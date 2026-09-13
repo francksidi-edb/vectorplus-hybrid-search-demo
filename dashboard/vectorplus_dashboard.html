@@ -1,0 +1,2433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EDB Vector Plus — ivfplus Demo</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F4F3EF;--surface:#FFF;--surface2:#EEEDEA;--border:#DDDBD5;--border2:#C8C5BD;
+  --text:#1A1A18;--muted:#6B6860;--faint:#9B9890;
+  --green:#1A7A4A;--green-bg:#EBF5EF;--green-bd:#B8DFC8;
+  --blue:#1A5A9A;--blue-bg:#EBF0F9;--blue-bd:#A0C0E0;
+  --amber:#9A6A00;--amber-bg:#FDF6E3;--amber-bd:#E0C060;
+  --red:#9A2A1A;--red-bg:#FCECEA;--red-bd:#E0A090;
+  --teal:#0F6E5A;--teal-bg:#E8F5F2;--teal-bd:#A8D8CE;
+  --purple:#5A3A9A;--purple-bg:#F0EBF9;--purple-bd:#C0A8E0;
+  --mono:'IBM Plex Mono',monospace;
+  --sans:'IBM Plex Sans',sans-serif;
+  --r:6px;--rl:10px;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.6}
+
+/* ── HEADER ── */
+.site-header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.brand{font-weight:600;font-size:15px;display:flex;align-items:center;gap:10px}
+.brand-fs{color:var(--teal)}.brand-x{color:var(--border)}.brand-wpg{color:var(--blue)}
+.header-right{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0}
+.status-dot.ok{background:var(--green);box-shadow:0 0 5px rgba(26,122,74,.4)}
+.status-dot.err{background:var(--red)}
+.ext-badge{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-family:var(--mono);font-size:11px}
+.badge-teal{background:var(--teal-bg);border-color:var(--teal-bd);color:var(--teal)}
+.badge-blue{background:var(--blue-bg);border-color:var(--blue-bd);color:var(--blue)}
+.badge-green{background:var(--green-bg);border-color:var(--green-bd);color:var(--green)}
+.badge-amber{background:var(--amber-bg);border-color:var(--amber-bd);color:var(--amber)}
+.badge-red{background:var(--red-bg);border-color:var(--red-bd);color:var(--red)}
+
+/* ── TABS ── */
+.tab-bar{background:var(--surface);border-bottom:2px solid var(--border);padding:0 2rem;display:flex;gap:0;overflow-x:auto}
+.tab{padding:12px 18px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--muted);font-size:13px;font-weight:500;white-space:nowrap;transition:color .15s,border-color .15s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--teal);border-bottom-color:var(--teal)}
+
+/* ── LAYOUT ── */
+.page{max-width:1280px;margin:0 auto;padding:2rem}
+.panel{display:none}.panel.active{display:block}
+.section{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);margin-bottom:1.5rem;overflow:hidden}
+.section-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;transition:background .1s}
+.section-header:hover{background:var(--surface2)}
+.section-num{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:30px}
+.section-title{font-weight:600;font-size:14px;flex:1}
+.section-desc{font-size:12px;color:var(--muted);max-width:460px}
+.section-body{padding:20px;display:none}
+.section-body.open{display:block}
+.chevron{color:var(--faint);font-size:12px;transition:transform .2s}
+.chevron.open{transform:rotate(180deg)}
+
+/* ── KPIs ── */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px;margin-bottom:16px}
+.kpi{background:var(--surface2);border-radius:var(--r);padding:13px 15px}
+.kpi-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.kpi-val{font-family:var(--mono);font-size:21px;font-weight:500;line-height:1.1}
+.kpi-val.green{color:var(--green)}.kpi-val.blue{color:var(--blue)}.kpi-val.teal{color:var(--teal)}
+.kpi-val.amber{color:var(--amber)}.kpi-val.red{color:var(--red)}.kpi-val.purple{color:var(--purple)}
+.kpi-sub{font-size:11px;color:var(--faint);margin-top:2px}
+
+/* ── TABLE ── */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;padding:7px 10px;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:1px solid var(--border)}
+.tbl td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--surface2)}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r)}
+.tbl .num{font-family:var(--mono);text-align:right}
+code{font-family:var(--mono);font-size:12px;background:var(--surface2);padding:2px 5px;border-radius:3px;color:var(--teal)}
+
+/* ── BADGES ── */
+.badge{display:inline-block;font-size:11px;padding:2px 7px;border-radius:3px;font-weight:500}
+.bg{background:var(--green-bg);color:var(--green)}.bb{background:var(--blue-bg);color:var(--blue)}
+.ba{background:var(--amber-bg);color:var(--amber)}.bt{background:var(--teal-bg);color:var(--teal)}
+.br{background:var(--red-bg);color:var(--red)}.bp{background:var(--purple-bg);color:var(--purple)}
+
+/* ── CONTROL PANEL ── */
+.ctrl-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.ctrl-card-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.ctrl-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.ctrl-row:last-child{margin-bottom:0}
+.ctrl-label{font-size:12px;color:var(--muted);white-space:nowrap;min-width:80px}
+.run-btn{background:var(--teal);color:#fff;border:none;padding:6px 14px;border-radius:var(--r);font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:opacity .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+.run-btn:hover{opacity:.85}
+.run-btn:disabled{opacity:.5;cursor:not-allowed}
+.run-btn.secondary{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+.run-btn.secondary:hover{background:var(--surface2)}
+.run-btn.danger{background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)}
+.run-btn.danger:hover{background:#f7d8d5}
+.run-btn.success{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd)}
+select,input[type=number],input[type=text]{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--sans);font-size:13px;padding:5px 9px;border-radius:var(--r);outline:none}
+select:focus,input:focus{border-color:var(--teal)}
+input[type=range]{accent-color:var(--teal);vertical-align:middle}
+label.chk{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer}
+
+/* ── STATUS INDICATORS ── */
+.proc-status{display:flex;align-items:center;gap:6px;font-size:13px;padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)}
+.proc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.proc-dot.running{background:var(--green);box-shadow:0 0 5px rgba(26,122,74,.4)}
+.proc-dot.stopped{background:var(--red)}
+.proc-dot.unknown{background:var(--faint)}
+.proc-name{font-family:var(--mono);font-size:12px;font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proc-pid{font-family:var(--mono);font-size:11px;color:var(--faint)}
+.status-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
+@media(max-width:700px){.status-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* ── LIVE PULSE ── */
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--faint);flex-shrink:0}
+.live-dot.active{background:var(--green);animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(1.2)}}
+
+/* ── SQL PANEL ── */
+.sql-panel{border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-top:14px}
+.sql-panel-header{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:var(--surface2);border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+.sql-panel-header:hover{background:#E5E4DF}
+.sql-label{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--teal);display:flex;align-items:center;gap:6px}
+.sql-label::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--teal);display:inline-block}
+.sql-toggle-hint{font-size:11px;color:var(--faint)}
+.sql-body{display:none;background:#1B1F27}
+.sql-body.open{display:block}
+.sql-pre{margin:0;padding:14px 16px;font-family:var(--mono);font-size:12px;line-height:1.85;color:#ABB2BF;overflow-x:auto;white-space:pre;max-height:420px;overflow-y:auto}
+.sql-footer{display:flex;justify-content:flex-end;padding:7px 14px;background:#161A22;border-top:1px solid #2A2F3A}
+.copy-btn{background:#2A2F3A;border:1px solid #3A4050;color:#8A95A8;font-family:var(--mono);font-size:11px;padding:4px 12px;border-radius:4px;cursor:pointer;transition:all .15s}
+.copy-btn:hover{background:#3A4050;color:#ABB2BF}
+.copy-btn.copied{color:#4EC9A0;border-color:#4EC9A0}
+.s-kw{color:#C678DD}.s-fn{color:#61AFEF}.s-str{color:#98C379}
+.s-cm{color:#5C6370;font-style:italic}.s-num{color:#D19A66}.s-yaml-key{color:#E5C07B}
+
+/* ── CHARTS ── */
+.chart-wrap{position:relative;height:220px}
+.chart-wrap.tall{height:280px}
+/* 1fr is minmax(auto,1fr): the auto minimum stops a track shrinking below its
+   content, so a column with long rows overflows the grid instead of ellipsing.
+   minmax(0,1fr) plus min-width:0 on the children is what actually lets them
+   compress — see .hit-title below. */
+.two-col{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.three-col{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.two-col>*,.three-col>*{min-width:0}
+@media(max-width:980px){.three-col{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:860px){.two-col{grid-template-columns:minmax(0,1fr)}}
+.chart-label{font-size:12px;color:var(--muted);margin-bottom:10px}
+
+/* ── PIPELINE ── */
+.pipeline{display:flex;align-items:center;overflow-x:auto;padding:12px 0 14px;gap:0}
+.pipe-node{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:9px 14px;text-align:center;min-width:100px;flex-shrink:0}
+.pipe-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.pipe-name{font-size:13px;font-weight:600}
+.pipe-arrow{color:var(--border2);font-size:18px;padding:0 5px;flex-shrink:0;transition:color .4s}
+.pipe-arrow.live{color:var(--teal)}
+
+/* ── LOG / RESULT BOX ── */
+.log-box{background:#1B1F27;border:1px solid var(--border);border-radius:var(--r);max-height:220px;overflow-y:auto;font-family:var(--mono);font-size:11px;padding:10px 12px;color:#ABB2BF;white-space:pre-wrap;word-break:break-word}
+
+/* ── SQL EDITOR ── */
+.sqled-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.sqled-textarea{width:100%;min-height:140px;background:#1B1F27;color:#ABB2BF;font-family:var(--mono);font-size:13px;line-height:1.6;border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;resize:vertical;outline:none}
+.sqled-textarea:focus{border-color:var(--teal)}
+.sqled-presets{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.preset-chip{background:var(--surface);border:1px solid var(--border);color:var(--muted);font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:12px;cursor:pointer;transition:all .15s}
+.preset-chip:hover{border-color:var(--teal);color:var(--teal);background:var(--teal-bg)}
+.preset-chip.on{border-color:var(--teal);color:var(--teal);background:var(--teal-bg)}
+.sqled-meta{font-family:var(--mono);font-size:11px;color:var(--faint);margin:8px 0}
+.sqled-results{border:1px solid var(--border);border-radius:var(--r);overflow:auto;max-height:420px}
+
+/* ── MISC ── */
+.loading{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);padding:14px 0}
+.spinner{width:15px;height:15px;border:2px solid var(--border);border-top-color:var(--teal);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-box{background:var(--red-bg);border:1px solid var(--red-bd);border-radius:var(--r);padding:11px 14px;font-size:13px;color:var(--red);margin-top:8px}
+.info-box{background:var(--teal-bg);border:1px solid var(--teal-bd);border-radius:var(--r);padding:9px 14px;font-size:12px;color:var(--teal);margin-bottom:14px}
+.warn-box{background:var(--amber-bg);border:1px solid var(--amber-bd);border-radius:var(--r);padding:9px 14px;font-size:12px;color:var(--amber);margin-top:8px}
+.output-msg{font-family:var(--mono);font-size:12px;padding:6px 10px;border-radius:var(--r);margin-top:8px}
+.output-msg.ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd)}
+.output-msg.err{background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)}
+
+/* ── PROGRESS ── */
+.pbar{height:9px;border-radius:5px;background:var(--surface2);border:1px solid var(--border);overflow:hidden}
+.pbar-fill{height:100%;background:var(--teal);width:0;transition:width .4s}
+.pbar-fill.blue{background:var(--blue)}
+.pbar-fill.indeterminate{background:repeating-linear-gradient(45deg,var(--teal),var(--teal) 10px,var(--blue) 10px,var(--blue) 20px);animation:pbar-slide 1s linear infinite}
+@keyframes pbar-slide{from{background-position:0 0}to{background-position:28px 0}}
+@media(prefers-reduced-motion:reduce){.pbar-fill.indeterminate{animation:none}}
+.big-timer{font-family:var(--mono);font-size:40px;font-weight:500;line-height:1;color:var(--teal)}
+.big-timer.idle{color:var(--faint)}
+.timer-unit{font-size:16px;color:var(--muted);margin-left:4px}
+
+/* ── RESULT HITS ── */
+/* flex:1 alone does NOT let a flex item shrink below its content: the automatic
+   minimum size still applies, so text-overflow never fires and the row pushes
+   its column wider. min-width:0 is the part that makes the ellipsis work. */
+.hit{display:flex;gap:10px;align-items:baseline;padding:6px 9px;border-bottom:1px solid var(--border);font-size:13px}
+.hit:last-child{border-bottom:none}
+.hit-rank{flex:0 0 auto;font-family:var(--mono);font-size:11px;color:var(--faint);min-width:22px}
+.hit-title{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hit-score{flex:0 0 auto;font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.hit.both{background:var(--green-bg)}
+.hit-list{border:1px solid var(--border);border-radius:var(--r);overflow:hidden;background:var(--surface);min-width:0}
+.col-head{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:7px;display:flex;justify-content:space-between;gap:8px;min-width:0}
+.col-head>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.col-head>span:last-child{flex:0 0 auto;white-space:nowrap}
+.hit-ranks{color:var(--faint)}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header class="site-header">
+  <div class="brand">
+    <span class="brand-fs">EDB Vector Plus</span>
+    <span class="brand-x">×</span>
+    <span class="brand-wpg">ivfplus</span>
+    <span style="color:var(--border);font-weight:300">|</span>
+    <span style="font-weight:400;font-size:13px;color:var(--muted)">RaBitQ + hierarchical IVF</span>
+  </div>
+  <div class="header-right">
+    <div class="live-dot" id="live-dot"></div>
+    <span id="live-label" style="font-size:12px">connecting…</span>
+    <div style="width:1px;height:18px;background:var(--border)"></div>
+    <div class="status-dot" id="status-dot"></div>
+    <span id="status-text" style="color:var(--muted);font-size:12px">—</span>
+    <span class="ext-badge badge-teal" id="ext-badge">ext —</span>
+    <span class="ext-badge badge-blue" id="rows-badge">— rows</span>
+    <span class="ext-badge" id="dim-badge">dim —</span>
+    <span id="refresh-ts" style="font-family:var(--mono);font-size:10px;color:var(--faint)"></span>
+  </div>
+</header>
+
+<!-- ── TABS ── -->
+<div class="tab-bar">
+  <div class="tab active" id="tab-setup"   onclick="switchTab('setup')">⚙ Setup</div>
+  <div class="tab" id="tab-vectors" onclick="switchTab('vectors')">🧬 Build Vectors</div>
+  <div class="tab" id="tab-build"   onclick="switchTab('build')">⚡ Index Build</div>
+  <div class="tab" id="tab-search"  onclick="switchTab('search')">🔍 Vector Search</div>
+  <div class="tab" id="tab-recall"  onclick="switchTab('recall')">🎯 Recall Lab</div>
+  <div class="tab" id="tab-hybrid"  onclick="switchTab('hybrid')">🔀 Hybrid Search</div>
+  <div class="tab" id="tab-filter"  onclick="switchTab('filter')">🧪 Filtering</div>
+  <div class="tab" id="tab-maint"   onclick="switchTab('maint')">🩺 Health &amp; Maintenance</div>
+  <div class="tab" id="tab-history" onclick="switchTab('history')">📈 History &amp; Compare</div>
+  <div class="tab" id="tab-querylog" onclick="switchTab('querylog')">🧾 Query Log</div>
+  <div class="tab" id="tab-sqleditor" onclick="switchTab('sqleditor')">🔎 SQL Editor</div>
+</div>
+
+<div class="page">
+
+<!-- ══════════════════════════ SETUP ═══════════════════════════════════════ -->
+<div class="panel active" id="panel-setup">
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">01</span>
+      <span class="section-title">Extension &amp; Server</span>
+      <span class="section-desc">edb_vectorplus needs pgvector ≥ 0.7.0; CASCADE creates it first</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div class="info-box">
+        <code>CREATE EXTENSION edb_vectorplus CASCADE;</code> — no
+        <code>shared_preload_libraries</code> entry and no restart needed. The extension
+        is relocatable, so schema-qualify the helper functions if it lives off your
+        <code>search_path</code>.
+      </div>
+
+      <div class="pipeline">
+        <div class="pipe-node"><div class="pipe-label">extension</div><div class="pipe-name" id="pp-ext">—</div></div>
+        <span class="pipe-arrow" id="pp-a1">→</span>
+        <div class="pipe-node"><div class="pipe-label">table</div><div class="pipe-name" id="pp-tbl">—</div></div>
+        <span class="pipe-arrow" id="pp-a2">→</span>
+        <div class="pipe-node"><div class="pipe-label">rows loaded</div><div class="pipe-name" id="pp-rows">—</div></div>
+        <span class="pipe-arrow" id="pp-a3">→</span>
+        <div class="pipe-node"><div class="pipe-label">ivfplus index</div><div class="pipe-name" id="pp-idx">—</div></div>
+        <span class="pipe-arrow" id="pp-a4">→</span>
+        <div class="pipe-node"><div class="pipe-label">query</div><div class="pipe-name" id="pp-qry">—</div></div>
+      </div>
+
+      <div class="status-grid" id="setup-grid"></div>
+
+      <div class="ctrl-row">
+        <button class="run-btn" onclick="createExtension()">⚡ CREATE EXTENSION … CASCADE</button>
+        <button class="run-btn secondary" onclick="loadEnv()">↻ Reload server settings</button>
+      </div>
+      <div id="setup-output"></div>
+
+      <div id="env-table" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">02</span>
+      <span class="section-title">Demo Table</span>
+      <span class="section-desc">Documents with text + a vector column, so hybrid search has both sides</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div class="ctrl-card">
+        <div class="ctrl-card-title">Create table</div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">Dimensions</span>
+          <input type="number" id="tbl-dim" value="768" min="2" max="2000" style="width:110px"
+                 oninput="renderPacking()">
+          <select id="dim-preset" onchange="document.getElementById('tbl-dim').value=this.value;renderPacking()">
+            <option value="">preset…</option>
+            <option value="384">384 — MiniLM</option>
+            <option value="768">768 — BERT base</option>
+            <option value="1024">1024 — BGE large</option>
+            <option value="1536">1536 — OpenAI ada-002</option>
+            <option value="1537">1537 — deliberately unpacked</option>
+            <option value="1792">1792 — over the packing window</option>
+          </select>
+          <button class="run-btn danger" onclick="createTable()">↺ Drop &amp; recreate table</button>
+        </div>
+        <div id="packing-note"></div>
+      </div>
+      <div id="table-output"></div>
+      <div id="setup-sql"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">03</span>
+      <span class="section-title">Limits &amp; Fixed Constants</span>
+      <span class="section-desc">Compiled in — none of these is a knob</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="section-body">
+      <div id="limits-table"></div>
+    </div>
+  </div>
+
+</div><!-- /setup -->
+
+
+<!-- ══════════════════════════ BUILD VECTORS ═══════════════════════════════ -->
+<div class="panel" id="panel-vectors">
+
+  <div class="section">
+    <div class="section-header" style="cursor:default">
+      <span class="section-num">🧬</span>
+      <span class="section-title">Generate the corpus</span>
+      <span class="section-desc">Text and embeddings that agree with each other, streamed in via COPY</span>
+    </div>
+    <div class="section-body open" style="display:block">
+      <div class="info-box">
+        Each document is drawn from one topic's vocabulary, and its embedding is the
+        normalized mean of per-word vectors. Two documents about the same topic land near
+        each other <i>and</i> share words — which is what makes the hybrid tab meaningful
+        rather than decorative. <b>Load before <code>CREATE INDEX</code></b>: the build
+        clusters the rows that are already there.
+      </div>
+
+      <div class="kpi-row" id="gen-kpis"></div>
+
+      <div class="ctrl-card">
+        <div class="ctrl-card-title">Generator</div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">Rows</span>
+          <input type="number" id="gen-rows" value="50000" min="100" step="1000" style="width:130px">
+          <span class="ctrl-label" style="min-width:auto">Batch</span>
+          <input type="number" id="gen-batch" value="5000" min="500" max="20000" style="width:110px">
+          <span class="ctrl-label" style="min-width:auto">Seed</span>
+          <input type="number" id="gen-seed" value="42" style="width:80px">
+          <label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)"
+                 title="Binary COPY is about half the bytes of the text format and skips float formatting and parsing. Falls back to text automatically if the server refuses it.">
+            <input type="checkbox" id="gen-binary" checked> binary COPY
+          </label>
+          <button class="run-btn" id="gen-start-btn" onclick="genStart()">▶ Generate &amp; load</button>
+          <button class="run-btn secondary" onclick="genStop()">■ Stop</button>
+          <button class="run-btn danger" onclick="resetData()">✕ Truncate table</button>
+        </div>
+        <div class="ctrl-row">
+          <div style="flex:1;min-width:240px"><div class="pbar"><div class="pbar-fill" id="gen-bar"></div></div></div>
+          <span class="sqled-meta" id="gen-meta" style="margin:0"></span>
+        </div>
+      </div>
+
+      <div class="ctrl-card">
+        <div class="ctrl-card-title">Scalar indexes — tsv (GIN) and category_id (btree)</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">
+          The loader drops these before the COPY and rebuilds them after, so you should not
+          normally need these buttons. Use them to recover from a load that failed part-way,
+          or to time the build on its own.
+        </div>
+        <div class="ctrl-row">
+          <button class="run-btn" onclick="scalarIndexes('build')">▶ Build indexes</button>
+          <button class="run-btn danger" onclick="scalarIndexes('drop')">✕ Drop indexes</button>
+        </div>
+        <div id="scalar-idx-output"></div>
+        <div id="scalar-idx-detail" style="margin-top:10px"></div>
+      </div>
+      <div id="gen-output"></div>
+
+      <div class="two-col" style="margin-top:16px">
+        <div>
+          <div class="col-head"><span>Rows by topic</span><span id="topic-total"></span></div>
+          <div id="topic-table"></div>
+        </div>
+        <div>
+          <div class="col-head"><span>Latest rows</span><span></span></div>
+          <div id="sample-table"></div>
+        </div>
+      </div>
+
+      <div id="gen-sql"></div>
+    </div>
+  </div>
+
+</div><!-- /vectors -->
+
+
+<!-- ══════════════════════════ INDEX BUILD ═════════════════════════════════ -->
+<div class="panel" id="panel-build">
+
+  <div class="section">
+    <div class="section-header" style="cursor:default">
+      <span class="section-num">⚡</span>
+      <span class="section-title">Time to build an ivfplus index</span>
+      <span class="section-desc">Live wall clock, server-side build progress, and the resulting size</span>
+    </div>
+    <div class="section-body open" style="display:block">
+
+      <div class="two-col" style="margin-bottom:16px">
+        <div class="ctrl-card" style="margin:0">
+          <div class="ctrl-card-title">Build parameters</div>
+          <div class="ctrl-row">
+            <span class="ctrl-label">Access method</span>
+            <select id="bd-am" style="width:130px">
+              <option value="ivfplus">ivfplus</option>
+              <option value="ivfflat">ivfflat (pgvector, for comparison)</option>
+            </select>
+          </div>
+          <div class="ctrl-row">
+            <span class="ctrl-label">lists</span>
+            <input type="number" id="bd-lists" value="100" min="1" max="32768" style="width:110px"
+                   oninput="listsNote()">
+            <button class="run-btn secondary" onclick="applyAdvisor()">use recommendation</button>
+          </div>
+          <div class="ctrl-row">
+            <span class="ctrl-label">Opclass</span>
+            <select id="bd-opclass" style="width:190px"></select>
+          </div>
+          <div class="ctrl-row">
+            <span class="ctrl-label">Options</span>
+            <label class="chk"><input type="checkbox" id="bd-rotation" checked> rotation</label>
+            <label class="chk"><input type="checkbox" id="bd-conc"> CONCURRENTLY</label>
+            <label class="chk"><input type="checkbox" id="bd-store"> store_vectors</label>
+          </div>
+          <div class="ctrl-row">
+            <span class="ctrl-label">Build memory</span>
+            <input type="text" id="bd-mwm" placeholder="auto" style="width:110px"
+                   title="maintenance_work_mem for this build session only, e.g. 512MB or 2GB. Leave as auto and the app sizes it from the k-means sample.">
+            <span class="sqled-meta" id="bd-mem-note" style="margin:0"></span>
+          </div>
+          <div class="ctrl-row">
+            <span class="ctrl-label">Index name</span>
+            <input type="text" id="bd-name" placeholder="auto" style="width:220px">
+          </div>
+          <div class="ctrl-row">
+            <button class="run-btn" id="bd-start" onclick="buildStart()">▶ CREATE INDEX</button>
+            <button class="run-btn secondary" onclick="loadIndexes()">↻ Refresh</button>
+          </div>
+        </div>
+
+        <div class="ctrl-card" style="margin:0;display:flex;flex-direction:column;justify-content:center">
+          <div class="ctrl-card-title">Elapsed</div>
+          <div><span class="big-timer idle" id="bd-timer">0.00</span><span class="timer-unit">s</span></div>
+          <div class="sqled-meta" id="bd-phase" style="margin-top:8px">idle</div>
+          <div class="pbar" style="margin-top:6px"><div class="pbar-fill blue" id="bd-bar"></div></div>
+          <div class="sqled-meta" id="bd-progress"></div>
+        </div>
+      </div>
+
+      <div id="bd-advisor"></div>
+      <div id="bd-warnings"></div>
+      <div id="bd-output"></div>
+      <div id="bd-result"></div>
+      <div id="bd-sql"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">📊</span>
+      <span class="section-title">Build comparison</span>
+      <span class="section-desc">Every build this session — time, size, and bytes per row</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div class="two-col">
+        <div><div class="chart-label">Build time by lists</div><div class="chart-wrap"><canvas id="chart-build"></canvas></div></div>
+        <div><div class="chart-label">Index size by lists</div><div class="chart-wrap"><canvas id="chart-size"></canvas></div></div>
+      </div>
+      <div id="build-history" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">💾</span>
+      <span class="section-title">Existing indexes &amp; size model</span>
+      <span class="section-desc">Where the bytes go, and what a rerank-policy build would save</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div id="index-table"></div>
+      <div id="size-model" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+</div><!-- /build -->
+
+
+<!-- ══════════════════════════ VECTOR SEARCH ═══════════════════════════════ -->
+<div class="panel" id="panel-search">
+
+  <div class="section">
+    <div class="section-header" style="cursor:default">
+      <span class="section-num">🔍</span>
+      <span class="section-title">Query</span>
+      <span class="section-desc">Type text, paste a vector, or search by an existing row id</span>
+    </div>
+    <div class="section-body open" style="display:block">
+
+      <div class="ctrl-card">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Query text</span>
+          <input type="text" id="sc-text" value="tuning recall for an approximate vector index"
+                 style="flex:1;min-width:280px" onkeydown="if(event.key==='Enter')runSearch()">
+          <button class="run-btn" onclick="runSearch()">▶ Search</button>
+        </div>
+        <div class="sqled-presets" id="sc-examples"></div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">Opclass</span>
+          <select id="sc-opclass" style="width:180px"></select>
+          <span class="ctrl-label" style="min-width:auto">probes</span>
+          <input type="range" id="sc-probes" min="1" max="256" value="16" style="width:150px"
+                 oninput="document.getElementById('sc-probes-v').textContent=this.value">
+          <span id="sc-probes-v" style="font-family:var(--mono);min-width:34px">16</span>
+          <span class="ctrl-label" style="min-width:auto">LIMIT</span>
+          <input type="number" id="sc-limit" value="10" min="1" max="1000" style="width:90px">
+          <label class="chk"><input type="checkbox" id="sc-explain"> EXPLAIN ANALYZE</label>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">Row id</span>
+          <input type="number" id="sc-id" placeholder="optional — search by an indexed row" style="width:180px">
+          <span class="ctrl-label" style="min-width:auto">iterative_scan</span>
+          <select id="sc-iter" style="width:140px">
+            <option value="off">off</option>
+            <option value="relaxed_order">relaxed_order</option>
+          </select>
+          <span class="ctrl-label" style="min-width:auto">max_probes</span>
+          <input type="number" id="sc-maxprobes" value="128" min="1" max="32768" style="width:110px">
+          <button class="run-btn secondary" onclick="runCompare()">⇄ Compare with exact scan</button>
+        </div>
+      </div>
+
+      <div id="sc-notes"></div>
+      <div id="sc-output"></div>
+      <div id="sc-results"></div>
+      <div id="sc-plan"></div>
+      <div id="sc-sql"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">📖</span>
+      <span class="section-title">Query surface</span>
+      <span class="section-desc">Every supported operator and opclass, plus what falls back to a seq scan</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div id="caps-list"></div>
+    </div>
+  </div>
+
+</div><!-- /search -->
+
+
+<!-- ══════════════════════════ RECALL LAB ══════════════════════════════════ -->
+<div class="panel" id="panel-recall">
+
+  <div class="section">
+    <div class="section-header" style="cursor:default">
+      <span class="section-num">🎯</span>
+      <span class="section-title">Recall vs probes</span>
+      <span class="section-desc">Exact top-k with the index disabled, then index top-k at each setting</span>
+    </div>
+    <div class="section-body open" style="display:block">
+      <div class="info-box">
+        This is an approximate index — work through this tab before relying on it. Start
+        <code>probes</code> at <code>sqrt(lists)</code> and raise until recall is good
+        enough. Re-measure after any <code>lists</code> change.
+      </div>
+
+      <div class="ctrl-card">
+        <div class="ctrl-row">
+          <span class="ctrl-label">k</span>
+          <input type="number" id="rc-k" value="10" min="1" max="200" style="width:90px">
+          <span class="ctrl-label" style="min-width:auto">Query vectors</span>
+          <input type="number" id="rc-nq" value="20" min="1" max="200" style="width:90px">
+          <span class="ctrl-label" style="min-width:auto">Opclass</span>
+          <select id="rc-opclass" style="width:180px"></select>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">probes sweep</span>
+          <input type="text" id="rc-probes" value="1,2,4,8,16,32,64,128" style="flex:1;min-width:240px">
+          <button class="run-btn" onclick="runSweep()">▶ Measure recall</button>
+        </div>
+      </div>
+
+      <div class="kpi-row" id="rc-kpis"></div>
+      <div id="rc-output"></div>
+      <div class="two-col">
+        <div><div class="chart-label">Recall @k</div><div class="chart-wrap"><canvas id="chart-recall"></canvas></div></div>
+        <div><div class="chart-label">Latency (ms, avg)</div><div class="chart-wrap"><canvas id="chart-latency"></canvas></div></div>
+      </div>
+      <div id="rc-table" style="margin-top:14px"></div>
+      <div id="rc-sql"></div>
+    </div>
+  </div>
+
+</div><!-- /recall -->
+
+
+<!-- ══════════════════════════ HYBRID SEARCH ═══════════════════════════════ -->
+<div class="panel" id="panel-hybrid">
+
+  <div class="section">
+    <div class="section-header" style="cursor:default">
+      <span class="section-num">🔀</span>
+      <span class="section-title">Hybrid search — full text + vector, fused with RRF</span>
+      <span class="section-desc">Composed at the SQL level; the access method does not enter into it</span>
+    </div>
+    <div class="section-body open" style="display:block">
+      <div class="info-box">
+        Reciprocal Rank Fusion scores each document as
+        <code>Σ weight / (k + rank)</code> over the lists it appears in, so the two legs
+        never have to share a scale. Rows highlighted green were found by
+        <b>both</b> legs. Keep the semantic candidate list at or under 200 — the rerank
+        pool caps the scan there.
+      </div>
+
+      <div class="ctrl-card">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Query</span>
+          <input type="text" id="hy-text" value="espresso grinder burr extraction"
+                 style="flex:1;min-width:280px" onkeydown="if(event.key==='Enter')runHybrid()">
+          <button class="run-btn" onclick="runHybrid()">▶ Hybrid search</button>
+        </div>
+        <div class="sqled-presets" id="hy-examples"></div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">k (returned)</span>
+          <input type="number" id="hy-k" value="10" min="1" max="50" style="width:85px">
+          <span class="ctrl-label" style="min-width:auto">candidates</span>
+          <input type="number" id="hy-cand" value="200" min="1" max="200" style="width:85px"
+                 title="How deep each leg goes before fusion. The legs only agree below their own top-k, so a short list turns RRF into a plain interleave. 200 is the rerank-pool cap.">
+          <span class="ctrl-label" style="min-width:auto">RRF k</span>
+          <input type="number" id="hy-rrfk" value="60" min="1" max="1000" style="width:85px"
+                 title="Flattens the rank curve. At 60, rank 1 scores 1/61 and rank 50 scores 1/110 — under 2x across the list, which is what lets two mediocre agreements outrank one strong single-leg hit. Lower it and the best single ranker dominates.">
+          <span class="ctrl-label" style="min-width:auto">probes</span>
+          <input type="number" id="hy-probes" value="32" min="1" max="32768" style="width:85px">
+          <span class="ctrl-label" style="min-width:auto">lexical</span>
+          <select id="hy-lexical" style="width:210px" onchange="this.dataset.touched=1">
+            <option value="tsvector">tsvector + GIN (ts_rank_cd)</option>
+            <option value="bm25">pg_textsearch (BM25)</option>
+          </select>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">vector weight</span>
+          <input type="range" id="hy-wv" min="0" max="2" step="0.1" value="1" style="width:130px"
+                 oninput="document.getElementById('hy-wv-v').textContent=(+this.value).toFixed(1)">
+          <span id="hy-wv-v" style="font-family:var(--mono);min-width:30px">1.0</span>
+          <span class="ctrl-label" style="min-width:auto">text weight</span>
+          <input type="range" id="hy-wf" min="0" max="2" step="0.1" value="1" style="width:130px"
+                 oninput="document.getElementById('hy-wf-v').textContent=(+this.value).toFixed(1)">
+          <span id="hy-wf-v" style="font-family:var(--mono);min-width:30px">1.0</span>
+        </div>
+      </div>
+
+      <div class="kpi-row" id="hy-kpis"></div>
+      <div id="hy-output"></div>
+      <div class="three-col" id="hy-cols"></div>
+      <div id="hy-sql"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">🅱</span>
+      <span class="section-title">BM25 via pg_textsearch</span>
+      <span class="section-desc">Industry-standard relevance ranking as a Postgres index AM</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div class="info-box">
+        <code>ts_rank_cd</code> scores on term frequency within a document. BM25 adds
+        inverse document frequency, term-frequency saturation and length normalization
+        from corpus-wide statistics — the same ranker Elasticsearch and Lucene use. The
+        index goes on the same text the tsvector column covers, so the two are compared
+        on identical input.
+      </div>
+      <div id="bm25-status"></div>
+
+      <div class="ctrl-card">
+        <div class="ctrl-card-title">Build the BM25 index</div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">text_config</span>
+          <input type="text" id="bm-cfg" value="english" style="width:120px">
+          <span class="ctrl-label" style="min-width:auto">k1</span>
+          <input type="number" id="bm-k1" value="1.2" step="0.1" min="0.1" max="10" style="width:80px">
+          <span class="ctrl-label" style="min-width:auto">b</span>
+          <input type="number" id="bm-b" value="0.75" step="0.05" min="0" max="1" style="width:80px">
+          <label class="chk"><input type="checkbox" id="bm-merge" checked> force_merge after build</label>
+          <button class="run-btn" onclick="buildBm25()">▶ CREATE INDEX … USING bm25</button>
+        </div>
+        <div class="sqled-meta">k1 controls term-frequency saturation, b controls length
+          normalization. force_merge is the equivalent of Lucene&rsquo;s forceMerge(1) —
+          it collapses the LSM segments left over from the bulk load into one.</div>
+      </div>
+      <div id="bm25-build-out"></div>
+
+      <div class="ctrl-card">
+        <div class="ctrl-card-title">ts_rank_cd vs BM25, same query</div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">Query</span>
+          <input type="text" id="bm-q" value="postgres vacuum heap tuple"
+                 style="flex:1;min-width:260px" onkeydown="if(event.key==='Enter')compareBm25()">
+          <span class="ctrl-label" style="min-width:auto">k</span>
+          <input type="number" id="bm-k" value="10" min="1" max="100" style="width:80px">
+          <button class="run-btn" onclick="compareBm25()">▶ Compare rankers</button>
+        </div>
+      </div>
+      <div id="bm25-cmp-out"></div>
+      <div class="two-col" id="bm25-cmp"></div>
+    </div>
+  </div>
+
+</div><!-- /hybrid -->
+
+
+<!-- ══════════════════════════ FILTERING ═══════════════════════════════════ -->
+<div class="panel" id="panel-filter">
+
+  <div class="section">
+    <div class="section-header" style="cursor:default">
+      <span class="section-num">🧪</span>
+      <span class="section-title">Filtered queries</span>
+      <span class="section-desc">The filter runs after the index scan — a selective one returns short</span>
+    </div>
+    <div class="section-body open" style="display:block">
+      <div class="info-box">
+        Filtering is applied after the index scan, as with pgvector's IVFFlat. There are
+        no index-only, bitmap or parallel index scans, so a <code>WHERE</code> clause is
+        always applied afterward. Two fixes: a partial index, or a wider
+        <code>probes</code>.
+      </div>
+
+      <div class="ctrl-card">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Query text</span>
+          <input type="text" id="ft-text" value="postgres vacuum and heap tuple visibility"
+                 style="flex:1;min-width:260px">
+          <span class="ctrl-label" style="min-width:auto">category</span>
+          <select id="ft-cat" style="width:200px"></select>
+        </div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">probes</span>
+          <input type="number" id="ft-probes" value="4" min="1" max="32768" style="width:90px">
+          <span class="ctrl-label" style="min-width:auto">LIMIT</span>
+          <input type="number" id="ft-limit" value="10" min="1" max="200" style="width:90px">
+          <button class="run-btn" onclick="runFilter()">▶ Run filtered vs unfiltered</button>
+        </div>
+      </div>
+
+      <div id="ft-output"></div>
+      <div id="ft-results"></div>
+      <div id="ft-sql"></div>
+
+      <div class="ctrl-card" style="margin-top:16px">
+        <div class="ctrl-card-title">Fix — partial index</div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">category_id</span>
+          <input type="number" id="ft-pi-cat" value="2" style="width:90px">
+          <span class="ctrl-label" style="min-width:auto">lists</span>
+          <input type="number" id="ft-pi-lists" value="100" style="width:90px">
+          <button class="run-btn" onclick="buildPartial()">▶ CREATE partial index</button>
+        </div>
+      </div>
+      <div id="ft-pi-output"></div>
+      <div id="ft-plan"></div>
+    </div>
+  </div>
+
+</div><!-- /filter -->
+
+
+<!-- ══════════════════════════ HEALTH & MAINTENANCE ════════════════════════ -->
+<div class="panel" id="panel-maint">
+
+  <div class="section">
+    <div class="section-header" style="cursor:default">
+      <span class="section-num">🩺</span>
+      <span class="section-title">Index health &amp; drift</span>
+      <span class="section-desc">Clustering happens once, at build time — the table drifts away from it</span>
+    </div>
+    <div class="section-body open" style="display:block">
+      <div class="info-box">
+        <code>index_health = (1 − pct_pending) × (1 − pct_dead_lanes)</code>. It is 1.0 on
+        a fresh build; below 0.8 the function emits a NOTICE recommending
+        <code>REINDEX INDEX CONCURRENTLY</code>. REINDEX is the only operation that
+        repacks append-region rows and reclaims dead lanes.
+      </div>
+
+      <div class="ctrl-row" style="margin-bottom:12px">
+        <button class="run-btn secondary" onclick="loadHealth()">↻ check_ivfplus_index_health()</button>
+        <button class="run-btn secondary" onclick="loadRerankStats()">📊 rerank stats</button>
+      </div>
+      <div id="health-table"></div>
+      <div id="rerank-out" style="margin-top:12px"></div>
+
+      <div class="ctrl-card" style="margin-top:16px">
+        <div class="ctrl-card-title">Churn the table on purpose</div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">INSERT</span>
+          <input type="number" id="ch-ins" value="5000" min="0" style="width:110px">
+          <span class="ctrl-label" style="min-width:auto">UPDATE</span>
+          <input type="number" id="ch-upd" value="2000" min="0" style="width:110px">
+          <span class="ctrl-label" style="min-width:auto">DELETE</span>
+          <input type="number" id="ch-del" value="1000" min="0" style="width:110px">
+          <button class="run-btn" onclick="runChurn()">▶ Apply churn</button>
+        </div>
+        <div class="ctrl-row">
+          <div style="flex:1;min-width:200px"><div class="pbar"><div class="pbar-fill" id="ch-bar"></div></div></div>
+          <span class="sqled-meta" id="ch-meta" style="margin:0"></span>
+        </div>
+      </div>
+      <div id="ch-output"></div>
+
+      <div class="ctrl-card">
+        <div class="ctrl-card-title">Repair</div>
+        <div class="ctrl-row">
+          <span class="ctrl-label">Index</span>
+          <select id="rx-name" style="min-width:260px"></select>
+          <label class="chk"><input type="checkbox" id="rx-conc" checked> CONCURRENTLY</label>
+          <button class="run-btn" onclick="runReindex()">▶ REINDEX</button>
+        </div>
+      </div>
+      <div id="rx-output"></div>
+
+      <div id="ops-table" style="margin-top:16px"></div>
+    </div>
+  </div>
+
+</div><!-- /maint -->
+
+
+<!-- ══════════════════════════ HISTORY & COMPARE ═══════════════════════════ -->
+<div class="panel" id="panel-history">
+
+  <div class="section">
+    <div class="section-header" style="cursor:default">
+      <span class="section-num">📈</span>
+      <span class="section-title">Everything measured so far</span>
+      <span class="section-desc">Persisted to SQLite, shared with the vpbench CLI — survives a restart</span>
+    </div>
+    <div class="section-body open" style="display:block">
+      <div class="info-box" id="hist-source">
+        Builds and recall sweeps are recorded to a SQLite file rather than kept in memory.
+        The <code>vpbench.py</code> CLI writes the same file, so runs it makes against a
+        pure-pgvector database (<code>vector_demo</code>, using <code>ivfflat</code> or
+        <code>hnsw</code>) appear in the comparisons below without this app needing to
+        connect to that database itself.
+      </div>
+
+      <div class="ctrl-row">
+        <span class="ctrl-label">Recall floor</span>
+        <input type="range" id="hs-floor" min="0.5" max="1" step="0.01" value="0.95"
+               style="width:170px"
+               oninput="document.getElementById('hs-floor-v').textContent=(+this.value*100).toFixed(0)+'%'">
+        <span id="hs-floor-v" style="font-family:var(--mono);min-width:44px">95%</span>
+        <button class="run-btn" onclick="loadHistory()">↻ Refresh</button>
+      </div>
+      <div id="hist-output"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">⚡</span>
+      <span class="section-title">Build comparison</span>
+      <span class="section-desc">Latest build per target, engine and parameter set</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open"><div id="hist-builds"></div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">🎯</span>
+      <span class="section-title">Recall comparison</span>
+      <span class="section-desc">Cheapest setting that reaches the floor, per engine</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div id="hist-recalls"></div>
+      <div class="chart-label" style="margin-top:16px">Recall vs latency — every curve recorded</div>
+      <div class="chart-wrap tall"><canvas id="chart-hist-curves"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">🧮</span>
+      <span class="section-title">Build-memory model accuracy</span>
+      <span class="section-desc">What the estimate said against what the server actually demanded</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open"><div id="hist-memory"></div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">📋</span>
+      <span class="section-title">Full build log</span>
+      <span class="section-desc">Every CREATE INDEX ever recorded, newest first</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="section-body"><div id="hist-all-builds"></div></div>
+  </div>
+
+</div><!-- /history -->
+
+
+<!-- ══════════════════════════ QUERY LOG ═══════════════════════════════════ -->
+<div class="panel" id="panel-querylog">
+
+  <div class="section">
+    <div class="section-header" style="cursor:default">
+      <span class="section-num">🧾</span>
+      <span class="section-title">Every statement this app has run</span>
+      <span class="section-desc">Searches, hybrid legs, index builds, REINDEX and the SQL editor</span>
+    </div>
+    <div class="section-body open" style="display:block">
+      <div class="info-box" id="ql-source">
+        Each statement is written to a text file you can <code>tail -f</code> and to the
+        results store, so the SQL is recoverable after the fact instead of vanishing when
+        you switch tabs. What counts as worth logging is judged from the statement itself,
+        not from which function issued it: anything touching <code>embedding</code>,
+        <code>tsv</code> or a distance operator is kept, while catalog lookups,
+        <code>current_setting</code>, row counts and health probes are treated as metadata
+        and suppressed unless you switch the level. Press <b>full</b> on any row to get the
+        statement with the query vector substituted in, runnable in psql as-is. A recall
+        sweep is recorded once as a summary rather than as its hundreds of near-identical
+        statements.
+      </div>
+
+      <div class="ctrl-row">
+        <span class="ctrl-label">Kind</span>
+        <select id="ql-kind" style="min-width:180px" onchange="loadQueryLog()"></select>
+        <span class="ctrl-label" style="min-width:auto">Show</span>
+        <input type="number" id="ql-limit" value="100" min="1" max="1000" style="width:90px">
+        <label class="chk"><input type="checkbox" id="ql-auto"> auto-refresh</label>
+        <span class="ctrl-label" style="min-width:auto">Level</span>
+        <select id="ql-level" style="width:210px" onchange="setLogLevel()">
+          <option value="user">vectors &amp; full text only</option>
+          <option value="all">everything, incl. metadata</option>
+        </select>
+        <button class="run-btn" onclick="loadQueryLog()">↻ Refresh</button>
+        <button class="run-btn danger" onclick="clearQueryLog()">✕ Clear log</button>
+      </div>
+      <div id="ql-output"></div>
+      <div id="ql-table" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">📄</span>
+      <span class="section-title">Log file</span>
+      <span class="section-desc">Raw tail, exactly as written to disk</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="section-body">
+      <div class="ctrl-row">
+        <span class="ctrl-label">Lines</span>
+        <input type="number" id="ql-lines" value="200" min="10" max="2000" style="width:90px">
+        <button class="run-btn secondary" onclick="loadLogFile()">↻ Tail</button>
+        <span class="sqled-meta" id="ql-path" style="margin:0"></span>
+      </div>
+      <div class="log-box" id="ql-file" style="max-height:420px;margin-top:10px">not loaded</div>
+    </div>
+  </div>
+
+</div><!-- /querylog -->
+
+
+<!-- ══════════════════════════ SQL EDITOR ══════════════════════════════════ -->
+<div class="panel" id="panel-sqleditor">
+  <div class="section">
+    <div class="section-header" style="cursor:default">
+      <span class="section-num">🔎</span>
+      <span class="section-title">SQL Editor</span>
+      <span class="section-desc">Ad-hoc queries against the demo database — one statement at a time</span>
+    </div>
+    <div class="section-body open" style="display:block">
+      <div class="info-box">
+        Data-changing statements (DROP / DELETE / TRUNCATE / ALTER / UPDATE / INSERT /
+        CREATE / REINDEX / VACUUM) ask for confirmation first. Server NOTICEs are shown —
+        which is how you catch <code>ivfplus index created with little data</code>.
+      </div>
+      <div class="sqled-toolbar">
+        <button class="run-btn" onclick="runSqlQuery()">▶ Run Query</button>
+        <button class="run-btn secondary" onclick="clearSqlEditor()">✕ Clear</button>
+      </div>
+      <div class="sqled-presets" id="sqled-presets"></div>
+      <textarea class="sqled-textarea" id="sqled-sql" spellcheck="false"
+        placeholder="SELECT * FROM check_ivfplus_index_health('vp_docs_emb_ivfplus_l100');"></textarea>
+      <div class="sqled-meta" id="sqled-meta"></div>
+      <div id="sqled-output"></div>
+      <div id="sqled-results" style="margin-top:12px"></div>
+    </div>
+  </div>
+</div><!-- /sqleditor -->
+
+</div><!-- /page -->
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════════════════════════════════════════
+function toggle(hdr){
+  const b=hdr.nextElementSibling,c=hdr.querySelector('.chevron');
+  b.classList.toggle('open'); c.classList.toggle('open');
+}
+function switchTab(n){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+n).classList.add('active');
+  document.getElementById('tab-'+n).classList.add('active');
+  if(n==='build'){loadIndexes();loadSizeModel();}
+  if(n==='vectors'){loadTopics();loadSample();}
+  if(n==='search'){loadCaps();}
+  if(n==='filter'){loadCategories();}
+  if(n==='maint'){loadHealth();}
+  if(n==='history'){loadHistory();}
+  if(n==='hybrid'){loadBm25Status();}
+  if(n==='querylog'){loadQueryLog();loadLogFile();}
+}
+async function api(path, opts){
+  const r = await fetch(path, opts);
+  return r.json();
+}
+async function post(path, body){
+  return api(path,{method:'POST',headers:{'Content-Type':'application/json'},
+                   body:JSON.stringify(body||{})});
+}
+function escH(s){return String(s===null||s===undefined?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmt(n){return (n===null||n===undefined)?'—':Number(n).toLocaleString();}
+function bytes(b){
+  if(b===null||b===undefined) return '—';
+  const u=['B','KiB','MiB','GiB','TiB']; let i=0,v=Number(b);
+  while(v>=1024&&i<u.length-1){v/=1024;i++;}
+  return v.toFixed(v<10?2:1)+' '+u[i];
+}
+
+// ── SQL panel ─────────────────────────────────────────────────────────────────
+function sqlPanel(content, label, open){
+  const esc = escH(content);
+  let h = esc
+    .replace(/\b(SELECT|FROM|WHERE|AND|OR|NOT|IN|AS|ORDER BY|GROUP BY|LIMIT|WITH|JOIN|FULL|OUTER|LEFT|RIGHT|ON|USING|CREATE|INDEX|CONCURRENTLY|TABLE|EXTENSION|CASCADE|DROP|REINDEX|VACUUM|ANALYZE|SET|LOCAL|EXPLAIN|INSERT|INTO|UPDATE|DELETE|BEGIN|COMMIT|TEMP|OVER|PARTITION|DESC|ASC|CASE|WHEN|THEN|ELSE|END|IF|EXISTS|COPY|STDIN|GENERATED|ALWAYS|STORED)\b/g,'<span class="s-kw">$1</span>')
+    .replace(/\b(count|sum|avg|max|min|round|coalesce|row_number|ts_rank_cd|plainto_tsquery|to_tsvector|pg_size_pretty|pg_relation_size|check_ivfplus_index_health|edb_vectorplus_rerank_policy_available|edb_vectorplus_rerank_stats|current_setting|now|random)\b/gi,'<span class="s-fn">$1</span>')
+    .replace(/(--[^\n]*)/g,'<span class="s-cm">$1</span>')
+    .replace(/('(?:[^'\\]|\\.)*')/g,'<span class="s-str">$1</span>')
+    .replace(/\b(\d+\.?\d*)\b/g,'<span class="s-num">$1</span>');
+  const uid='sp-'+Math.random().toString(36).slice(2,8);
+  return `<div class="sql-panel">
+    <div class="sql-panel-header" onclick="tSql('${uid}')">
+      <span class="sql-label">${escH(label)}</span>
+      <span class="sql-toggle-hint" id="${uid}-h">${open?'click to hide':'click to show'}</span>
+    </div>
+    <div class="sql-body ${open?'open':''}" id="${uid}">
+      <pre class="sql-pre">${h}</pre>
+      <div class="sql-footer"><button class="copy-btn" onclick="cpSql('${uid}',this)">copy</button></div>
+    </div>
+  </div>`;
+}
+function tSql(uid){
+  const b=document.getElementById(uid),h=document.getElementById(uid+'-h');
+  h.textContent=b.classList.toggle('open')?'click to hide':'click to show';
+}
+function cpSql(uid,btn){
+  navigator.clipboard.writeText(document.getElementById(uid).querySelector('.sql-pre').textContent)
+    .then(()=>{btn.textContent='copied!';btn.classList.add('copied');
+               setTimeout(()=>{btn.textContent='copy';btn.classList.remove('copied')},2000)});
+}
+function showOutput(id, ok, msg){
+  const el=document.getElementById(id); if(!el) return;
+  el.innerHTML=`<div class="output-msg ${ok?'ok':'err'}">${ok?'✓':'✗'} ${escH(msg)}</div>`;
+  if(ok) setTimeout(()=>{if(el.querySelector('.ok')) el.innerHTML='';},5000);
+}
+function showToast(h){
+  let t=document.getElementById('_t');
+  if(!t){t=document.createElement('div');t.id='_t';
+    t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1A1A18;color:#fff;padding:9px 18px;border-radius:8px;font-size:13px;z-index:9999;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap';
+    document.body.appendChild(t);}
+  t.innerHTML=h;t.style.opacity='1';
+  clearTimeout(t._t);t._t=setTimeout(()=>t.style.opacity='0',2800);
+}
+function warnList(id, warns){
+  const el=document.getElementById(id); if(!el) return;
+  el.innerHTML=(warns&&warns.length)
+    ? warns.map(w=>`<div class="warn-box">⚠ ${escH(w)}</div>`).join('') : '';
+}
+function noticeList(notices){
+  if(!notices||!notices.length) return '';
+  return `<div class="log-box" style="margin-top:8px">${notices.map(escH).join('\n')}</div>`;
+}
+function tableHtml(cols, rows, cls){
+  return `<div class="tbl-wrap"><table class="tbl"><thead><tr>${
+    cols.map(c=>`<th>${escH(c)}</th>`).join('')}</tr></thead><tbody>${
+    rows.map(r=>`<tr>${r.map((v,i)=>`<td class="${(cls&&cls[i])||''}">${v}</td>`).join('')}</tr>`).join('')
+  }</tbody></table></div>`;
+}
+
+Chart.defaults.font={family:"'IBM Plex Mono',monospace",size:11};
+Chart.defaults.color='#9B9890';
+function mkChart(id,cfg){
+  const el=document.getElementById(id); if(!el) return null;
+  const ex=Chart.getChart(id); if(ex) ex.destroy();
+  return new Chart(el.getContext('2d'), cfg);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  STATUS
+// ══════════════════════════════════════════════════════════════════════════════
+let ST={};
+
+async function loadStatus(){
+  try{
+    const d=await api('/api/status'); ST=d;
+    if(document.getElementById('bd-lists')) listsNote();   // memory note tracks rows/dim
+    document.getElementById('status-dot').className='status-dot '+(d.db_ok?'ok':'err');
+    document.getElementById('status-text').textContent=d.db_ok?'DB connected':'DB error';
+    document.getElementById('ext-badge').textContent='ext '+(d.extension||'not installed');
+    document.getElementById('ext-badge').className='ext-badge '+(d.extension?'badge-teal':'badge-red');
+    document.getElementById('rows-badge').textContent=fmt(d.rows)+' rows';
+    document.getElementById('dim-badge').textContent='dim '+(d.dim||'—');
+    document.getElementById('refresh-ts').textContent=new Date().toLocaleTimeString();
+
+    const busy=(d.generator&&d.generator.running)||(d.build&&d.build.running);
+    document.getElementById('live-dot').className='live-dot'+(busy?' active':'');
+    document.getElementById('live-label').textContent = busy
+      ? (d.build&&d.build.running ? 'Building index…' : 'Loading vectors…')
+      : (d.indexes&&d.indexes.length ? d.indexes.length+' index(es) ready' : 'idle');
+
+    // Setup pipeline
+    const idxs=d.indexes||[];
+    document.getElementById('pp-ext').textContent = d.extension||'—';
+    document.getElementById('pp-tbl').textContent = d.table_exists?('dim '+d.dim):'—';
+    document.getElementById('pp-rows').textContent= fmt(d.rows);
+    document.getElementById('pp-idx').textContent = idxs.length? idxs.length+'×' : '—';
+    document.getElementById('pp-qry').textContent = idxs.length?'ready':'—';
+    document.getElementById('pp-a1').className='pipe-arrow'+(d.extension?' live':'');
+    document.getElementById('pp-a2').className='pipe-arrow'+(d.table_exists?' live':'');
+    document.getElementById('pp-a3').className='pipe-arrow'+(d.rows>0?' live':'');
+    document.getElementById('pp-a4').className='pipe-arrow'+(idxs.length?' live':'');
+
+    const sidx = d.scalar_indexes || [];
+    const empty = !d.rows;
+    document.getElementById('setup-grid').innerHTML=[
+      ['edb_vectorplus', d.extension, d.extension?('v'+d.extension):'not installed'],
+      ['vector (pgvector)', d.pgvector, d.pgvector?('v'+d.pgvector):'missing'],
+      ['rerank policy API', d.rerank_policy, d.rerank_policy?'available':'stock PostgreSQL'],
+      [d.schema+'.'+d.table, d.table_exists, d.table_exists?(fmt(d.rows)+' rows · '+(d.table_size||'')):'no table'],
+    ].concat(sidx.map(i=>[
+      i.name, i.present,
+      i.present ? i.size : (empty ? 'built after the load' : 'missing — run Build indexes'),
+    ])).concat([
+      ['ivfplus indexes', idxs.length, idxs.length? idxs.map(i=>i.name).join(', ') : 'none'],
+    ]).map(([n,ok,sub])=>`<div class="proc-status">
+        <div class="proc-dot ${ok?'running':(empty?'unknown':'stopped')}"></div>
+        <span class="proc-name">${escH(n)}</span>
+        <span class="proc-pid">${escH(sub)}</span></div>`).join('');
+
+    // Generator KPIs
+    const g=d.generator||{};
+    document.getElementById('gen-kpis').innerHTML=`
+      <div class="kpi"><div class="kpi-label">Rows in table</div><div class="kpi-val teal">${fmt(d.rows)}</div></div>
+      <div class="kpi"><div class="kpi-label">Dimensions</div><div class="kpi-val blue">${d.dim||'—'}</div>
+        <div class="kpi-sub">${d.packing&&d.packing.packed?'packed fast-scan':'unpacked path'}</div></div>
+      <div class="kpi"><div class="kpi-label">Table size</div><div class="kpi-val">${escH(d.table_size||'—')}</div></div>
+      <div class="kpi"><div class="kpi-label">Load rate</div><div class="kpi-val green">${fmt(g.rows_per_sec||0)}</div>
+        <div class="kpi-sub">rows/sec</div></div>
+      <div class="kpi"><div class="kpi-label">Recommended lists</div><div class="kpi-val amber">${d.advisor?d.advisor.lists:'—'}</div>
+        <div class="kpi-sub">${d.advisor?escH(d.advisor.rule):''}</div></div>`;
+
+    if(d.limits) renderLimits(d.limits, d);
+    if(d.advisor) renderAdvisor(d.advisor);
+    fillOpclassSelects();
+    fillIndexSelect(idxs);
+    renderPacking();
+  }catch(e){
+    document.getElementById('status-dot').className='status-dot err';
+    document.getElementById('status-text').textContent='API error';
+  }
+}
+
+function fillOpclassSelects(){
+  const list=['vector_l2_ops','vector_ip_ops','vector_cosine_ops',
+              'halfvec_l2_ops','halfvec_ip_ops','halfvec_cosine_ops'];
+  const ops={vector_l2_ops:'<->  L2 (default)',vector_ip_ops:'<#>  inner product',
+             vector_cosine_ops:'<=> cosine',halfvec_l2_ops:'<->  L2 · halfvec',
+             halfvec_ip_ops:'<#>  ip · halfvec',halfvec_cosine_ops:'<=> cosine · halfvec'};
+  ['bd-opclass','sc-opclass','rc-opclass'].forEach(id=>{
+    const el=document.getElementById(id); if(!el||el.options.length) return;
+    el.innerHTML=list.map(o=>`<option value="${o}">${o} — ${escH(ops[o])}</option>`).join('');
+  });
+}
+function fillIndexSelect(idxs){
+  const el=document.getElementById('rx-name'); if(!el) return;
+  const cur=el.value;
+  const names=(idxs||[]).filter(i=>i.am==='ivfplus').map(i=>i.name);
+  el.innerHTML=names.map(n=>`<option value="${escH(n)}">${escH(n)}</option>`).join('')
+             ||'<option value="">no ivfplus index</option>';
+  if(names.includes(cur)) el.value=cur;
+}
+
+function renderLimits(L, d){
+  const rows=[
+    ['Max dimensions', L.max_dim_vector+' vector · '+L.max_dim_halfvec+' halfvec'],
+    ['lists / probes range', L.lists_min+'–'+L.lists_max],
+    ['Rerank pool', L.rerank_pool+' rows per query'],
+    ['Two-level hierarchy', 'lists ≥ '+L.two_level_lists+' (build goes single-threaded)'],
+    ['Packing window', 'dim % '+L.packing_dim_modulo+' == 0 and dim ≤ '+L.packing_dim_max+' at 8 kB BLCKSZ'],
+    ['Rotation stages', L.rotation_stages+' (on/off only)'],
+    ['Hierarchy fan-out', 'K_lists 1.0 · K_probes 2.0'],
+    ['RaBitQ error bound ε₀', L.epsilon0],
+    ['Fast-scan block width', L.fastscan_block],
+    ['On-disk format version', L.format_version],
+  ];
+  document.getElementById('limits-table').innerHTML =
+    tableHtml(['Constant','Value'], rows.map(r=>[escH(r[0]),'<code>'+escH(r[1])+'</code>']));
+}
+
+function renderPacking(){
+  const el=document.getElementById('packing-note'); if(!el) return;
+  const dim=+document.getElementById('tbl-dim').value||0;
+  const modOk = dim%4===0, fits = dim<=1780;
+  const ok = modOk&&fits;
+  const reasons=[];
+  if(!modOk) reasons.push('dim '+dim+' is not a multiple of 4');
+  if(!fits)  reasons.push('dim '+dim+' exceeds 1780 at the default 8 kB BLCKSZ');
+  el.innerHTML = ok
+    ? `<div class="info-box" style="margin:8px 0 0">✓ Inside the packing window — this index gets the
+       32-wide packed fast-scan layout.</div>`
+    : `<div class="warn-box">⚠ Outside the packing window: ${escH(reasons.join('; '))}. The index
+       silently runs the slower unpacked path and health reports 1.0 forever — nothing surfaces it.
+       Pad or truncate to a multiple of 4 at or below 1780 (nearest: ${Math.min(1780,Math.floor(dim/4)*4)}).</div>`;
+}
+
+function renderAdvisor(a){
+  const el=document.getElementById('bd-advisor'); if(!el) return;
+  el.innerHTML=`<div class="info-box">
+    <b>lists is not derived from table size.</b> Set to 100 it stays 100 for a thousand rows or a
+    billion. For ${fmt(ST.rows)} rows: <code>lists = ${a.lists}</code> (${escH(a.rule)}) →
+    ~${fmt(a.rows_per_list)} rows/list, k-means samples ${fmt(a.kmeans_sample)} rows, start
+    <code>probes = ${a.probes_start}</code>.${a.two_level?' This crosses into the two-level hierarchy — single-threaded build.':''}
+  </div>`;
+}
+function applyAdvisor(){
+  if(ST.advisor){document.getElementById('bd-lists').value=ST.advisor.lists; listsNote();}
+}
+function fmtMB(b){ return (b/1024/1024) >= 1024
+  ? (b/1024/1024/1024).toFixed(1)+' GB' : Math.round(b/1024/1024)+' MB'; }
+
+// Mirrors ivf_build_memory() on the server: k-means holds max(50 x lists, 10000)
+// sample rows, capped by the table, plus the centroids.
+function buildMemBytes(lists){
+  const dim=ST.dim||0, rows=ST.rows||0;
+  if(!dim||!lists) return 0;
+  let samples=Math.max(50*lists,10000);
+  if(rows) samples=Math.min(samples,rows);
+  return Math.round((samples*dim*4 + lists*dim*4)*1.02);
+}
+function listsNote(){
+  const v=+document.getElementById('bd-lists').value||0;
+  const w=[];
+  if(v>=1800) w.push('lists ≥ 1800 switches to the two-level hierarchy, and that build is single-threaded — you forfeit max_parallel_maintenance_workers.');
+  const sample=Math.max(50*v,10000);
+  if(ST.rows && sample>ST.rows) w.push('k-means samples '+fmt(sample)+' rows but the table has '+fmt(ST.rows)+'. Expect the "created with little data" NOTICE.');
+  if(ST.rows && v && ST.rows/v>5000) w.push(Math.round(ST.rows/v).toLocaleString()+' rows per list — probing one list reads a lot. Raise lists.');
+
+  const need=buildMemBytes(v);
+  const note=document.getElementById('bd-mem-note');
+  if(note){
+    const have=ST.maintenance_work_mem||'?';
+    note.textContent = need
+      ? `k-means needs ≈ ${fmtMB(need)} · server maintenance_work_mem ${have}`
+      : '';
+  }
+  const haveB=parseMem(ST.maintenance_work_mem);
+  if(need && haveB && need>haveB){
+    w.push(`This build needs about ${fmtMB(need)} but the server's maintenance_work_mem is `
+      + `${ST.maintenance_work_mem}. Leave Build memory on auto and the app raises it for `
+      + `this session, or lower lists.`);
+  }
+  warnList('bd-warnings', w);
+}
+function parseMem(s){
+  if(!s) return 0;
+  const m=/^\s*(\d+)\s*(B|kB|MB|GB|TB)?\s*$/i.exec(s);
+  if(!m) return 0;
+  const u={b:1,kb:1024,mb:1048576,gb:1073741824,tb:1099511627776};
+  return +m[1]*u[(m[2]||'kB').toLowerCase()];
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  SETUP
+// ══════════════════════════════════════════════════════════════════════════════
+async function createExtension(){
+  showOutput('setup-output', true, 'running…');
+  const d=await post('/api/setup/extension');
+  if(d.ok){ showOutput('setup-output', true,
+    `edb_vectorplus ${d.version} · pgvector ${d.pgvector}`); loadStatus(); }
+  else showOutput('setup-output', false, d.error);
+}
+async function createTable(){
+  const dim=+document.getElementById('tbl-dim').value;
+  if(!confirm('This drops and recreates '+(ST.schema||'public')+'.vp_docs at dim '+dim+'. Continue?')) return;
+  showOutput('table-output', true, 'creating…');
+  const d=await post('/api/setup/create_table',{dim});
+  if(d.ok){ showOutput('table-output', true, 'Table created at dim '+d.dim); loadStatus(); }
+  else showOutput('table-output', false, d.error);
+  document.getElementById('setup-sql').innerHTML = sqlPanel(
+`CREATE EXTENSION IF NOT EXISTS edb_vectorplus CASCADE;   -- pulls in pgvector
+
+CREATE TABLE vp_docs (
+    id          bigserial PRIMARY KEY,
+    topic       text NOT NULL,
+    category_id int  NOT NULL,
+    title       text NOT NULL,
+    body        text NOT NULL,
+    created_at  timestamptz NOT NULL DEFAULT now(),
+    tsv         tsvector GENERATED ALWAYS AS
+                (to_tsvector('english', title || ' ' || body)) STORED,
+    embedding   vector(${dim})
+);
+
+-- No indexes yet. All three come after the load:
+--   vp_docs_tsv_idx  GIN, maintained per row during a COPY if it exists
+--   vp_docs_cat_idx  btree on the filter column
+--   ivfplus          clusters the rows that are already there
+-- The loader drops and rebuilds the first two around every load.`, 'setup.sql', true);
+}
+async function loadEnv(){
+  const d=await api('/api/env');
+  const rows=Object.entries(d).filter(([k,v])=>typeof v==='string')
+    .map(([k,v])=>[`<code>${escH(k)}</code>`, escH(v)]);
+  document.getElementById('env-table').innerHTML=tableHtml(['Server setting','Value'],rows);
+}
+async function resetData(){
+  if(!confirm('TRUNCATE the demo table? The table and its indexes stay. '
+            + 'The next load drops the tsv and category indexes again before the COPY.')) return;
+  const d=await post('/api/setup/reset');
+  showOutput('gen-output', d.ok, d.ok?'Table truncated':d.error);
+  loadStatus(); loadTopics(); loadSample();
+}
+
+async function scalarIndexes(action){
+  if(action==='drop' && !confirm('Drop vp_docs_tsv_idx and vp_docs_cat_idx? '
+      + 'Hybrid search falls back to a sequential scan until they are rebuilt.')) return;
+  showOutput('scalar-idx-output', true, action==='build'?'building…':'dropping…');
+  const d=await post('/api/setup/scalar_indexes', {action});
+  if(!d.ok){ showOutput('scalar-idx-output', false, d.error);
+             document.getElementById('scalar-idx-detail').innerHTML=''; return; }
+  if(d.action==='drop'){
+    showOutput('scalar-idx-output', true,
+      d.dropped.length? 'Dropped '+d.dropped.join(', ') : 'Nothing to drop');
+    document.getElementById('scalar-idx-detail').innerHTML='';
+  } else {
+    showOutput('scalar-idx-output', true,
+      `Built in ${d.seconds}s over ${fmt(d.rows)} rows · maintenance_work_mem ${d.maintenance_work_mem}`);
+    renderIndexDetail(d.detail);
+  }
+  loadStatus();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  VECTOR GENERATION
+// ══════════════════════════════════════════════════════════════════════════════
+let genPoll=null;
+async function genStart(){
+  const binary=document.getElementById('gen-binary').checked;
+  const body={rows:+document.getElementById('gen-rows').value,
+              batch:+document.getElementById('gen-batch').value,
+              seed:+document.getElementById('gen-seed').value,
+              binary:binary};
+  const d=await post('/api/data/generate/start', body);
+  if(!d.ok){ showOutput('gen-output', false, d.error); return; }
+  warnList('gen-output', d.warnings);
+  document.getElementById('gen-start-btn').disabled=true;
+  const copyStmt = binary
+    ? `COPY vp_docs (topic, category_id, title, body, embedding)
+     FROM STDIN WITH (FORMAT BINARY);   -- ~half the bytes, no float parsing`
+    : `COPY vp_docs (topic, category_id, title, body, embedding) FROM STDIN;`;
+  document.getElementById('gen-sql').innerHTML = sqlPanel(
+`-- 1. Indexes off. A GIN index maintained row-by-row through a COPY costs
+--    far more than one build pass over the finished table.
+DROP INDEX IF EXISTS vp_docs_tsv_idx;
+DROP INDEX IF EXISTS vp_docs_cat_idx;
+
+-- 2. Rows stream in — this is what the reference means by
+--    "load data BEFORE CREATE INDEX".
+${copyStmt}
+
+-- 3. Indexes back on, in one pass each.
+SET maintenance_work_mem = '512MB';
+CREATE INDEX vp_docs_tsv_idx ON vp_docs USING GIN (tsv);
+CREATE INDEX vp_docs_cat_idx ON vp_docs (category_id);
+
+ANALYZE vp_docs;
+
+-- The ivfplus index is still yours to build on the Index Builds tab.`, 'load.sql', false);
+  if(genPoll) clearInterval(genPoll);
+  genPoll=setInterval(genStatus, 700); genStatus();
+}
+async function genStop(){ await post('/api/data/generate/stop'); }
+const GEN_PHASE_LABEL = {
+  preparing:  'preparing',
+  generating: 'loading rows',
+  indexing:   'building tsv + category indexes',
+  analyzing:  'analyzing',
+  done:       'done',
+  error:      'failed',
+  idle:       'idle',
+};
+async function genStatus(){
+  const s=await api('/api/data/generate/status');
+  const indexing = s.phase==='indexing' || s.phase==='analyzing';
+  const bar=document.getElementById('gen-bar');
+  bar.style.width=(indexing?100:(s.pct||0))+'%';
+  bar.classList.toggle('indeterminate', indexing && s.running);
+
+  let meta = `${fmt(s.done)} / ${fmt(s.total)} rows · ${s.pct||0}% · ${fmt(s.rows_per_sec)} rows/s · ${s.elapsed||0}s`;
+  if(s.eta && !indexing) meta += ` · eta ${s.eta}s`;
+  meta += ` · ${GEN_PHASE_LABEL[s.phase]||s.phase}`;
+  if(s.copy_format)           meta += ` · ${s.copy_format} COPY`;
+  if(s.copy_seconds  != null) meta += ` · copy ${s.copy_seconds}s`;
+  if(s.index_seconds != null) meta += ` · index ${s.index_seconds}s`;
+  document.getElementById('gen-meta').textContent = meta;
+
+  if(!s.running){
+    clearInterval(genPoll); genPoll=null;
+    bar.classList.remove('indeterminate');
+    document.getElementById('gen-start-btn').disabled=false;
+    if(s.error) showOutput('gen-output', false, s.error);
+    else if(s.phase==='done'){
+      const parts=[`Loaded ${fmt(s.done)} rows in ${s.elapsed}s`];
+      if(s.copy_seconds  != null) parts.push(`copy ${s.copy_seconds}s at ${fmt(s.rows_per_sec)} rows/s`);
+      if(s.copy_format === 'text') parts.push('server refused binary COPY — used text');
+      if(s.index_seconds != null) parts.push(`indexes rebuilt in ${s.index_seconds}s`);
+      showOutput('gen-output', true, parts.join(' · '));
+      renderIndexDetail(s.index_detail);
+      showToast('✓ '+fmt(s.done)+' vectors loaded');
+    }
+    loadStatus(); loadTopics(); loadSample();
+  }
+}
+
+function renderIndexDetail(detail){
+  const el=document.getElementById('scalar-idx-detail');
+  if(!el) return;
+  if(!detail || !detail.length){ el.innerHTML=''; return; }
+  el.innerHTML = tableHtml(['Index','What it is','Build','Size'],
+    detail.map(d=>[`<code>${escH(d.name)}</code>`, escH(d.what),
+                   d.seconds+'s', escH(d.size||'—')]),
+    ['','','num','num']);
+}
+async function loadTopics(){
+  const d=await api('/api/data/topics');
+  const rows=(d.rows||[]).map(r=>[escH(r.topic), r.category_id, fmt(r.n)]);
+  document.getElementById('topic-table').innerHTML = rows.length
+    ? tableHtml(['Topic','category_id','Rows'], rows, ['','num','num'])
+    : '<div class="loading">No rows yet — run the generator.</div>';
+  const tot=(d.rows||[]).reduce((a,b)=>a+ +b.n,0);
+  document.getElementById('topic-total').textContent=fmt(tot);
+}
+async function loadSample(){
+  const d=await api('/api/data/sample?n=8');
+  if(!d.ok||!d.rows.length){
+    document.getElementById('sample-table').innerHTML='<div class="loading">No rows yet.</div>'; return;
+  }
+  document.getElementById('sample-table').innerHTML=tableHtml(
+    ['id','Title','Embedding'],
+    d.rows.map(r=>[r.id, escH(r.title), `<code>${escH(r.emb_head)}</code>`]),
+    ['num','','']);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  INDEX BUILD
+// ══════════════════════════════════════════════════════════════════════════════
+let bdPoll=null;
+async function buildStart(){
+  const body={
+    am:       document.getElementById('bd-am').value,
+    lists:   +document.getElementById('bd-lists').value,
+    opclass:  document.getElementById('bd-opclass').value,
+    rotation: document.getElementById('bd-rotation').checked,
+    concurrently: document.getElementById('bd-conc').checked,
+    name:     document.getElementById('bd-name').value.trim()||null,
+  };
+  const mwm=document.getElementById('bd-mwm').value.trim();
+  if(mwm) body.maintenance_work_mem=mwm;
+  if(document.getElementById('bd-store').checked) body.store_vectors=true;
+
+  const d=await post('/api/index/build/start', body);
+  if(!d.ok){ showOutput('bd-output', false, d.error); return; }
+  warnList('bd-warnings', d.warnings);
+  const pre = d.maintenance_work_mem
+    ? `SET maintenance_work_mem = '${d.maintenance_work_mem}';   -- this session only\n\n`
+    : '';
+  document.getElementById('bd-sql').innerHTML=sqlPanel(pre+d.sql,'CREATE INDEX', true);
+  document.getElementById('bd-start').disabled=true;
+  document.getElementById('bd-result').innerHTML='';
+  if(bdPoll) clearInterval(bdPoll);
+  bdPoll=setInterval(buildStatus, 400); buildStatus();
+}
+async function buildStatus(){
+  const s=await api('/api/index/build/status');
+  const t=document.getElementById('bd-timer');
+  t.textContent=(s.elapsed||0).toFixed(2);
+  t.className='big-timer'+(s.running?'':' idle');
+  document.getElementById('bd-phase').textContent=s.phase+(s.pid?(' · backend pid '+s.pid):'')
+    + (s.retried? ` · retrying at ${s.retried.retrying_at} (server wants ${s.retried.required_mb} MB)`:'');
+
+  const p=s.progress;
+  if(p&&p.blocks_total){
+    const pct=Math.min(100, 100*p.blocks_done/p.blocks_total);
+    document.getElementById('bd-bar').style.width=pct+'%';
+    document.getElementById('bd-progress').textContent=
+      `${p.phase} · blocks ${fmt(p.blocks_done)}/${fmt(p.blocks_total)} · tuples ${fmt(p.tuples_done)}`;
+  } else if(p){
+    document.getElementById('bd-progress').textContent=p.phase||'';
+  }
+
+  if(!s.running){
+    clearInterval(bdPoll); bdPoll=null;
+    document.getElementById('bd-start').disabled=false;
+    document.getElementById('bd-bar').style.width=s.error?'0%':'100%';
+    if(s.error){ showOutput('bd-output', false, s.error); }
+    else if(s.result){ renderBuildResult(s.result); showToast('✓ index built in '+s.result.seconds+'s'); }
+    if(s.notices&&s.notices.length)
+      document.getElementById('bd-output').innerHTML += noticeList(s.notices);
+    loadStatus(); loadIndexes(); loadSizeModel();
+  }
+}
+function renderBuildResult(r){
+  document.getElementById('bd-result').innerHTML=`
+    <div class="kpi-row" style="margin-top:14px">
+      <div class="kpi"><div class="kpi-label">Build time</div><div class="kpi-val teal">${r.seconds}s</div>
+        <div class="kpi-sub">${fmt(r.rows_per_sec)} rows/s</div></div>
+      <div class="kpi"><div class="kpi-label">Rows indexed</div><div class="kpi-val">${fmt(r.rows)}</div></div>
+      <div class="kpi"><div class="kpi-label">lists</div><div class="kpi-val blue">${r.lists}</div>
+        <div class="kpi-sub">${r.two_level?'two-level · single-threaded':'flat · parallel-capable'}</div></div>
+      <div class="kpi"><div class="kpi-label">Index size</div><div class="kpi-val amber">${escH(r.size)}</div>
+        <div class="kpi-sub">${r.bytes_per_row} B/row</div></div>
+      <div class="kpi"><div class="kpi-label">index_health</div><div class="kpi-val green">${r.health!==null&&r.health!==undefined?Number(r.health).toFixed(3):'—'}</div>
+        <div class="kpi-sub">1.0 on a fresh build</div></div>
+      <div class="kpi"><div class="kpi-label">Build memory</div><div class="kpi-val">${escH(r.maintenance_work_mem||'server default')}</div>
+        <div class="kpi-sub">${r.mem_estimated_mb?('estimated '+Math.round(r.mem_estimated_mb)+' MB'):''}</div></div>
+    </div>`
+    + (r.mem_required_mb
+       ? `<div class="warn-box">The first attempt failed and was retried automatically: the
+           model estimated ${Math.round(r.mem_estimated_mb)} MB but the server required
+           ${Math.round(r.mem_required_mb)} MB, so maintenance_work_mem was raised to
+           ${escH(r.maintenance_work_mem)} for this build only. Both figures are recorded —
+           see History &amp; Compare.</div>`
+       : '')
+    + noticeList(r.notices);
+}
+async function loadIndexes(){
+  const d=await api('/api/index/list');
+  const rows=(d.rows||[]).map(r=>{
+    const h=r.health&&r.health.index_health!==undefined?Number(r.health.index_health):null;
+    const cls=h===null?'':(h>=0.8?'bg':'ba');
+    return [
+      `<code>${escH(r.name)}</code>`,
+      `<span class="badge ${r.am==='ivfplus'?'bt':'bb'}">${escH(r.am)}</span>`,
+      r.lists??'—', escH(r.opclass||'—'),
+      r.partial?'<span class="badge bp">partial</span>':'',
+      escH(r.size),
+      h===null?'—':`<span class="badge ${cls}">${h.toFixed(3)}</span>`,
+      `<button class="run-btn danger" style="padding:3px 9px;font-size:11px"
+        onclick="dropIndex('${escH(r.name)}')">drop</button>`];
+  });
+  document.getElementById('index-table').innerHTML = rows.length
+    ? tableHtml(['Index','AM','lists','Opclass','','Size','health',''], rows,
+                ['','','num','','','num','',''])
+    : '<div class="loading">No vector indexes yet.</div>';
+  renderHistory(d.history||[]);
+}
+async function dropIndex(name){
+  if(!confirm('DROP INDEX '+name+'?')) return;
+  const d=await post('/api/index/drop',{name, concurrently:true});
+  showOutput('bd-output', d.ok, d.ok?('Dropped '+name):d.error);
+  loadIndexes(); loadStatus();
+}
+function renderHistory(h){
+  if(!h.length){document.getElementById('build-history').innerHTML=
+    '<div class="loading">Build something to populate the comparison.</div>';return;}
+  document.getElementById('build-history').innerHTML=tableHtml(
+    ['At','Index','lists','Opclass','Rows','Seconds','rows/s','Size','B/row'],
+    h.map(r=>[escH(r.at), `<code>${escH(r.name)}</code>`, r.lists, escH(r.opclass),
+              fmt(r.rows), r.seconds, fmt(r.rows_per_sec), escH(r.size), r.bytes_per_row]),
+    ['','','num','','num','num','num','num','num']);
+  const labels=h.map(r=>r.lists+' / '+r.opclass.replace('vector_','').replace('_ops',''));
+  mkChart('chart-build',{type:'bar',data:{labels,datasets:[{label:'seconds',
+    data:h.map(r=>r.seconds),backgroundColor:'#0F6E5A'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:true,title:{display:true,text:'seconds'}}}}});
+  mkChart('chart-size',{type:'bar',data:{labels,datasets:[{label:'MiB',
+    data:h.map(r=>+(r.bytes/1048576).toFixed(2)),backgroundColor:'#1A5A9A'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:true,title:{display:true,text:'MiB'}}}}});
+}
+async function loadSizeModel(){
+  const lists=+document.getElementById('bd-lists').value||100;
+  const d=await api('/api/index/size_model?lists='+lists);
+  if(!d.ok){document.getElementById('size-model').innerHTML='';return;}
+  document.getElementById('size-model').innerHTML=`
+    <div class="chart-label">Size model at dim ${d.dim}, ${fmt(d.rows)} rows, lists ${d.lists}</div>` +
+    tableHtml(['Region','Bytes per row','Total'],[
+      ['Frozen packed block <code>1028/32 + dim/8</code>', d.packed_bytes_per_row,
+       bytes(d.packed_bytes_per_row*d.rows)],
+      ['f16 rerank copy <code>6 + 2×dim</code> + 4 B line pointer', d.f16_bytes_per_row,
+       bytes(d.f16_bytes_per_row*d.rows)+` <span class="badge ba">${d.f16_share_pct}% of the index</span>`],
+      ['Append tuple (rows inserted after the build)', d.append_bytes_per_row, '—'],
+      ['Centroids <code>lists × dim × 4</code>', '—', bytes(d.centroid_bytes)],
+      ['<b>Stock PostgreSQL total</b>','', '<b>'+bytes(d.stock_total)+'</b>'],
+      ['<b>postgres-im-rerank total</b> (f16 copy dropped)','',
+       '<b>'+bytes(d.policy_total)+'</b> <span class="badge bg">rerank against the heap</span>'],
+    ], ['','num','']);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  VECTOR SEARCH
+// ══════════════════════════════════════════════════════════════════════════════
+let EXAMPLES=[];
+
+// The chips must come from the corpus that is actually loaded. Hardcoding them
+// meant that after switching to the BFSI corpus every example still used
+// technology vocabulary, and plainto_tsquery — which ANDs its terms — returned
+// nothing for all of them.
+async function loadExamples(){
+  try{
+    const d=await api('/api/corpus/examples');
+    if(d.ok && d.examples && d.examples.length){
+      EXAMPLES=d.examples;
+      fillExamples('sc-examples','sc-text','runSearch');
+      fillExamples('hy-examples','hy-text','runHybrid');
+      const seed=EXAMPLES[0];
+      ['sc-text','hy-text','bm-q','ft-text'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el && !el.dataset.touched) el.value=seed;
+      });
+    }
+  }catch(e){}
+}
+
+function fillExamples(id, target, fn){
+  const el=document.getElementById(id); if(!el) return;
+  el.innerHTML=EXAMPLES.map(e=>`<span class="preset-chip"
+    onclick="document.getElementById('${target}').dataset.touched=1;document.getElementById('${target}').value=${JSON.stringify(e)};${fn}()">${escH(e)}</span>`).join('');
+}
+
+async function runSearch(){
+  const body={
+    text:  document.getElementById('sc-text').value,
+    opclass: document.getElementById('sc-opclass').value,
+    probes:+document.getElementById('sc-probes').value,
+    limit: +document.getElementById('sc-limit').value,
+    explain: document.getElementById('sc-explain').checked,
+    iterative_scan: document.getElementById('sc-iter').value,
+    max_probes:+document.getElementById('sc-maxprobes').value,
+  };
+  const id=document.getElementById('sc-id').value;
+  if(id) body.id=+id;
+  document.getElementById('sc-results').innerHTML='<div class="loading"><div class="spinner"></div>Searching…</div>';
+  const d=await post('/api/search/knn', body);
+  if(!d.ok){ showOutput('sc-output', false, d.error);
+             document.getElementById('sc-results').innerHTML=''; return; }
+  document.getElementById('sc-output').innerHTML='';
+  warnList('sc-notes', d.notes);
+
+  const short = d.returned < d.requested;
+  document.getElementById('sc-results').innerHTML=`
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-label">Latency</div><div class="kpi-val teal">${d.ms}<span style="font-size:13px"> ms</span></div></div>
+      <div class="kpi"><div class="kpi-label">Rows returned</div><div class="kpi-val ${short?'amber':'green'}">${d.returned}</div>
+        <div class="kpi-sub">requested ${d.requested}</div></div>
+      <div class="kpi"><div class="kpi-label">Operator</div><div class="kpi-val blue">${escH(d.operator)}</div>
+        <div class="kpi-sub">${escH(d.metric)}</div></div>
+      <div class="kpi"><div class="kpi-label">Session</div><div class="kpi-val" style="font-size:12px">${d.settings.map(escH).join('<br>')}</div></div>
+    </div>` +
+    tableHtml(['#','id','Topic','Title','Distance'],
+      d.rows.map((r,i)=>[i+1, r.id, `<span class="badge bt">${escH(r.topic)}</span>`,
+                         escH(r.title), r.distance]),
+      ['num','num','','','num']);
+  document.getElementById('sc-sql').innerHTML=sqlPanel(
+    d.settings.map(s=>'SET LOCAL '+s+';').join('\n')+'\n\n'+d.sql, 'query.sql', false);
+  document.getElementById('sc-plan').innerHTML = d.plan
+    ? sqlPanel(d.plan,'EXPLAIN (ANALYZE, BUFFERS)', true) : '';
+}
+
+async function runCompare(){
+  const body={text:document.getElementById('sc-text').value,
+              opclass:document.getElementById('sc-opclass').value,
+              probes:+document.getElementById('sc-probes').value,
+              limit:+document.getElementById('sc-limit').value};
+  const id=document.getElementById('sc-id').value; if(id) body.id=+id;
+  document.getElementById('sc-results').innerHTML='<div class="loading"><div class="spinner"></div>Running exact scan…</div>';
+  const d=await post('/api/search/compare', body);
+  if(!d.ok){ showOutput('sc-output', false, d.error); return; }
+  const hits=new Set(d.hits);
+  const col=(title,res,scoreKey)=>`<div>
+      <div class="col-head"><span>${title}</span><span>${res.ms} ms</span></div>
+      <div class="hit-list">${res.rows.map((r,i)=>`<div class="hit ${hits.has(r.id)?'both':''}">
+        <span class="hit-rank">${i+1}</span>
+        <span class="hit-title" title="${escH(r.title)}">${escH(r.title)}</span>
+        <span class="hit-score">${r.distance}</span></div>`).join('')}</div></div>`;
+  document.getElementById('sc-results').innerHTML=`
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-label">Recall @${d.k}</div><div class="kpi-val ${d.recall>=0.9?'green':(d.recall>=0.7?'amber':'red')}">${(d.recall*100).toFixed(0)}%</div></div>
+      <div class="kpi"><div class="kpi-label">probes</div><div class="kpi-val blue">${d.probes}</div></div>
+      <div class="kpi"><div class="kpi-label">Exact scan</div><div class="kpi-val">${d.exact.ms} ms</div></div>
+      <div class="kpi"><div class="kpi-label">Index scan</div><div class="kpi-val teal">${d.approx.ms} ms</div></div>
+      <div class="kpi"><div class="kpi-label">Speedup</div><div class="kpi-val green">${d.speedup?d.speedup+'×':'—'}</div></div>
+    </div>
+    <div class="two-col">${col('Exact — index disabled', d.exact)}${col('ivfplus — probes '+d.probes, d.approx)}</div>
+    <div class="info-box" style="margin-top:12px">Green rows appear in both lists. That fraction is the recall.</div>`;
+  document.getElementById('sc-sql').innerHTML=sqlPanel(
+`BEGIN;                               -- exact top-${d.k}: force a scan and sort
+SET LOCAL enable_indexscan = off;
+CREATE TEMP TABLE truth AS
+    SELECT id FROM vp_docs ORDER BY embedding <-> :'q' LIMIT ${d.k};
+COMMIT;
+
+SET ivfplus.probes = ${d.probes};    -- index top-${d.k} at the setting under test
+CREATE TEMP TABLE got AS
+    SELECT id FROM vp_docs ORDER BY embedding <-> :'q' LIMIT ${d.k};
+
+SELECT count(*)::float / ${d.k} AS recall FROM truth JOIN got USING (id);`,
+    'recall.sql', false);
+}
+
+async function loadCaps(){
+  const d=await api('/api/search/capabilities');
+  if(!d.ok) return;
+  document.getElementById('caps-list').innerHTML=d.caps.map(c=>`
+    <div class="ctrl-card">
+      <div class="ctrl-card-title">${escH(c.title)}${c.opclass?` <span class="badge bt">${escH(c.opclass)}</span>`:''}</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px">${escH(c.note)}</div>
+      ${sqlPanel(c.sql, c.id+'.sql', false)}
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  RECALL LAB
+// ══════════════════════════════════════════════════════════════════════════════
+async function runSweep(){
+  const plist=document.getElementById('rc-probes').value.split(',')
+              .map(s=>parseInt(s.trim(),10)).filter(n=>n>0);
+  const body={k:+document.getElementById('rc-k').value,
+              queries:+document.getElementById('rc-nq').value,
+              opclass:document.getElementById('rc-opclass').value,
+              probes_list:plist};
+  document.getElementById('rc-table').innerHTML=
+    '<div class="loading"><div class="spinner"></div>Measuring — exact ground truth first, then each probes setting…</div>';
+  const d=await post('/api/recall/sweep', body);
+  if(!d.ok){ showOutput('rc-output', false, d.error);
+             document.getElementById('rc-table').innerHTML=''; return; }
+  document.getElementById('rc-output').innerHTML='';
+
+  const best=d.results.find(r=>r.recall>=0.95)||d.results[d.results.length-1];
+  document.getElementById('rc-kpis').innerHTML=`
+    <div class="kpi"><div class="kpi-label">Rows</div><div class="kpi-val">${fmt(d.rows)}</div></div>
+    <div class="kpi"><div class="kpi-label">k</div><div class="kpi-val blue">${d.k}</div></div>
+    <div class="kpi"><div class="kpi-label">Query vectors</div><div class="kpi-val">${d.queries}</div></div>
+    <div class="kpi"><div class="kpi-label">Exact scan</div><div class="kpi-val amber">${d.exact_ms} ms</div></div>
+    <div class="kpi"><div class="kpi-label">probes for ≥95%</div><div class="kpi-val green">${best.recall>=0.95?best.probes:'not reached'}</div>
+      <div class="kpi-sub">${best.recall>=0.95?best.ms+' ms · '+best.speedup+'× faster':'raise probes or lists'}</div></div>`;
+
+  document.getElementById('rc-table').innerHTML=tableHtml(
+    ['probes','Recall','Latency (ms)','Speedup vs exact','Avg rows returned'],
+    d.results.map(r=>[r.probes,
+      `<span class="badge ${r.recall>=0.95?'bg':(r.recall>=0.8?'ba':'br')}">${(r.recall*100).toFixed(1)}%</span>`,
+      r.ms, r.speedup?r.speedup+'×':'—', r.avg_returned]),
+    ['num','','num','num','num']);
+  if(d.note) document.getElementById('rc-table').innerHTML+=`<div class="warn-box">${escH(d.note)}</div>`;
+
+  const labels=d.results.map(r=>r.probes);
+  mkChart('chart-recall',{type:'line',data:{labels,datasets:[{label:'recall',
+    data:d.results.map(r=>+(r.recall*100).toFixed(1),),borderColor:'#0F6E5A',
+    backgroundColor:'rgba(15,110,90,.12)',fill:true,tension:.25,pointRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{min:0,max:100,title:{display:true,text:'recall %'}},
+              x:{title:{display:true,text:'probes'}}}}});
+  mkChart('chart-latency',{type:'line',data:{labels,datasets:[
+    {label:'ivfplus',data:d.results.map(r=>r.ms),borderColor:'#1A5A9A',tension:.25,pointRadius:3},
+    {label:'exact scan',data:d.results.map(()=>d.exact_ms),borderColor:'#9A2A1A',
+     borderDash:[5,4],pointRadius:0}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{y:{beginAtZero:true,title:{display:true,text:'ms'}},
+              x:{title:{display:true,text:'probes'}}}}});
+
+  document.getElementById('rc-sql').innerHTML=sqlPanel(
+`-- Averaged over ${d.queries} sampled query vectors. The reference recommends
+-- at least 50, and re-measuring after any lists change.
+SET LOCAL enable_indexscan = off;    -- ground truth
+SELECT id FROM vp_docs ORDER BY embedding <-> :'q' LIMIT ${d.k};
+
+SET ivfplus.probes = 32;             -- setting under test
+SELECT id FROM vp_docs ORDER BY embedding <-> :'q' LIMIT ${d.k};
+
+-- recall = |truth ∩ got| / k`, 'sweep.sql', false);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  HYBRID SEARCH
+// ══════════════════════════════════════════════════════════════════════════════
+async function runHybrid(){
+  const body={text:document.getElementById('hy-text').value,
+              k:+document.getElementById('hy-k').value,
+              candidates:+document.getElementById('hy-cand').value,
+              rrf_k:+document.getElementById('hy-rrfk').value,
+              probes:+document.getElementById('hy-probes').value,
+              w_vec:+document.getElementById('hy-wv').value,
+              w_fts:+document.getElementById('hy-wf').value,
+              lexical:document.getElementById('hy-lexical').value};
+  const cols=document.getElementById('hy-cols');
+  cols.innerHTML='<div class="loading"><div class="spinner"></div>Running both legs…</div>';
+  let d;
+  try{ d=await post('/api/hybrid/search', body); }
+  catch(err){ cols.innerHTML='';
+              showOutput('hy-output', false, 'request failed: '+err); return; }
+  if(!d.ok){ showOutput('hy-output', false, d.error); cols.innerHTML=''; return; }
+
+  // Tolerate an API that predates these fields. The dashboard and the API are
+  // separate files and Flask runs without a reloader, so it is entirely normal
+  // to reload the page against a server that has not been restarted. Reading a
+  // missing field used to throw mid-render, which left the spinner up forever
+  // and made a fast query look like a hang.
+  const stale = (d.candidates===undefined || d.overlap_topk===undefined);
+  d.candidates   = d.candidates   ?? body.candidates;
+  d.rrf_k        = d.rrf_k        ?? body.rrf_k;
+  d.k            = d.k            ?? body.k;
+  d.overlap      = d.overlap      || [];
+  d.overlap_topk = d.overlap_topk || d.overlap;
+  d.agreements   = d.agreements   || [];
+  d.vector_only  = d.vector_only  || [];
+  d.lexical_only = d.lexical_only || [];
+
+  document.getElementById('hy-output').innerHTML =
+    (stale?`<div class="warn-box">⚠ This API predates the current dashboard —
+       restart vectorplus_api.py to get candidate-depth overlap, tie detection
+       and the agreement figures. Flask runs with debug=False, so editing the
+       file is not enough.</div>`:'')
+    + (d.notes||[]).map(n=>`<div class="warn-box">⚠ ${escH(n)}</div>`).join('');
+
+  const both=new Set(d.overlap);
+  const col=(title, ms, rows, scoreFn, extra)=>`<div>
+    <div class="col-head"><span>${title}</span><span>${ms} ms</span></div>
+    <div class="hit-list">${rows.length?rows.map((r,i)=>`<div class="hit ${both.has(r.id)?'both':''}">
+      <span class="hit-rank">${i+1}</span>
+      <span class="hit-title" title="${escH(r.title)}">${escH(r.title)}</span>
+      <span class="hit-score">${scoreFn(r)}</span></div>`).join('')
+      :'<div class="hit"><span class="hit-title" style="color:var(--muted)">no matches</span></div>'}</div>
+    ${extra||''}</div>`;
+
+  const top=(d.agreements&&d.agreements[0])||null;
+  document.getElementById('hy-kpis').innerHTML=`
+    <div class="kpi"><div class="kpi-label">In both legs</div>
+      <div class="kpi-val ${d.overlap.length?'green':'amber'}">${d.overlap.length}</div>
+      <div class="kpi-sub">of ${d.candidates} candidates${d.overlap_topk.length?'':' · none in the top '+d.k}</div></div>
+    <div class="kpi"><div class="kpi-label">Best agreement</div>
+      <div class="kpi-val ${top?'teal':'amber'}" style="font-size:17px">${top?(top.vec_rank+' / '+top.fts_rank):'—'}</div>
+      <div class="kpi-sub">${top?'vec rank / lex rank → '+top.score.toFixed(5):'nothing to fuse'}</div></div>
+    <div class="kpi"><div class="kpi-label">Single-leg ceiling</div>
+      <div class="kpi-val blue" style="font-size:17px">${(1/(d.rrf_k+1)).toFixed(5)}</div>
+      <div class="kpi-sub">1/(${d.rrf_k}+1) — best a lone leg can score</div></div>
+    <div class="kpi"><div class="kpi-label">Fusion time</div><div class="kpi-val">${d.fused.ms} ms</div>
+      <div class="kpi-sub">vec ${d.vector.ms} · fts ${d.lexical.ms}</div></div>
+    <div class="kpi"><div class="kpi-label">Lexical scores</div>
+      <div class="kpi-val ${d.lexical_tied?'red':'green'}" style="font-size:17px">${d.lexical_tied?'tied':'distinct'}</div>
+      <div class="kpi-sub">${d.lexical_tied?'order is arbitrary':'ranks are meaningful'}</div></div>`;
+
+  // The fused column's ranks used to be dumped into one wide line under the
+  // list, which both widened the column and made you count positions to match
+  // a rank to a row. They belong on the row itself.
+  try{
+  cols.innerHTML =
+    col('① Vector — ivfplus', d.vector.ms, d.vector.rows, r=>r.distance) +
+    col(d.lexical_engine==='bm25' ? '② BM25 — pg_textsearch' : '② Full text — GIN tsvector',
+        d.lexical.ms, d.lexical.rows, r=>r.rank) +
+    col('③ Fused — RRF', d.fused.ms, d.fused.rows,
+        r=>`<span class="hit-ranks">${r.vec_rank||'–'}/${r.fts_rank||'–'}</span> ${r.score.toFixed(5)}`,
+        `<div class="sqled-meta">Score column: vector rank / lexical rank, then the fused
+          RRF score. A dash means that leg did not return the document.</div>`);
+  document.getElementById('hy-sql').innerHTML=sqlPanel(d.sql,'hybrid_rrf.sql', true);
+  }catch(err){
+    cols.innerHTML=`<div class="error-box">The results came back but could not be
+      rendered: ${escH(err)}. This usually means the dashboard and
+      vectorplus_api.py are different versions — restart the API.</div>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  FILTERING
+// ══════════════════════════════════════════════════════════════════════════════
+async function loadCategories(){
+  const d=await api('/api/data/topics');
+  const el=document.getElementById('ft-cat');
+  const cur=el.value;
+  el.innerHTML='<option value="any">— no filter —</option>'+
+    (d.rows||[]).map(r=>`<option value="${r.category_id}">${escH(r.topic)} (id ${r.category_id}, ${fmt(r.n)} rows)</option>`).join('');
+  if(cur) el.value=cur;
+}
+async function runFilter(){
+  const body={text:document.getElementById('ft-text').value,
+              probes:+document.getElementById('ft-probes').value,
+              limit:+document.getElementById('ft-limit').value,
+              category_id:document.getElementById('ft-cat').value};
+  document.getElementById('ft-results').innerHTML='<div class="loading"><div class="spinner"></div>Running…</div>';
+  const d=await post('/api/filter/demo', body);
+  if(!d.ok){ showOutput('ft-output', false, d.error);
+             document.getElementById('ft-results').innerHTML=''; return; }
+  document.getElementById('ft-output').innerHTML='';
+
+  const col=(title,res)=>`<div>
+    <div class="col-head"><span>${title}</span><span>${res.ms} ms · ${res.rows.length} rows</span></div>
+    <div class="hit-list">${res.rows.map((r,i)=>`<div class="hit">
+      <span class="hit-rank">${i+1}</span>
+      <span class="hit-title" title="${escH(r.title)}">${escH(r.title)}</span>
+      <span class="hit-score">cat ${r.category_id} · ${r.distance}</span></div>`).join('')}</div></div>`;
+
+  let html='';
+  if(d.filtered){
+    html=`<div class="kpi-row">
+      <div class="kpi"><div class="kpi-label">LIMIT</div><div class="kpi-val blue">${d.limit}</div></div>
+      <div class="kpi"><div class="kpi-label">Rows after filter</div><div class="kpi-val ${d.shortfall>0?'amber':'green'}">${d.filtered.rows.length}</div></div>
+      <div class="kpi"><div class="kpi-label">Shortfall</div><div class="kpi-val ${d.shortfall>0?'red':'green'}">${d.shortfall}</div>
+        <div class="kpi-sub">rows the filter removed</div></div>
+      <div class="kpi"><div class="kpi-label">probes</div><div class="kpi-val">${d.probes}</div></div>
+    </div>
+    <div class="two-col">${col('Unfiltered',d.unfiltered)}${col('WHERE '+escH(d.where),d.filtered)}</div>`;
+    if(d.shortfall>0) html+=`<div class="warn-box">⚠ ${escH(d.note)}</div>`;
+    else html+=`<div class="info-box" style="margin-top:12px">No shortfall at these settings — try a
+      more selective category or lower probes to reproduce it.</div>`;
+  } else {
+    html=`<div class="info-box">No category selected, so this is just the plain
+      K-NN query — pick a category above to see what the post-scan filter costs.</div>
+      <div class="two-col">${col('Unfiltered',d.unfiltered)}<div></div></div>`;
+  }
+  document.getElementById('ft-results').innerHTML=html;
+
+  // The queries themselves — this tab is about what the SQL does, so show it.
+  const withSettings=(res)=>
+    (res.settings&&res.settings.length ? res.settings.map(x=>'SET LOCAL '+x+';').join('\n')+'\n\n' : '')
+    + res.sql + ';';
+  let sqlHtml = sqlPanel(withSettings(d.unfiltered), 'unfiltered.sql', !d.filtered);
+  if(d.filtered) sqlHtml += sqlPanel(withSettings(d.filtered), 'filtered.sql', true);
+  document.getElementById('ft-sql').innerHTML = sqlHtml;
+
+  document.getElementById('ft-plan').innerHTML = (d.filtered && d.filtered.plan)
+    ? sqlPanel(d.filtered.plan,'EXPLAIN — filter applied above the scan', false) : '';
+}
+async function buildPartial(){
+  const body={category_id:+document.getElementById('ft-pi-cat').value,
+              lists:+document.getElementById('ft-pi-lists').value,
+              opclass:'vector_l2_ops'};
+  showOutput('ft-pi-output', true, 'building…');
+  const d=await post('/api/filter/partial_index', body);
+  if(d.ok){
+    showOutput('ft-pi-output', true, d.already_existed
+      ? `${d.name} already exists — nothing rebuilt`
+      : `${d.name} built in ${d.seconds}s over ${fmt(d.matching_rows)} matching rows`
+        + (d.maintenance_work_mem?` (maintenance_work_mem ${d.maintenance_work_mem})`:''));
+    document.getElementById('ft-pi-output').innerHTML+=sqlPanel(d.sql,'partial_index.sql',true)
+      +noticeList(d.notices);
+    loadIndexes(); loadStatus();
+  } else showOutput('ft-pi-output', false, d.error);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  MAINTENANCE
+// ══════════════════════════════════════════════════════════════════════════════
+async function loadHealth(){
+  const d=await api('/api/maint/health');
+  const rows=(d.rows||[]).filter(r=>!r.error).map(r=>{
+    const h=Number(r.index_health);
+    return [`<code>${escH(r.name)}</code>`,
+      `<span class="badge ${h>=0.8?'bg':'br'}">${h.toFixed(4)}</span>`,
+      (Number(r.pct_pending)*100).toFixed(2)+'%',
+      (Number(r.pct_dead_lanes)*100).toFixed(2)+'%',
+      fmt(r.n_frozen_live), fmt(r.n_dead_lanes), fmt(r.n_pending), escH(r.size||'')];
+  });
+  document.getElementById('health-table').innerHTML = rows.length
+    ? tableHtml(['Index','index_health','pct_pending','pct_dead_lanes',
+                 'n_frozen_live','n_dead_lanes','n_pending','Size'], rows,
+                ['','','num','num','num','num','num','num'])
+    : '<div class="loading">No ivfplus index to check.</div>';
+  const notes=(d.rows||[]).flatMap(r=>r.notices||[]);
+  if(notes.length) document.getElementById('health-table').innerHTML+=noticeList(notes);
+  renderOps();
+}
+function renderOps(){
+  document.getElementById('ops-table').innerHTML=`<div class="chart-label">Effect of each operation on the index</div>`+
+  tableHtml(['Operation','Effect'],[
+    ['<code>INSERT</code> after build','Lands unpacked in the append region and is read by a slower bit-sliced scan'],
+    ['<code>UPDATE</code>','Delete plus insert — the row moves to the append region'],
+    ['<code>DELETE</code> / <code>VACUUM</code>','Tombstones the row\'s lane; the space is not reclaimed and the lane is not reused'],
+    ['<code>REINDEX</code>','The only operation that repacks append-region rows and reclaims dead lanes'],
+    ['<code>ALTER INDEX … SET (…)</code>','Takes an AccessExclusiveLock and changes nothing until the next REINDEX'],
+  ]);
+}
+let chPoll=null;
+async function runChurn(){
+  const body={inserts:+document.getElementById('ch-ins').value,
+              updates:+document.getElementById('ch-upd').value,
+              deletes:+document.getElementById('ch-del').value};
+  const d=await post('/api/maint/churn', body);
+  if(!d.ok){ showOutput('ch-output', false, d.error); return; }
+  if(chPoll) clearInterval(chPoll);
+  chPoll=setInterval(churnStatus, 700); churnStatus();
+}
+async function churnStatus(){
+  const s=await api('/api/maint/churn/status');
+  const pct=s.total?Math.round(100*s.done/s.total):0;
+  document.getElementById('ch-bar').style.width=pct+'%';
+  document.getElementById('ch-meta').textContent=`${s.phase} · ${fmt(s.done)} / ${fmt(s.total)}`;
+  if(!s.running){
+    clearInterval(chPoll); chPoll=null;
+    if(s.error) showOutput('ch-output', false, s.error);
+    else { showOutput('ch-output', true, 'Churn applied — re-check health'); loadHealth(); loadStatus(); }
+  }
+}
+async function runReindex(){
+  const name=document.getElementById('rx-name').value;
+  if(!name){ showOutput('rx-output', false, 'No index selected'); return; }
+  document.getElementById('rx-output').innerHTML='<div class="loading"><div class="spinner"></div>REINDEX running…</div>';
+  const d=await post('/api/maint/reindex',{name, concurrently:document.getElementById('rx-conc').checked});
+  if(!d.ok){ showOutput('rx-output', false, d.error); return; }
+  const b=d.before||{}, a=d.after||{};
+  document.getElementById('rx-output').innerHTML=`
+    <div class="kpi-row" style="margin-top:10px">
+      <div class="kpi"><div class="kpi-label">REINDEX time</div><div class="kpi-val teal">${d.seconds}s</div></div>
+      <div class="kpi"><div class="kpi-label">health before</div><div class="kpi-val amber">${b.index_health!==undefined?Number(b.index_health).toFixed(4):'—'}</div></div>
+      <div class="kpi"><div class="kpi-label">health after</div><div class="kpi-val green">${a.index_health!==undefined?Number(a.index_health).toFixed(4):'—'}</div></div>
+      <div class="kpi"><div class="kpi-label">pending before</div><div class="kpi-val">${b.n_pending!==undefined?fmt(b.n_pending):'—'}</div></div>
+      <div class="kpi"><div class="kpi-label">pending after</div><div class="kpi-val green">${a.n_pending!==undefined?fmt(a.n_pending):'—'}</div></div>
+    </div>`+sqlPanel(d.sql,'reindex.sql',true)+noticeList(d.notices);
+  loadHealth(); loadStatus();
+}
+async function loadRerankStats(){
+  const d=await api('/api/maint/rerank_stats');
+  const el=document.getElementById('rerank-out');
+  if(!d.ok){ el.innerHTML=`<div class="error-box">${escH(d.error)}</div>`; return; }
+  if(!d.available){ el.innerHTML=`<div class="warn-box">${escH(d.note)}</div>`; return; }
+  const s=d.stats||{};
+  el.innerHTML=`<div class="kpi-row">
+    <div class="kpi"><div class="kpi-label">decisions</div><div class="kpi-val teal">${fmt(s.decisions)}</div></div>
+    <div class="kpi"><div class="kpi-label">fetch_more</div><div class="kpi-val blue">${fmt(s.fetch_more)}</div></div>
+    <div class="kpi"><div class="kpi-label">return_top</div><div class="kpi-val green">${fmt(s.return_top)}</div></div>
+  </div><div class="info-box">${escH(d.note)}</div>`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  SQL EDITOR
+// ══════════════════════════════════════════════════════════════════════════════
+async function loadSqlPresets(){
+  const d=await api('/api/sqleditor/presets');
+  document.getElementById('sqled-presets').innerHTML=d.map(p=>
+    `<span class="preset-chip" onclick="document.getElementById('sqled-sql').value=${JSON.stringify(p.sql)}">${escH(p.label)}</span>`).join('');
+}
+async function runSqlQuery(confirmed){
+  const sql=document.getElementById('sqled-sql').value.trim();
+  if(!sql) return;
+  document.getElementById('sqled-results').innerHTML='<div class="loading"><div class="spinner"></div>Running…</div>';
+  const d=await post('/api/sqleditor/query',{sql, confirm:!!confirmed});
+  if(!d.ok){
+    document.getElementById('sqled-results').innerHTML='';
+    if(d.needs_confirm && confirm(d.error+'\n\nRun it anyway?')) return runSqlQuery(true);
+    showOutput('sqled-output', false, d.error); return;
+  }
+  document.getElementById('sqled-output').innerHTML='';
+  document.getElementById('sqled-meta').textContent =
+    `${d.row_count!==undefined?d.row_count+' rows':(d.affected+' rows affected')} · ${d.elapsed}s`
+    + (d.truncated?' · truncated at 500':'');
+  let html='';
+  if(d.columns && d.columns.length){
+    html=`<div class="sqled-results">`+tableHtml(d.columns,
+      d.rows.map(r=>r.map(v=>escH(v===null?'NULL':v))))+`</div>`;
+  }
+  if(d.notices && d.notices.length) html+=noticeList(d.notices);
+  document.getElementById('sqled-results').innerHTML=html||'<div class="loading">Statement ran, no rows returned.</div>';
+}
+function clearSqlEditor(){
+  document.getElementById('sqled-sql').value='';
+  document.getElementById('sqled-results').innerHTML='';
+  document.getElementById('sqled-meta').textContent='';
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  HISTORY & COMPARE
+// ══════════════════════════════════════════════════════════════════════════════
+const ENGINE_COLOR={ivfplus:'#0F6E5A', ivfflat:'#1A5A9A', hnsw:'#9A6A00'};
+
+async function loadHistory(){
+  const floor=+document.getElementById('hs-floor').value;
+  document.getElementById('hist-builds').innerHTML=
+    '<div class="loading"><div class="spinner"></div>Reading the results store…</div>';
+  const d=await api('/api/history/compare?floor='+floor);
+  if(!d.ok){ showOutput('hist-output', false, d.error||'could not read history'); return; }
+  document.getElementById('hist-output').innerHTML='';
+
+  // ── builds ────────────────────────────────────────────────────────────────
+  document.getElementById('hist-builds').innerHTML = d.builds.length
+    ? tableHtml(['Target','Engine','Params','Rows','Dim','Seconds','rows/s','Size','B/row','vs fastest'],
+        d.builds.map(b=>[
+          `<span class="badge ${b.target==='edb'?'bt':'bb'}">${escH(b.target)}</span> ${escH(b.label||'')}`,
+          `<code>${escH(b.engine)}</code>`,
+          b.lists!==null&&b.lists!==undefined ? 'lists '+b.lists
+            : `m=${b.m}/ef=${b.ef_construction}`,
+          fmt(b.rows), b.dim,
+          b.build_seconds!==null?Number(b.build_seconds).toFixed(2):'—',
+          fmt(Math.round(b.rows_per_sec||0)), escH(b.size||'—'),
+          b.bytes_per_row!==null?Math.round(b.bytes_per_row):'—',
+          b.rel? (b.rel===1?'<span class="badge bg">1.00x</span>':b.rel.toFixed(2)+'x'):'—'],
+        ), ['','','','num','num','num','num','num','num','num'])
+    : '<div class="loading">No builds recorded yet. Build an index, or run the vpbench CLI.</div>';
+
+  // ── recall at floor ───────────────────────────────────────────────────────
+  const R=d.recalls;
+  document.getElementById('hist-recalls').innerHTML = R.length
+    ? tableHtml(['Target','Engine','k','Rows','Parameter','Value','Recall','ms','vs exact'],
+        R.map(r=>[
+          `<span class="badge ${r.target==='edb'?'bt':'bb'}">${escH(r.target)}</span> ${escH(r.label||'')}`,
+          `<code>${escH(r.engine)}</code>`, r.k, fmt(r.rows),
+          `<code>${escH((r.param||'').split('.').pop())}</code>`, r.value,
+          `<span class="badge bg">${(r.recall*100).toFixed(1)}%</span>`,
+          Number(r.ms).toFixed(2),
+          r.speedup?Number(r.speedup).toFixed(1)+'x':'—'],
+        ), ['','','num','num','','num','','num','num'])
+    : `<div class="warn-box">No recorded sweep reaches ${(floor*100).toFixed(0)}% recall.
+        Lower the floor, widen the probes sweep, or raise lists.</div>`;
+
+  // ── curves: one series per target+engine+k ────────────────────────────────
+  const groups={};
+  (d.curves||[]).forEach(c=>{
+    const key=`${c.target} · ${c.engine} · k=${c.k}`;
+    (groups[key]=groups[key]||[]).push(c);
+  });
+  const sets=Object.entries(groups).map(([name,pts],i)=>{
+    pts.sort((a,b)=>a.ms-b.ms);
+    return {label:name,
+            data:pts.map(p=>({x:p.ms, y:+(p.recall*100).toFixed(2)})),
+            borderColor:ENGINE_COLOR[pts[0].engine]||'#5A3A9A',
+            backgroundColor:ENGINE_COLOR[pts[0].engine]||'#5A3A9A',
+            borderDash:i%2?[5,4]:[], showLine:true, tension:.2, pointRadius:3};
+  });
+  // Latency spans orders of magnitude between engines, so a log x-axis is the
+  // only way both curves stay readable on one plot.
+  mkChart('chart-hist-curves',{type:'scatter',data:{datasets:sets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}},
+               tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y}% @ ${c.parsed.x.toFixed(2)} ms`}}},
+      scales:{x:{type:'logarithmic',title:{display:true,text:'latency ms (log)'}},
+              y:{min:0,max:100,title:{display:true,text:'recall %'}}}}});
+
+  // ── memory model accuracy ────────────────────────────────────────────────
+  document.getElementById('hist-memory').innerHTML = d.memory.length
+    ? tableHtml(['#','Target','Engine','lists','Dim','Estimated','Server required','Error'],
+        d.memory.map(m=>[m.id, escH(m.target), `<code>${escH(m.engine)}</code>`,
+          m.lists, m.dim,
+          m.mem_estimated_mb!==null?Math.round(m.mem_estimated_mb)+' MB':'—',
+          m.mem_required_mb!==null?Math.round(m.mem_required_mb)+' MB':'—',
+          m.error_pct!==null
+            ? `<span class="badge ${m.error_pct<10?'bg':(m.error_pct<25?'ba':'br')}">${m.error_pct}%</span>`
+            : '—'],
+        ), ['num','','','num','num','num','num',''])
+    : `<div class="info-box" style="margin:0">No build has hit the memory ceiling since the
+        model was corrected — the estimate has been sizing the session correctly, so the
+        server never had to argue. Rows appear here only when a build is retried at the
+        server's own figure.</div>`;
+
+  // ── full log ─────────────────────────────────────────────────────────────
+  const all=await api('/api/history/builds?limit=200');
+  document.getElementById('hist-all-builds').innerHTML = (all.rows||[]).length
+    ? tableHtml(['#','When','Target','Engine','Index','lists','Rows','Seconds','Size','mem','health'],
+        all.rows.map(b=>[b.id, escH((b.ts||'').slice(5,16)), escH(b.target),
+          `<code>${escH(b.engine)}</code>`, `<code>${escH(b.index_name||'')}</code>`,
+          b.lists??'—', fmt(b.rows),
+          b.build_seconds!==null?Number(b.build_seconds).toFixed(2):'—',
+          escH(b.size||'—'), escH(b.maint_work_mem||'—'),
+          b.health!==null&&b.health!==undefined?Number(b.health).toFixed(4):'—'],
+        ), ['num','','','','','num','num','num','num','num','num'])
+    : '<div class="loading">Nothing recorded yet.</div>';
+  if(all.results_db)
+    document.getElementById('hist-source').innerHTML +=
+      `<div style="margin-top:6px;font-family:var(--mono);font-size:11px">store: ${escH(all.results_db)} · this app records as target <b>${escH(all.target)}</b></div>`;
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  QUERY LOG
+// ══════════════════════════════════════════════════════════════════════════════
+let qlTimer=null;
+
+async function loadQueryLog(){
+  const kind=document.getElementById('ql-kind').value||'all';
+  const limit=+document.getElementById('ql-limit').value||100;
+  const d=await api(`/api/log/queries?kind=${encodeURIComponent(kind)}&limit=${limit}`);
+  if(!d.ok){ showOutput('ql-output', false, d.error||'could not read the log'); return; }
+
+  const sel=document.getElementById('ql-kind');
+  if(sel.options.length !== (d.kinds.length+1)){
+    const cur=sel.value;
+    sel.innerHTML='<option value="all">all kinds</option>'+
+      d.kinds.map(k=>`<option value="${escH(k)}">${escH(k)}</option>`).join('');
+    if(cur) sel.value=cur;
+  }
+  if(d.log_file) document.getElementById('ql-path').textContent=d.log_file;
+  const lv=await api('/api/log/level');
+  if(lv.ok) document.getElementById('ql-level').value=lv.level;
+
+  document.getElementById('ql-table').innerHTML = d.rows.length
+    ? tableHtml(['When','Kind','SQL','Settings','ms','Rows',''],
+        d.rows.map(r=>[
+          escH((r.ts||'').slice(5,19)),
+          `<span class="badge ${r.error?'br':(r.kind||'').startsWith('index')||r.kind==='reindex'||r.kind==='partial-index'?'ba':((r.kind||'').startsWith('hybrid')?'bp':'bt')}">${escH(r.kind)}</span>`,
+          `<code style="white-space:nowrap">${escH(oneLine(r.sql))}</code>`,
+          `<span style="font-size:11px;color:var(--muted)">${escH(r.settings||'')}</span>`,
+          r.ms!==null&&r.ms!==undefined?Number(r.ms).toFixed(2):'—',
+          r.rows!==null&&r.rows!==undefined?fmt(r.rows):'—',
+          `<button class="run-btn secondary" style="padding:2px 8px;font-size:11px"
+             onclick="showQuerySql(${r.id})">view</button>`
+           + (r.has_full?` <button class="run-btn" style="padding:2px 8px;font-size:11px"
+             onclick="showQueryFull(${r.id})">full</button>`:'')],
+        ), ['','','','','num','num',''])
+    : '<div class="loading">Nothing logged yet — run a search or a build.</div>';
+
+  window._qlRows = {};
+  d.rows.forEach(r=>{ window._qlRows[r.id]=r; });
+
+  // auto-refresh is opt-in: polling while you read is more annoying than useful
+  clearInterval(qlTimer); qlTimer=null;
+  if(document.getElementById('ql-auto').checked)
+    qlTimer=setInterval(loadQueryLog, 4000);
+}
+
+function oneLine(s){
+  const t=String(s||'').replace(/\s+/g,' ').trim();
+  return t.length>90 ? t.slice(0,90)+'…' : t;
+}
+
+function showQuerySql(id){
+  const r=(window._qlRows||{})[id]; if(!r) return;
+  const body=(r.settings?r.settings.split('; ').map(x=>'SET LOCAL '+x+';').join('\n')+'\n\n':'')
+           + (r.sql||'')
+           + (r.params?`\n\n-- parameters: ${r.params}`:'')
+           + (r.error?`\n\n-- ERROR: ${r.error}`:'');
+  document.getElementById('ql-output').innerHTML =
+    sqlPanel(body, `#${r.id} · ${r.kind}` + (r.label?` · ${r.label}`:''), true);
+  document.getElementById('ql-output').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+async function setLogLevel(){
+  const level=document.getElementById('ql-level').value;
+  const d=await post('/api/log/level',{level});
+  showOutput('ql-output', d.ok, d.ok
+    ? (level==='all'
+       ? 'Now also logging metadata — catalog lookups, current_setting, row counts, health probes. The status poll adds roughly a dozen entries every 4 seconds.'
+       : 'Logging only statements that touch vectors or full text. Metadata is suppressed.')
+    : d.error);
+  loadQueryLog();
+}
+
+// The resolved statement, with the embedding substituted in — fetched on demand
+// because it can run to several kB per query.
+async function showQueryFull(id){
+  const out=document.getElementById('ql-output');
+  out.innerHTML='<div class="loading"><div class="spinner"></div>Fetching the full statement…</div>';
+  const d=await api('/api/log/query/'+id);
+  if(!d.ok){ showOutput('ql-output', false, d.error); return; }
+  const r=d.row;
+  out.innerHTML = sqlPanel(d.runnable,
+      `#${r.id} · ${r.kind} · runnable (${fmt(d.bytes)} chars)`
+      + (r.label?` · ${escH(r.label)}`:''), true)
+    + `<div class="info-box" style="margin-top:8px">Parameters are substituted, so this
+       runs in psql unchanged — including the query vector, which is the part you cannot
+       reconstruct from the log line. Use the copy button in the panel.</div>`;
+  out.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+async function loadLogFile(){
+  const n=+document.getElementById('ql-lines').value||200;
+  const d=await api('/api/log/file?lines='+n);
+  document.getElementById('ql-file').textContent = d.ok ? d.text : ('error: '+d.error);
+  if(d.path) document.getElementById('ql-path').textContent=d.path;
+}
+
+async function clearQueryLog(){
+  if(!confirm('Clear the recorded queries? Also empty the log file on disk?\n\nOK clears both.')) return;
+  const d=await post('/api/log/clear',{file:true});
+  showOutput('ql-output', d.ok, d.ok?'Log cleared':d.error);
+  loadQueryLog(); loadLogFile();
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  BM25 / pg_textsearch
+// ══════════════════════════════════════════════════════════════════════════════
+async function loadBm25Status(){
+  const d=await api('/api/bm25/status');
+  const el=document.getElementById('bm25-status'); if(!el) return;
+  const sel=document.getElementById('hy-lexical');
+  const rows=[
+    ['pg_textsearch extension', d.extension, d.extension?('v'+d.extension):'not installed'],
+    ['bm25 access method', d.am, d.am?'present':'library not loaded'],
+    ['shared_preload_libraries', d.preloaded, d.preloaded?'loaded':'missing — needs a restart'],
+    ['PostgreSQL major', d.pg_major>=17, 'v'+d.pg_major+(d.pg_major>=17?'':' — needs 17 or 18')],
+    ['BM25 index', !!d.index, d.index?(d.index.name+' · '+d.index.size):'not built'],
+  ];
+  el.innerHTML='<div class="status-grid">'+rows.map(([n,ok,sub])=>
+    `<div class="proc-status"><div class="proc-dot ${ok?'running':'stopped'}"></div>
+      <span class="proc-name">${escH(n)}</span>
+      <span class="proc-pid">${escH(sub)}</span></div>`).join('')+'</div>'
+    + (d.usable ? '' : `<div class="warn-box">⚠ ${escH(d.reason||'')} ${escH(d.install_hint||'')}</div>`);
+
+  // Don't offer BM25 in the hybrid selector when it cannot actually run.
+  if(sel){
+    const opt=sel.querySelector('option[value="bm25"]');
+    if(opt){
+      opt.disabled=!d.usable;
+      opt.textContent='pg_textsearch (BM25)'+(d.usable?'':' — unavailable');
+      if(!d.usable && sel.value==='bm25') sel.value='tsvector';
+      // ts_rank_cd has no IDF, which is what makes its scores tie across the
+      // demo corpus. When BM25 is available it is both the better ranker and
+      // the one this deck is about, so prefer it until the user chooses.
+      if(d.usable && !sel.dataset.touched) sel.value='bm25';
+    }
+  }
+}
+
+async function buildBm25(){
+  const body={text_config:document.getElementById('bm-cfg').value.trim(),
+              k1:+document.getElementById('bm-k1').value,
+              b:+document.getElementById('bm-b').value,
+              force_merge:document.getElementById('bm-merge').checked};
+  document.getElementById('bm25-build-out').innerHTML=
+    '<div class="loading"><div class="spinner"></div>Building the BM25 index…</div>';
+  const d=await post('/api/bm25/build', body);
+  if(!d.ok){ showOutput('bm25-build-out', false, d.error);
+             if(d.sql) document.getElementById('bm25-build-out').innerHTML+=sqlPanel(d.sql,'bm25.sql',true);
+             return; }
+  document.getElementById('bm25-build-out').innerHTML=`
+    <div class="kpi-row" style="margin-top:12px">
+      <div class="kpi"><div class="kpi-label">Build time</div><div class="kpi-val teal">${d.seconds}s</div>
+        <div class="kpi-sub">${fmt(Math.round(d.rows/d.seconds))} rows/s</div></div>
+      <div class="kpi"><div class="kpi-label">force_merge</div><div class="kpi-val">${d.force_merge_seconds!==null?d.force_merge_seconds+'s':'skipped'}</div></div>
+      <div class="kpi"><div class="kpi-label">BM25 index</div><div class="kpi-val amber">${escH(d.size)}</div>
+        <div class="kpi-sub">${d.bytes_per_row} B/row</div></div>
+      <div class="kpi"><div class="kpi-label">GIN tsvector</div><div class="kpi-val blue">${escH(d.gin_size)}</div></div>
+      <div class="kpi"><div class="kpi-label">BM25 / GIN</div><div class="kpi-val ${d.vs_gin&&d.vs_gin>1?'red':'green'}">${d.vs_gin?d.vs_gin+'x':'—'}</div>
+        <div class="kpi-sub">index size ratio</div></div>
+    </div>`+sqlPanel(d.sql,'bm25.sql',true)+noticeList(d.notices);
+  loadBm25Status(); loadIndexes();
+}
+
+async function compareBm25(){
+  const body={text:document.getElementById('bm-q').value, k:+document.getElementById('bm-k').value};
+  document.getElementById('bm25-cmp').innerHTML=
+    '<div class="loading"><div class="spinner"></div>Running both rankers…</div>';
+  const d=await post('/api/bm25/compare', body);
+  if(!d.ok){ showOutput('bm25-cmp-out', false, d.error);
+             document.getElementById('bm25-cmp').innerHTML=''; return; }
+  document.getElementById('bm25-cmp-out').innerHTML=
+    (d.notes||[]).map(x=>`<div class="warn-box">${escH(x)}</div>`).join('')
+    + `<div class="kpi-row">
+        <div class="kpi"><div class="kpi-label">ts_rank_cd</div><div class="kpi-val blue">${d.tsvector.ms} ms</div></div>
+        <div class="kpi"><div class="kpi-label">BM25</div><div class="kpi-val teal">${d.bm25_rows.ms!==null?d.bm25_rows.ms+' ms':'—'}</div></div>
+        <div class="kpi"><div class="kpi-label">BM25 vs ts_rank</div><div class="kpi-val ${d.speedup&&d.speedup>1?'green':'amber'}">${d.speedup?d.speedup+'x':'—'}</div></div>
+        <div class="kpi"><div class="kpi-label">Same documents</div><div class="kpi-val ${d.degenerate?'red':''}">${d.degenerate?'n/a':d.overlap_pct+'%'}</div>
+          <div class="kpi-sub">${d.degenerate?'scores are tied':d.overlap.length+' of top '+d.k}</div></div>
+        <div class="kpi"><div class="kpi-label">Distinct scores</div><div class="kpi-val ${d.degenerate?'red':'green'}">${d.distinct_scores.tsvector} / ${d.distinct_scores.bm25}</div>
+          <div class="kpi-sub">ts_rank / BM25, of ${d.k}</div></div>
+       </div>`;
+  const both=new Set(d.overlap);
+  const col=(title,ms,rows,err)=>`<div>
+      <div class="col-head"><span>${title}</span><span>${ms!==null&&ms!==undefined?ms+' ms':''}</span></div>
+      <div class="hit-list">${err?`<div class="hit"><span class="hit-title" style="color:var(--red)">${escH(err)}</span></div>`
+        : (rows.length?rows.map((r,i)=>`<div class="hit ${both.has(r.id)?'both':''}">
+            <span class="hit-rank">${i+1}</span>
+            <span class="hit-title" title="${escH(r.title)}">${escH(r.title)}</span>
+            <span class="hit-score">${r.score}</span></div>`).join('')
+          :'<div class="hit"><span class="hit-title" style="color:var(--muted)">no matches</span></div>')}</div></div>`;
+  document.getElementById('bm25-cmp').innerHTML =
+    col('ts_rank_cd — GIN tsvector', d.tsvector.ms, d.tsvector.rows) +
+    col('BM25 — pg_textsearch', d.bm25_rows.ms, d.bm25_rows.rows, d.bm25_rows.error);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  BOOT
+// ══════════════════════════════════════════════════════════════════════════════
+loadExamples();
+loadStatus(); loadEnv(); loadSqlPresets(); loadCaps(); renderOps();
+setInterval(loadStatus, 4000);
+</script>
+</body>
+</html>
