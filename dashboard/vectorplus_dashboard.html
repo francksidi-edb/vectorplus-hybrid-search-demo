@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>EDB Vector Plus — ivfplus Demo</title>
+<title>EDB Vector Plus × VectorChord — Demo</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -210,6 +210,24 @@ label.chk{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:va
 .col-head>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .col-head>span:last-child{flex:0 0 auto;white-space:nowrap}
 .hit-ranks{color:var(--faint)}
+/* ── VectorChord / comparison additions ── */
+input[type=password]{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--sans);font-size:13px;padding:5px 9px;border-radius:var(--r);outline:none}
+input[type=password]:focus{border-color:var(--teal)}
+.conn-chip{font-family:var(--mono);font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.conn-chip:hover{border-color:var(--teal);color:var(--teal)}
+.field-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 14px;margin-bottom:12px}
+.field-grid label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.field-grid input,.field-grid select{width:100%;text-transform:none;letter-spacing:0}
+.eng-card{border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;background:var(--surface)}
+.eng-card.vp{border-top:3px solid #0F6E5A}.eng-card.vc{border-top:3px solid #5A3A9A}
+.eng-card h4{font-size:13px;margin-bottom:8px;display:flex;justify-content:space-between;gap:8px}
+.eng-card dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:12px}
+.eng-card dt{color:var(--muted)}.eng-card dd{font-family:var(--mono);text-align:right;word-break:break-all}
+.hit.miss .hit-title{color:var(--muted)}
+.hit.truth{background:var(--green-bg)}
+.legend{font-size:11px;color:var(--muted);margin:6px 0 10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:middle;margin-right:4px}
+.mini-note{font-size:11px;color:var(--faint);margin-top:4px}
 </style>
 </head>
 <body>
@@ -224,6 +242,7 @@ label.chk{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:va
     <span style="font-weight:400;font-size:13px;color:var(--muted)">RaBitQ + hierarchical IVF</span>
   </div>
   <div class="header-right">
+    <span class="conn-chip" id="conn-chip" onclick="switchTab('setup')" title="Click to change the connection">connection…</span>
     <div class="live-dot" id="live-dot"></div>
     <span id="live-label" style="font-size:12px">connecting…</span>
     <div style="width:1px;height:18px;background:var(--border)"></div>
@@ -246,6 +265,8 @@ label.chk{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:va
   <div class="tab" id="tab-hybrid"  onclick="switchTab('hybrid')">🔀 Hybrid Search</div>
   <div class="tab" id="tab-filter"  onclick="switchTab('filter')">🧪 Filtering</div>
   <div class="tab" id="tab-maint"   onclick="switchTab('maint')">🩺 Health &amp; Maintenance</div>
+  <div class="tab" id="tab-vc"      onclick="switchTab('vc')">🌀 VectorChord</div>
+  <div class="tab" id="tab-cmp"     onclick="switchTab('cmp')">⚔ Engine Compare</div>
   <div class="tab" id="tab-history" onclick="switchTab('history')">📈 History &amp; Compare</div>
   <div class="tab" id="tab-querylog" onclick="switchTab('querylog')">🧾 Query Log</div>
   <div class="tab" id="tab-sqleditor" onclick="switchTab('sqleditor')">🔎 SQL Editor</div>
@@ -255,6 +276,35 @@ label.chk{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:va
 
 <!-- ══════════════════════════ SETUP ═══════════════════════════════════════ -->
 <div class="panel active" id="panel-setup">
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">00</span>
+      <span class="section-title">Connection</span>
+      <span class="section-desc">Point the whole dashboard at a database — no restart needed</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div class="info-box" id="conn-state">Reading current connection…</div>
+      <div class="field-grid">
+        <label>Host<input type="text" id="conn-host" oninput="connDirty=true"></label>
+        <label>Port<input type="number" id="conn-port" min="1" max="65535" oninput="connDirty=true"></label>
+        <label>User<input type="text" id="conn-user" oninput="connDirty=true"></label>
+        <label>Password<input type="password" id="conn-pass" autocomplete="new-password" placeholder="(unchanged)" oninput="connDirty=true"></label>
+        <label>Database<input type="text" id="conn-db" oninput="connDirty=true"></label>
+        <label>Schema<input type="text" id="conn-schema" oninput="connDirty=true"></label>
+      </div>
+      <div class="ctrl-row">
+        <button class="run-btn secondary" onclick="connTest()">⚡ Test connection</button>
+        <button class="run-btn" onclick="connApply()">✓ Apply</button>
+        <label class="chk"><input type="checkbox" id="conn-save"> remember as the default on this server</label>
+        <label class="chk"><input type="checkbox" id="conn-savepw"> include the password in the file</label>
+        <button class="run-btn danger" id="conn-forget" onclick="connForget()" style="margin-left:auto;display:none">Forget saved</button>
+      </div>
+      <div id="conn-result"></div>
+      <div class="mini-note">Applying switches every tab at once, so it is refused while a load, build, clone or churn is running. A saved connection is written to <code id="conn-file">~/.vectorplus_demo_connection.json</code> (mode 600, outside the folder the app serves); command-line flags still override it. The password is only stored if you tick the box.</div>
+    </div>
+  </div>
+
 
   <div class="section">
     <div class="section-header" onclick="toggle(this)">
@@ -864,6 +914,221 @@ label.chk{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:va
   </div>
 
 </div><!-- /maint -->
+
+
+<!-- ══════════════════════════ VECTORCHORD ═════════════════════════════════ -->
+<div class="panel" id="panel-vc">
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">01</span>
+      <span class="section-title">VectorChord &amp; its table</span>
+      <span class="section-desc">A row-for-row clone of the Vector Plus table, so both engines index identical data</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div class="info-box">
+        <code>vchordrq</code> is VectorChord's IVF + RaBitQ index. Same ids, same embeddings, same text as
+        <code id="vc-vp-name">vp_docs</code> — the clone copies rows inside the database, so what differs between
+        the two tables is only the access method.
+      </div>
+      <div class="pipeline">
+        <div class="pipe-node"><div class="pipe-label">vchord</div><div class="pipe-name" id="vc-pp-ext">—</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><div class="pipe-label">vp table</div><div class="pipe-name" id="vc-pp-vp">—</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><div class="pipe-label">vc table</div><div class="pipe-name" id="vc-pp-vc">—</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><div class="pipe-label">in sync</div><div class="pipe-name" id="vc-pp-sync">—</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><div class="pipe-label">vchordrq index</div><div class="pipe-name" id="vc-pp-idx">—</div></div>
+      </div>
+      <div id="vc-warn"></div>
+      <div class="ctrl-row">
+        <button class="run-btn secondary" onclick="vcCreateExt()">⚡ CREATE EXTENSION vchord</button>
+        <button class="run-btn danger" onclick="vcClone()">⧉ Drop &amp; clone vp_docs → vc_docs</button>
+        <span class="mini-note" style="margin:0">Re-clone after any reload or churn of the Vector Plus table.</span>
+      </div>
+      <div id="vc-clone-box" style="display:none;margin-top:8px">
+        <div class="pbar"><div class="pbar-fill" id="vc-clone-bar"></div></div>
+        <div class="mini-note" id="vc-clone-txt"></div>
+      </div>
+      <div id="vc-out"></div>
+      <div id="vc-gucs" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">02</span>
+      <span class="section-title">Build a vchordrq index</span>
+      <span class="section-desc">lists is an array: [] is unpartitioned, [N] one level, [N, M] two</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div class="ctrl-card">
+        <div class="ctrl-card-title">Index options</div>
+        <div class="field-grid">
+          <label>lists<input type="text" id="vcb-lists" placeholder="empty = [ ]  ·  1000  ·  1000,50000"></label>
+          <label>Operator class<select id="vcb-opclass"></select></label>
+          <label>residual_quantization<select id="vcb-rq"><option value="">server default</option><option value="true">true</option><option value="false">false</option></select></label>
+          <label>spherical_centroids<select id="vcb-sph"><option value="">server default</option><option value="true">true</option><option value="false">false</option></select></label>
+          <label>build_threads<input type="number" id="vcb-threads" min="1" max="255" placeholder="default"></label>
+          <label>parallel workers<input type="number" id="vcb-workers" min="0" max="64" placeholder="server setting"></label>
+          <label>maintenance_work_mem<input type="text" id="vcb-mwm" placeholder="e.g. 1GB"></label>
+          <label>Index name<input type="text" id="vcb-name" placeholder="auto"></label>
+        </div>
+        <div class="ctrl-row">
+          <label class="chk"><input type="checkbox" id="vcb-rit"> rerank_in_table (capacity-optimized: smaller, slower queries)</label>
+          <label class="chk"><input type="checkbox" id="vcb-conc"> CONCURRENTLY</label>
+        </div>
+        <div class="ctrl-row">
+          <button class="run-btn" id="vcb-btn" onclick="vcBuild()">⚡ CREATE INDEX … USING vchordrq</button>
+          <button class="run-btn secondary" onclick="vcUseAdvice()">use suggested lists</button>
+          <span class="mini-note" id="vcb-advice" style="margin:0"></span>
+        </div>
+      </div>
+      <div id="vcb-warn"></div>
+      <div id="vcb-live" style="display:none">
+        <div style="display:flex;align-items:center;gap:18px;margin:10px 0">
+          <div class="big-timer" id="vcb-timer">0.0<span class="timer-unit">s</span></div>
+          <div style="flex:1"><div class="pbar"><div class="pbar-fill indeterminate" id="vcb-bar"></div></div>
+          <div class="mini-note" id="vcb-phase"></div></div>
+        </div>
+      </div>
+      <div id="vcb-result"></div>
+      <div id="vcb-sql"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">03</span>
+      <span class="section-title">Indexes &amp; build history</span>
+      <span class="section-desc">Prewarm loads the index into shared buffers — vchordrq is disk-first, so the first query pays</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div id="vc-indexes"></div>
+      <div style="margin-top:14px" id="vc-history"></div>
+    </div>
+  </div>
+
+</div><!-- /vc -->
+
+
+<!-- ══════════════════════════ ENGINE COMPARE ══════════════════════════════ -->
+<div class="panel" id="panel-cmp">
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">01</span>
+      <span class="section-title">Two tables, two engines</span>
+      <span class="section-desc">Same rows. Build both with matched parameters and compare cost and size</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div id="cmp-kpis"></div>
+      <div class="two-col" id="cmp-cards"></div>
+      <div class="ctrl-card" style="margin-top:14px">
+        <div class="ctrl-card-title">Build both, one after the other</div>
+        <div class="field-grid">
+          <label>ivfplus lists<input type="number" id="cb-vp-lists" value="100" min="1" max="32768"></label>
+          <label>vchordrq lists<input type="text" id="cb-vc-lists" value="" placeholder="empty = [ ]  ·  100"></label>
+          <label>Operator class<select id="cb-opclass"></select></label>
+          <label>maintenance_work_mem<input type="text" id="cb-mwm" placeholder="e.g. 1GB (both)"></label>
+        </div>
+        <div class="ctrl-row">
+          <button class="run-btn" id="cb-btn" onclick="cmpBuildBoth()">⚡ Build both indexes</button>
+          <button class="run-btn secondary" onclick="cmpSummary()">↻ Refresh</button>
+          <span class="mini-note" id="cb-status" style="margin:0"></span>
+        </div>
+        <div class="mini-note">Each build keeps whatever other indexes already exist on its table. For a clean comparison keep exactly one vector index per table — the planner picks between several and the results then depend on its choice.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">02</span>
+      <span class="section-title">One query, both engines</span>
+      <span class="section-desc">Recall is measured against an exact scan; latency is the median of repeated runs</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div class="ctrl-card">
+        <div class="field-grid">
+          <label>Query text<input type="text" id="cs-text" value="tuning recall for an approximate vector index"></label>
+          <label>…or row id<span style="display:flex;gap:6px"><input type="number" id="cs-id" placeholder="blank = use text" style="flex:1"><button class="run-btn secondary" type="button" onclick="cmpRandomId()" title="pick a random existing row">🎲</button></span></label>
+          <label>k<input type="number" id="cs-k" value="10" min="1" max="200"></label>
+          <label>Operator class<select id="cs-opclass"></select></label>
+          <label>ivfplus.probes<input type="number" id="cs-vp-probes" value="16" min="1" max="32768"></label>
+          <label>vchordrq.probes<input type="text" id="cs-vc-probes" value="" placeholder="'' for lists = [ ]"></label>
+          <label>vchordrq.epsilon<input type="text" id="cs-eps" placeholder="1.9 (default)"></label>
+          <label>category filter<select id="cs-cat"><option value="">none</option></select></label>
+          <label>vchordrq.prefilter<select id="cs-pre"><option value="">server default</option><option value="true">on</option><option value="false">off</option></select></label>
+          <label>timed runs<input type="number" id="cs-reps" value="3" min="1" max="20"></label>
+        </div>
+        <div class="ctrl-row">
+          <button class="run-btn" onclick="cmpSearch()">🔍 Run on both</button>
+          <label class="chk"><input type="checkbox" id="cs-force" checked> disable seqscan for the approximate runs</label>
+        </div>
+      </div>
+      <div id="cs-out"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">03</span>
+      <span class="section-title">Recall vs latency sweep</span>
+      <span class="section-desc">The honest comparison: what each engine costs at the same recall</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div class="ctrl-card">
+        <div class="field-grid">
+          <label>k<input type="number" id="cr-k" value="10" min="1" max="200"></label>
+          <label>Query vectors<input type="number" id="cr-q" value="30" min="1" max="200"></label>
+          <label>Operator class<select id="cr-opclass"></select></label>
+          <label>ivfplus.probes list<input type="text" id="cr-vp" value="1,2,4,8,16,32,64,128"></label>
+          <label>vchordrq.probes list<input type="text" id="cr-vc" placeholder="auto from the index's lists"></label>
+          <label>vchordrq.epsilon<input type="text" id="cr-eps" placeholder="1.9 (default)"></label>
+        </div>
+        <div class="ctrl-row">
+          <button class="run-btn" id="cr-btn" onclick="cmpSweep()">🎯 Sweep both</button>
+          <label class="chk"><input type="checkbox" id="cr-force" checked> disable seqscan for the approximate runs</label>
+        </div>
+        <div class="mini-note">For a two-level vchordrq index give probes per level, one value per list entry, separated by a comma inside each item — e.g. <code>10,100;20,200</code> uses semicolons between sweep points.</div>
+      </div>
+      <div id="cr-out"></div>
+      <div class="chart-label" style="margin-top:12px" id="cr-chart-label" hidden>Recall (%) against mean latency — further up and left is better</div>
+      <div class="chart-wrap tall" id="cr-chart-wrap" hidden><canvas id="chart-cmp-recall"></canvas></div>
+      <div id="cr-floor" style="margin-top:14px"></div>
+      <div class="two-col" id="cr-tables" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">04</span>
+      <span class="section-title">Identical churn on both</span>
+      <span class="section-desc">Insert, update and delete the same rows in each table and time the index maintenance</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div class="ctrl-row">
+        <span class="ctrl-label">Inserts</span><input type="number" id="cc-ins" value="5000" min="0" style="width:100px">
+        <span class="ctrl-label" style="min-width:auto">Updates</span><input type="number" id="cc-upd" value="2000" min="0" style="width:100px">
+        <span class="ctrl-label" style="min-width:auto">Deletes</span><input type="number" id="cc-del" value="1000" min="0" style="width:100px">
+        <button class="run-btn" id="cc-btn" onclick="cmpChurn()">🌪 Apply to both</button>
+      </div>
+      <div class="mini-note">Same new rows and same ids go into both tables, then the same random existing rows are updated and deleted, then each table is vacuumed. Re-run the sweep afterwards to see which engine holds its recall.</div>
+      <div id="cc-out"></div>
+    </div>
+  </div>
+
+</div><!-- /cmp -->
 
 
 <!-- ══════════════════════════ HISTORY & COMPARE ═══════════════════════════ -->
@@ -2423,6 +2688,354 @@ async function compareBm25(){
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+//  VECTORCHORD + ENGINE COMPARISON + CONNECTION  (added)
+// ══════════════════════════════════════════════════════════════════════════════
+const byId=id=>document.getElementById(id);
+ENGINE_COLOR.vchordrq='#5A3A9A';
+const CMP_OPCLASSES={vector_l2_ops:'<-> L2',vector_ip_ops:'<#> inner product',vector_cosine_ops:'<=> cosine',
+                     halfvec_l2_ops:'<-> L2 · halfvec',halfvec_ip_ops:'<#> ip · halfvec',halfvec_cosine_ops:'<=> cosine · halfvec'};
+function fillCmpSelects(){
+  ['vcb-opclass','cb-opclass','cs-opclass','cr-opclass'].forEach(id=>{
+    const el=byId(id); if(!el||el.options.length) return;
+    el.innerHTML=Object.entries(CMP_OPCLASSES).map(([k,v])=>`<option value="${k}">${k} — ${escH(v)}</option>`).join('');
+  });
+}
+fillCmpSelects();
+
+// hook the existing tab switcher
+const _switchTab=switchTab;
+switchTab=function(n){
+  _switchTab(n);
+  if(n==='setup') connLoad(true);
+  if(n==='vc'){vcStatus();vcIndexes();}
+  if(n==='cmp'){cmpSummary();cmpCategories();}
+};
+setInterval(()=>{ if(byId('panel-vc').classList.contains('active') && !vcBusy) {vcStatus();} },4000);
+
+// ── CONNECTION ────────────────────────────────────────────────────────────────
+let connDirty=false;
+async function connLoad(force){
+  let d; try{ d=await api('/api/conn'); }catch(e){ return; }
+  if(!d.ok) return;
+  const label=`${d.user}@${d.host}:${d.port}/${d.dbname}${d.schema!=='public'?' · '+d.schema:''}`;
+  const chip=byId('conn-chip'); if(chip){chip.textContent=label; chip.title='Click to change the connection';}
+  if(!connDirty||force){
+    byId('conn-host').value=d.host||''; byId('conn-port').value=d.port||5432;
+    byId('conn-user').value=d.user||''; byId('conn-db').value=d.dbname||'';
+    byId('conn-schema').value=d.schema||'public'; byId('conn-pass').value='';
+    byId('conn-pass').placeholder=d.has_password?'(unchanged)':'(none set)';
+    connDirty=false;
+  }
+  byId('conn-state').innerHTML=`Connected as <b>${escH(label)}</b> — source: ${escH(d.source)}`;
+  byId('conn-forget').style.display=d.saved_exists?'':'none';
+  if(byId('conn-file')) byId('conn-file').textContent=d.saved_file;
+}
+function connBody(extra){
+  return Object.assign({host:byId('conn-host').value.trim(),port:+byId('conn-port').value,
+    user:byId('conn-user').value.trim(),password:byId('conn-pass').value,
+    dbname:byId('conn-db').value.trim(),schema:byId('conn-schema').value.trim()},extra||{});
+}
+function connReport(d){
+  const ex=d.extensions||{}, names=['edb_vectorplus','vchord','vector','pg_textsearch'];
+  const badges=names.map(n=>ex[n]?`<span class="badge bg">${n} ${escH(ex[n])}</span>`
+                               :`<span class="badge ba">${n} missing</span>`).join(' ');
+  let h=`<div class="output-msg ok" style="margin-top:10px">✓ ${escH(d.server_version)} · ${escH(d.database)} as ${escH(d.user)}${d.superuser?' (superuser)':''} · ${d.connect_ms} ms</div>
+    <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">${badges}
+      <span class="badge ${d.vp_table?'bg':'ba'}">vp_docs ${d.vp_table?'exists':'not created'}</span>
+      <span class="badge ${d.vc_table?'bg':'ba'}">vc_docs ${d.vc_table?'exists':'not created'}</span></div>`;
+  if(!d.schema_exists) h+=`<div class="warn-box">Schema does not exist on this database yet — “Drop &amp; recreate table” will create it.</div>`;
+  if(ex.vchord&&!d.vchord_preloaded) h+=`<div class="warn-box">vchord is installed but not in shared_preload_libraries (${escH(d.preload||'empty')}). Builds and the vchordrq.* settings need it, plus a restart.</div>`;
+  if(d.save_error) h+=`<div class="error-box">Could not write the saved file: ${escH(d.save_error)}</div>`;
+  return h;
+}
+async function connTest(){
+  byId('conn-result').innerHTML='<div class="loading"><div class="spinner"></div>Connecting…</div>';
+  const d=await post('/api/conn/test',connBody());
+  byId('conn-result').innerHTML=d.ok?connReport(d):`<div class="error-box">${escH(d.error)}</div>`;
+}
+async function connApply(){
+  byId('conn-result').innerHTML='<div class="loading"><div class="spinner"></div>Connecting…</div>';
+  const d=await post('/api/conn/apply',connBody({save:byId('conn-save').checked,save_password:byId('conn-savepw').checked}));
+  if(!d.ok){ byId('conn-result').innerHTML=`<div class="error-box">${escH(d.error)}</div>`; return; }
+  connDirty=false; byId('conn-result').innerHTML=connReport(d)+(d.saved?'<div class="mini-note">Saved as the default.</div>':'');
+  showToast('Connection applied'); await connLoad(true);
+  loadStatus(); loadEnv();
+  if(byId('panel-vc').classList.contains('active')){vcStatus();vcIndexes();}
+  if(byId('panel-cmp').classList.contains('active')) cmpSummary();
+}
+async function connForget(){
+  const d=await post('/api/conn/forget'); if(d.ok){showToast('Saved connection removed'); connLoad();}
+}
+
+// ── VECTORCHORD TAB ───────────────────────────────────────────────────────────
+let VCS={}, vcBusy=false, vcClonePoll=null, vcBuildPoll=null, vcAdvice=null;
+async function vcStatus(){
+  const d=await api('/api/vc/status'); VCS=d;
+  const set=(id,t,cls)=>{const e=byId(id); e.textContent=t; if(cls!==undefined) e.style.color=cls;};
+  if(!d.db_ok){ set('vc-pp-ext','no DB','var(--red)'); return; }
+  byId('vc-vp-name').textContent=d.vp_table;
+  set('vc-pp-ext',d.extension||'not installed',d.extension?'var(--green)':'var(--amber)');
+  set('vc-pp-vp',d.vp_exists?fmt(d.vp_rows)+' rows':'missing',d.vp_exists?'':'var(--amber)');
+  set('vc-pp-vc',d.vc_exists?fmt(d.vc_rows)+' rows':'not cloned',d.vc_exists?'':'var(--amber)');
+  set('vc-pp-sync',d.in_sync===undefined?'—':(d.in_sync?'yes':'no — re-clone'),d.in_sync?'var(--green)':(d.in_sync===false?'var(--red)':''));
+  set('vc-pp-idx',(d.indexes&&d.indexes.length)?d.indexes.length+' · '+d.indexes.map(i=>i.size).join(', '):'none',(d.indexes&&d.indexes.length)?'var(--green)':'var(--amber)');
+  let w='';
+  if(d.extension&&!d.preloaded) w+=`<div class="warn-box">⚠ vchord is installed but not in <code>shared_preload_libraries</code>. Add it and restart the server — index builds and the <code>vchordrq.*</code> settings depend on it.</div>`;
+  if(d.in_sync===false) w+=`<div class="warn-box">⚠ The two tables hold different rows (${fmt(d.vp_rows)} vs ${fmt(d.vc_rows)}). Re-clone before comparing anything.</div>`;
+  if(d.vc_exists&&d.vp_exists&&d.dim&&d.vc_dim&&d.dim!==d.vc_dim) w+=`<div class="warn-box">⚠ Dimensions differ (${d.dim} vs ${d.vc_dim}).</div>`;
+  byId('vc-warn').innerHTML=w;
+  vcAdvice=d.advisor; 
+  if(d.advisor) byId('vcb-advice').textContent=`suggested: lists = [${d.advisor.lists.join(', ')}], probes ≈ '${d.advisor.probes_start}' — ${d.advisor.rule}`;
+  byId('vc-gucs').innerHTML=(d.gucs&&d.gucs.length)
+    ? `<div class="col-head"><span>vchordrq.* settings on this server</span><span></span></div>`+
+      tableHtml(['Setting','Value'],d.gucs.map(g=>[`<code>${escH(g.name)}</code>`,escH(g.setting===''?"''":g.setting)]),['','num'])
+    : '';
+  if(d.clone&&d.clone.running&&!vcClonePoll) vcClonePollStart();
+  if(d.build&&d.build.running&&!vcBuildPoll) vcBuildPollStart();
+}
+async function vcCreateExt(){
+  const d=await post('/api/vc/setup/extension');
+  if(d.ok){ showOutput('vc-out',true,`vchord ${d.version} ready`); vcStatus(); }
+  else byId('vc-out').innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(d.error)}</div>`;
+}
+function vcClone(){
+  if(!confirm(`Drop and recreate ${VCS.vc_table||'vc_docs'} from ${VCS.vp_table||'vp_docs'}? Its indexes go with it.`)) return;
+  post('/api/vc/table/clone').then(d=>{
+    if(!d.ok){ byId('vc-out').innerHTML=`<div class="error-box">${escH(d.error)}</div>`; return; }
+    byId('vc-out').innerHTML=''; vcClonePollStart();
+  });
+}
+function vcClonePollStart(){
+  byId('vc-clone-box').style.display='block'; vcBusy=true;
+  const tick=async()=>{
+    const s=await api('/api/vc/table/clone/status');
+    byId('vc-clone-bar').style.width=(s.pct||0)+'%';
+    byId('vc-clone-txt').textContent=`${s.phase} — ${fmt(s.done)} / ${fmt(s.total)} rows · ${s.elapsed}s`;
+    if(!s.running){
+      clearInterval(vcClonePoll); vcClonePoll=null; vcBusy=false;
+      if(s.error) byId('vc-out').innerHTML=`<div class="error-box">${escH(s.error)}</div>`;
+      else if(s.result) showOutput('vc-out',true,`cloned ${fmt(s.result.rows)} rows in ${s.result.copy_seconds}s (${fmt(s.result.rows_per_sec)} rows/s)`);
+      vcStatus();
+    }
+  };
+  if(vcClonePoll) clearInterval(vcClonePoll);
+  vcClonePoll=setInterval(tick,600); tick();
+}
+function vcUseAdvice(){ if(vcAdvice) byId('vcb-lists').value=vcAdvice.lists.join(','); }
+function vcBuildBody(){
+  const tri=id=>{const v=byId(id).value; return v===''?null:v==='true';};
+  return {lists:byId('vcb-lists').value.trim(),opclass:byId('vcb-opclass').value,
+    residual_quantization:tri('vcb-rq'),spherical_centroids:tri('vcb-sph'),
+    build_threads:byId('vcb-threads').value,parallel_workers:byId('vcb-workers').value,
+    maintenance_work_mem:byId('vcb-mwm').value.trim(),name:byId('vcb-name').value.trim(),
+    rerank_in_table:byId('vcb-rit').checked,concurrently:byId('vcb-conc').checked};
+}
+async function vcBuild(){
+  byId('vcb-result').innerHTML=''; byId('vcb-warn').innerHTML='';
+  const d=await post('/api/vc/index/build/start',vcBuildBody());
+  if(!d.ok){ byId('vcb-result').innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(d.error)}</div>`; return; }
+  warnList('vcb-warn',d.warnings);
+  byId('vcb-sql').innerHTML=sqlPanel(d.sql,'CREATE INDEX — '+d.name,true);
+  vcBuildPollStart();
+}
+function vcBuildPollStart(){
+  byId('vcb-live').style.display='block'; byId('vcb-btn').disabled=true; vcBusy=true;
+  const tick=async()=>{
+    const s=await api('/api/vc/index/build/status');
+    byId('vcb-timer').innerHTML=`${Number(s.elapsed||0).toFixed(1)}<span class="timer-unit">s</span>`;
+    const p=s.progress;
+    byId('vcb-phase').textContent=p?`${p.phase||''}${p.tuples_total?` — ${fmt(p.tuples_done)} / ${fmt(p.tuples_total)} tuples`:(p.blocks_total?` — ${fmt(p.blocks_done)} / ${fmt(p.blocks_total)} blocks`:'')}`:'starting…';
+    if(!s.running){
+      clearInterval(vcBuildPoll); vcBuildPoll=null; vcBusy=false;
+      byId('vcb-btn').disabled=false; byId('vcb-live').style.display='none';
+      if(s.error) byId('vcb-result').innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(s.error)}</div>${noticeList(s.notices)}`;
+      else if(s.result){ const r=s.result;
+        byId('vcb-result').innerHTML=`<div class="kpi-row">
+          <div class="kpi"><div class="kpi-label">Build time</div><div class="kpi-val purple">${r.seconds}s</div><div class="kpi-sub">${fmt(r.rows_per_sec)} rows/s</div></div>
+          <div class="kpi"><div class="kpi-label">Index size</div><div class="kpi-val">${escH(r.size)}</div><div class="kpi-sub">${r.bytes_per_row} B/row</div></div>
+          <div class="kpi"><div class="kpi-label">lists</div><div class="kpi-val">[${(r.lists||[]).join(', ')}]</div></div>
+          <div class="kpi"><div class="kpi-label">maintenance_work_mem</div><div class="kpi-val">${escH(r.maintenance_work_mem||'server')}</div></div></div>`+
+          (r.notices&&r.notices.length?`<details><summary class="mini-note" style="cursor:pointer">server notices (${r.notices.length})</summary>${noticeList(r.notices)}</details>`:'');
+      }
+      vcIndexes(); vcStatus();
+    }
+  };
+  if(vcBuildPoll) clearInterval(vcBuildPoll);
+  vcBuildPoll=setInterval(tick,500); tick();
+}
+async function vcIndexes(){
+  const d=await api('/api/vc/index/list'); if(!d.ok) return;
+  byId('vc-indexes').innerHTML=d.rows.length
+    ? tableHtml(['Index','lists','Opclass','residual','rerank in table','Size','Valid',''],
+        d.rows.map(r=>[`<code>${escH(r.name)}</code>`,r.lists?'['+r.lists.join(', ')+']':'—',escH(r.opclass||'—'),
+          r.residual_quantization===null?'default':String(r.residual_quantization),
+          r.rerank_in_table?'<span class="badge ba">yes</span>':'no',escH(r.size),
+          r.valid?'<span class="badge bg">valid</span>':'<span class="badge br">invalid</span>',
+          `<button class="run-btn secondary" onclick="vcPrewarm('${escH(r.name)}')">prewarm</button> <button class="run-btn danger" onclick="vcDrop('${escH(r.name)}')">drop</button>`]),
+        ['','','','','','num','',''])
+    : '<div class="loading">No vchordrq index yet.</div>';
+  byId('vc-history').innerHTML=d.history.length
+    ? `<div class="col-head"><span>Builds recorded for VectorChord</span><span></span></div>`+
+      tableHtml(['When','Index','lists','Rows','Seconds','rows/s','Size','B/row','note'],
+        d.history.map(b=>[escH(b.at),`<code>${escH(b.index_name||'')}</code>`,b.lists??'—',fmt(b.rows),
+          b.build_seconds!==null?Number(b.build_seconds).toFixed(2):'—',fmt(Math.round(b.rows_per_sec||0)),
+          escH(b.size),b.bytes_per_row!==null?Math.round(b.bytes_per_row):'—',
+          `<span style="font-size:11px;color:var(--faint)">${escH((b.note||'').slice(0,60))}</span>`]),
+        ['','','num','num','num','num','num','num',''])
+    : '';
+}
+async function vcDrop(name){
+  if(!confirm('Drop index '+name+'?')) return;
+  const d=await post('/api/vc/index/drop',{name}); if(!d.ok) showOutput('vc-out',false,d.error); vcIndexes(); vcStatus();
+}
+async function vcPrewarm(name){
+  showToast('Prewarming '+escH(name)+'…');
+  const d=await post('/api/vc/index/prewarm',{name});
+  d.ok?showOutput('vc-out',true,`prewarmed ${name} in ${d.seconds}s`):byId('vc-out').innerHTML=`<div class="error-box">${escH(d.error)}</div>`;
+}
+
+// ── COMPARE TAB ───────────────────────────────────────────────────────────────
+function engCard(cls,e){
+  if(!e||!e.exists) return `<div class="eng-card ${cls}"><h4><span>${escH(e?e.label:'')}</span><span class="badge ba">no table</span></h4><div class="mini-note">${e?`<code>${escH(e.table)}</code> does not exist yet.`:''}</div></div>`;
+  const b=e.last_build;
+  return `<div class="eng-card ${cls}"><h4><span>${escH(e.label)} · <code>${escH(e.engine)}</code></span><span class="badge bb">${fmt(e.rows)} rows</span></h4><dl>
+    <dt>table</dt><dd>${escH(e.table)}</dd>
+    <dt>heap + toast</dt><dd>${bytes(e.heap_bytes)}</dd>
+    <dt>vector indexes</dt><dd>${e.indexes.length?e.indexes.map(i=>escH(i.name)+' · '+escH(i.size)).join('<br>'):'none'}</dd>
+    <dt>last build</dt><dd>${b&&b.build_seconds!==null?Number(b.build_seconds).toFixed(2)+' s':'—'}</dd>
+    <dt>build rate</dt><dd>${b?fmt(Math.round(b.rows_per_sec||0))+' rows/s':'—'}</dd>
+    <dt>bytes / row</dt><dd>${b&&b.bytes_per_row!==null?Math.round(b.bytes_per_row):'—'}</dd>
+    <dt>lists</dt><dd>${b&&b.lists!==null&&b.lists!==undefined?b.lists:'—'}</dd></dl></div>`;
+}
+async function cmpSummary(){
+  const d=await api('/api/cmp/summary'); if(!d.ok) return;
+  const vp=d.engines.vp, vc=d.engines.vc;
+  byId('cmp-cards').innerHTML=engCard('vp',vp)+engCard('vc',vc);
+  let k='';
+  if(d.build_ratio_vc_over_vp) k+=`<div class="kpi"><div class="kpi-label">Build time</div><div class="kpi-val ${d.build_ratio_vc_over_vp<1?'purple':'teal'}">${d.build_ratio_vc_over_vp}×</div><div class="kpi-sub">VectorChord ÷ Vector Plus</div></div>`;
+  if(d.size_ratio_vc_over_vp) k+=`<div class="kpi"><div class="kpi-label">Index size</div><div class="kpi-val ${d.size_ratio_vc_over_vp<1?'purple':'teal'}">${d.size_ratio_vc_over_vp}×</div><div class="kpi-sub">VectorChord ÷ Vector Plus</div></div>`;
+  byId('cmp-kpis').innerHTML=k?`<div class="kpi-row">${k}</div>`:'';
+}
+async function cmpCategories(){
+  const d=await api('/api/cmp/categories'); const el=byId('cs-cat'); if(!d.ok||!el) return;
+  const cur=el.value; el.innerHTML='<option value="">none</option>'+d.rows.map(r=>`<option value="${r.category_id}">${r.category_id} (${fmt(r.n)} rows)</option>`).join(''); el.value=cur;
+}
+async function cmpRandomId(){
+  const d=await api('/api/data/sample?n=50'); if(d.ok&&d.rows.length){ byId('cs-id').value=d.rows[Math.floor(Math.random()*d.rows.length)].id; }
+}
+async function cmpBuildBoth(){
+  const out=byId('cb-status'), btn=byId('cb-btn'); btn.disabled=true;
+  const mwm=byId('cb-mwm').value.trim(), opclass=byId('cb-opclass').value;
+  const waitFor=async(url)=>{ for(;;){ const s=await api(url); if(!s.running) return s; await new Promise(r=>setTimeout(r,700)); } };
+  try{
+    out.textContent='Building ivfplus…';
+    const a=await post('/api/index/build/start',{lists:+byId('cb-vp-lists').value,opclass,maintenance_work_mem:mwm});
+    if(!a.ok){ out.innerHTML=`<span style="color:var(--red)">ivfplus: ${escH(a.error)}</span>`; return; }
+    const sa=await waitFor('/api/index/build/status');
+    if(sa.error){ out.innerHTML=`<span style="color:var(--red)">ivfplus failed: ${escH(sa.error)}</span>`; return; }
+    out.textContent=`ivfplus built in ${sa.result.seconds}s. Building vchordrq…`;
+    const b=await post('/api/vc/index/build/start',{lists:byId('cb-vc-lists').value.trim(),opclass,maintenance_work_mem:mwm});
+    if(!b.ok){ out.innerHTML=`<span style="color:var(--red)">vchordrq: ${escH(b.error)}</span>`; return; }
+    const sb=await waitFor('/api/vc/index/build/status');
+    if(sb.error){ out.innerHTML=`<span style="color:var(--red)">vchordrq failed: ${escH(sb.error)}</span>`; return; }
+    out.textContent=`ivfplus ${sa.result.seconds}s · vchordrq ${sb.result.seconds}s`;
+  } finally { btn.disabled=false; cmpSummary(); }
+}
+function hitCol(title,res,truth){
+  const ids=new Set(truth.map(r=>r.id));
+  return `<div><div class="col-head"><span>${title}</span><span>${res.ms} ms</span></div>
+    <div class="hit-list">${res.rows.length?res.rows.map((r,i)=>`<div class="hit ${ids.has(r.id)?'truth':'miss'}">
+      <span class="hit-rank">${i+1}</span><span class="hit-title" title="${escH(r.title)}">#${r.id} ${escH(r.title)}</span>
+      <span class="hit-score">${r.distance}</span></div>`).join(''):'<div class="hit"><span class="hit-title" style="color:var(--red)">no rows returned</span></div>'}</div>
+    <div class="mini-note">index used: <code>${escH(res.plan.index||'none — '+res.plan.nodes.join(' › '))}</code></div></div>`;
+}
+async function cmpSearch(){
+  const out=byId('cs-out'); out.innerHTML='<div class="loading"><div class="spinner"></div>Running exact scan, then both indexes…</div>';
+  const tri=id=>{const v=byId(id).value; return v===''?null:v==='true';};
+  const body={opclass:byId('cs-opclass').value,limit:+byId('cs-k').value,vp_probes:+byId('cs-vp-probes').value,
+    vc_probes:byId('cs-vc-probes').value.trim(),epsilon:byId('cs-eps').value.trim()||null,
+    category_id:byId('cs-cat').value||null,prefilter:tri('cs-pre'),reps:+byId('cs-reps').value,force_index:byId('cs-force').checked};
+  const id=byId('cs-id').value; if(id) body.id=+id; else body.text=byId('cs-text').value;
+  const d=await post('/api/cmp/search',body);
+  if(!d.ok){ out.innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(d.error)}</div>`; return; }
+  const pct=v=>v===null||v===undefined?'—':(v*100).toFixed(0)+'%';
+  const rc=v=>v>=.95?'green':(v>=.8?'amber':'red');
+  out.innerHTML=`<div class="kpi-row">
+    <div class="kpi"><div class="kpi-label">Exact scan</div><div class="kpi-val">${d.exact.ms} ms</div><div class="kpi-sub">ground truth</div></div>
+    <div class="kpi"><div class="kpi-label">ivfplus</div><div class="kpi-val teal">${d.ivfplus.ms} ms</div><div class="kpi-sub">${d.speedup_vs_exact.ivfplus??'—'}× vs exact</div></div>
+    <div class="kpi"><div class="kpi-label">vchordrq</div><div class="kpi-val purple">${d.vchordrq.ms} ms</div><div class="kpi-sub">${d.speedup_vs_exact.vchordrq??'—'}× vs exact</div></div>
+    <div class="kpi"><div class="kpi-label">Recall ivfplus</div><div class="kpi-val ${rc(d.recall.ivfplus)}">${pct(d.recall.ivfplus)}</div><div class="kpi-sub">${d.returned.ivfplus} of ${d.k} rows</div></div>
+    <div class="kpi"><div class="kpi-label">Recall vchordrq</div><div class="kpi-val ${rc(d.recall.vchordrq)}">${pct(d.recall.vchordrq)}</div><div class="kpi-sub">${d.returned.vchordrq} of ${d.k} rows</div></div>
+    <div class="kpi"><div class="kpi-label">Same results</div><div class="kpi-val">${d.overlap_between_engines.length}</div><div class="kpi-sub">found by both engines</div></div></div>
+    <div class="legend"><i style="background:var(--green-bg);border:1px solid var(--green-bd)"></i>in the exact top ${d.k} &nbsp; <i style="background:var(--surface);border:1px solid var(--border)"></i>not in the exact top ${d.k} &nbsp;·&nbsp; query: ${escH(d.label)}</div>
+    <div class="three-col">${hitCol('Exact (seq scan)',d.exact,d.exact.rows)}${hitCol('EDB Vector Plus · ivfplus',d.ivfplus,d.exact.rows)}${hitCol('VectorChord · vchordrq',d.vchordrq,d.exact.rows)}</div>
+    <div id="cs-notes"></div>`+
+    sqlPanel(`-- ${d.settings.ivfplus.join(';\n-- ')};\n${d.ivfplus.sql.replace(/%s/g,"'[…]'")}\n\n-- ${d.settings.vchordrq.join(';\n-- ')};\n${d.vchordrq.sql.replace(/%s/g,"'[…]'")}`,'queries run (approximate legs)',false);
+  warnList('cs-notes',d.notes);
+}
+function parseList(s,vc){
+  s=s.trim(); if(!s) return null;
+  if(vc) return (s.includes(';')?s.split(';'):s.split(',')).map(x=>x.trim());
+  return s.split(',').map(x=>+x.trim()).filter(x=>x>0);
+}
+async function cmpSweep(){
+  const out=byId('cr-out'), btn=byId('cr-btn'); btn.disabled=true;
+  out.innerHTML='<div class="loading"><div class="spinner"></div>Exact ground truth, then both sweeps… this runs every query at every setting.</div>';
+  const d=await post('/api/cmp/recall',{k:+byId('cr-k').value,queries:+byId('cr-q').value,opclass:byId('cr-opclass').value,
+    vp_probes_list:parseList(byId('cr-vp').value,false),vc_probes_list:parseList(byId('cr-vc').value,true),
+    epsilon:byId('cr-eps').value.trim()||null,force_index:byId('cr-force').checked});
+  btn.disabled=false;
+  if(!d.ok){ out.innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(d.error)}</div>`; return; }
+  out.innerHTML=`<div class="info-box" style="margin:0">${escH(d.note)} Exact scan: ${d.exact_ms} ms. ivfplus used <code>${escH(d.ivfplus.index||'no index')}</code>, vchordrq used <code>${escH(d.vchordrq.index||'no index')}</code>${d.vchordrq.lists?` (lists = [${d.vchordrq.lists.join(', ')}])`:''}.</div><div id="cr-notes"></div>`;
+  warnList('cr-notes',d.notes);
+  byId('cr-chart-label').hidden=false; byId('cr-chart-wrap').hidden=false;
+  const mk=(res,label,color,dash)=>({label,data:res.map(r=>({x:r.ms,y:+(r.recall*100).toFixed(2),p:r.param})),
+    borderColor:color,backgroundColor:color,borderDash:dash,showLine:true,tension:.15,pointRadius:4});
+  mkChart('chart-cmp-recall',{type:'scatter',data:{datasets:[
+      mk(d.ivfplus.results,'ivfplus','#0F6E5A',[]),mk(d.vchordrq.results,'vchordrq','#5A3A9A',[5,4])]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10}},
+        tooltip:{callbacks:{label:c=>`${c.dataset.label} probes=${c.raw.p||"''"}: ${c.parsed.y}% @ ${c.parsed.x.toFixed(3)} ms`}}},
+      scales:{x:{type:'logarithmic',title:{display:true,text:'mean latency ms (log)'}},
+              y:{min:0,max:100,title:{display:true,text:'recall %'}}}}});
+  const fr=(r)=>r?`<code>${escH(r.param===''?"''":r.param)}</code> · ${(r.recall*100).toFixed(1)}% · <b>${r.ms} ms</b> <span style="color:var(--faint)">p95 ${r.p95_ms}</span>`:'<span class="badge br">never reaches it</span>';
+  const rows=Object.entries(d.at_floor).map(([f,v])=>{
+    const a=v.ivfplus,b=v.vchordrq; let win='—';
+    if(a&&b) win=a.ms<b.ms?`<span class="badge bt">ivfplus ${(b.ms/a.ms).toFixed(1)}× faster</span>`:`<span class="badge bp">vchordrq ${(a.ms/b.ms).toFixed(1)}× faster</span>`;
+    else if(a||b) win=`<span class="badge ba">${a?'ivfplus':'vchordrq'} only</span>`;
+    return [`≥ ${(f*100).toFixed(0)}%`,fr(a),fr(b),win];});
+  byId('cr-floor').innerHTML=`<div class="col-head"><span>Cheapest setting that clears each recall bar</span><span></span></div>`+tableHtml(['Recall','ivfplus','vchordrq','Faster'],rows);
+  const tbl=(res,pname)=>tableHtml([pname,'Recall','ms','p95 ms','returned','vs exact'],res.map(r=>[
+    `<code>${escH(r.param===''?"''":r.param)}</code>`,`<span class="badge ${r.recall>=.95?'bg':(r.recall>=.8?'ba':'br')}">${(r.recall*100).toFixed(1)}%</span>`,
+    r.ms,r.p95_ms,r.avg_returned,r.speedup?r.speedup+'×':'—']),['','','num','num','num','num']);
+  byId('cr-tables').innerHTML=`<div><div class="col-head"><span>ivfplus</span><span>exact ${d.exact_ms} ms</span></div>${tbl(d.ivfplus.results,'probes')}</div>
+    <div><div class="col-head"><span>vchordrq</span><span>exact ${d.exact_ms} ms</span></div>${tbl(d.vchordrq.results,'probes')}</div>`;
+}
+let ccPoll=null;
+async function cmpChurn(){
+  const btn=byId('cc-btn'); btn.disabled=true; byId('cc-out').innerHTML='';
+  const d=await post('/api/cmp/churn',{inserts:+byId('cc-ins').value,updates:+byId('cc-upd').value,deletes:+byId('cc-del').value});
+  if(!d.ok){ btn.disabled=false; byId('cc-out').innerHTML=`<div class="error-box">${escH(d.error)}</div>`; return; }
+  ccPoll=setInterval(async()=>{
+    const s=await api('/api/cmp/churn/status');
+    byId('cc-out').innerHTML=`<div class="loading"><div class="spinner"></div>${escH(s.phase)} — ${fmt(s.done)} / ${fmt(s.total)}</div>`;
+    if(!s.running){
+      clearInterval(ccPoll); btn.disabled=false;
+      if(s.error){ byId('cc-out').innerHTML=`<div class="error-box">${escH(s.error)}</div>`; return; }
+      const t=s.result.timings, ph=['insert','update','delete','vacuum'], n={insert:s.result.inserts,update:s.result.updates,delete:s.result.deletes,vacuum:null};
+      byId('cc-out').innerHTML=tableHtml(['Phase','Rows','ivfplus s','vchordrq s','vchordrq ÷ ivfplus'],
+        ph.filter(p=>n[p]!==0).map(p=>[p,n[p]===null?'—':fmt(n[p]),t.ivfplus[p],t.vchordrq[p],
+          t.ivfplus[p]>0?(t.vchordrq[p]/t.ivfplus[p]).toFixed(2)+'×':'—']),['','num','num','num','num'])+
+        `<div class="mini-note">index size after: ivfplus ${bytes(s.result.index_bytes.ivfplus)} · vchordrq ${bytes(s.result.index_bytes.vchordrq)} · rows ${fmt(s.result.rows.ivfplus)} / ${fmt(s.result.rows.vchordrq)}. Re-run the sweep to see recall after drift.</div>`;
+      cmpSummary();
+    }
+  },700);
+}
+connLoad(true);
+setInterval(()=>{ if(!connDirty) connLoad(false); },15000);
+
+
+// ══════════════════════════════════════════════════════════════════════════════
 //  BOOT
 // ══════════════════════════════════════════════════════════════════════════════
 loadExamples();
@@ -2431,3 +3044,4 @@ setInterval(loadStatus, 4000);
 </script>
 </body>
 </html>
+
