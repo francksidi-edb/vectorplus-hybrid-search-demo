@@ -228,6 +228,13 @@ input[type=password]:focus{border-color:var(--teal)}
 .legend{font-size:11px;color:var(--muted);margin:6px 0 10px}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:middle;margin-right:4px}
 .mini-note{font-size:11px;color:var(--faint);margin-top:4px}
+.eng-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.eng-card.hn{border-top:3px solid #1A5A9A}.eng-card.if{border-top:3px solid #9A6A00}
+.hit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.hit-grid>*{min-width:0}
+.eng-pick{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.eng-pick label.chk{font-size:13px;color:var(--text)}
+.eng-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:3px}
 </style>
 </head>
 <body>
@@ -266,6 +273,7 @@ input[type=password]:focus{border-color:var(--teal)}
   <div class="tab" id="tab-filter"  onclick="switchTab('filter')">🧪 Filtering</div>
   <div class="tab" id="tab-maint"   onclick="switchTab('maint')">🩺 Health &amp; Maintenance</div>
   <div class="tab" id="tab-vc"      onclick="switchTab('vc')">🌀 VectorChord</div>
+  <div class="tab" id="tab-pgv"     onclick="switchTab('pgv')">🐘 pgvector</div>
   <div class="tab" id="tab-cmp"     onclick="switchTab('cmp')">⚔ Engine Compare</div>
   <div class="tab" id="tab-history" onclick="switchTab('history')">📈 History &amp; Compare</div>
   <div class="tab" id="tab-querylog" onclick="switchTab('querylog')">🧾 Query Log</div>
@@ -981,6 +989,7 @@ input[type=password]:focus{border-color:var(--teal)}
         <div class="ctrl-row">
           <label class="chk"><input type="checkbox" id="vcb-rit"> rerank_in_table (capacity-optimized: smaller, slower queries)</label>
           <label class="chk"><input type="checkbox" id="vcb-conc"> CONCURRENTLY</label>
+          <label class="chk"><input type="checkbox" id="vcb-replace" checked> replace the existing index (keeps one per table)</label>
         </div>
         <div class="ctrl-row">
           <button class="run-btn" id="vcb-btn" onclick="vcBuild()">⚡ CREATE INDEX … USING vchordrq</button>
@@ -1017,33 +1026,161 @@ input[type=password]:focus{border-color:var(--teal)}
 </div><!-- /vc -->
 
 
-<!-- ══════════════════════════ ENGINE COMPARE ══════════════════════════════ -->
-<div class="panel" id="panel-cmp">
+<!-- ══════════════════════════ PGVECTOR ════════════════════════════════════ -->
+<div class="panel" id="panel-pgv">
 
   <div class="section">
     <div class="section-header" onclick="toggle(this)">
       <span class="section-num">01</span>
-      <span class="section-title">Two tables, two engines</span>
+      <span class="section-title">pgvector &amp; its two tables</span>
+      <span class="section-desc">HNSW and IVFFlat each get a row-for-row clone, so each index is the only one on its table</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div class="info-box">
+        pgvector is the baseline most teams already run. <code>hnsw</code> builds a navigable graph (no training step, larger and slower
+        to build); <code>ivfflat</code> clusters like ivfplus does (cheap to build, needs data loaded first). Both are cloned from
+        <code id="pgv-vp-name">vp_docs</code>: same ids, same embeddings, same text.
+      </div>
+      <div class="pipeline">
+        <div class="pipe-node"><div class="pipe-label">pgvector</div><div class="pipe-name" id="pgv-pp-ext">—</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><div class="pipe-label">vp table</div><div class="pipe-name" id="pgv-pp-vp">—</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><div class="pipe-label">HNSW table</div><div class="pipe-name" id="pgv-pp-h">—</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><div class="pipe-label">IVFFlat table</div><div class="pipe-name" id="pgv-pp-i">—</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><div class="pipe-label">indexes</div><div class="pipe-name" id="pgv-pp-idx">—</div></div>
+      </div>
+      <div id="pgv-warn"></div>
+      <div class="ctrl-row">
+        <button class="run-btn danger" onclick="pgvClone('both')">⧉ Drop &amp; clone both tables</button>
+        <button class="run-btn secondary" onclick="pgvClone('hnsw')">HNSW table only</button>
+        <button class="run-btn secondary" onclick="pgvClone('ivfflat')">IVFFlat table only</button>
+        <span class="mini-note" style="margin:0">Re-clone after any reload or churn of the Vector Plus table.</span>
+      </div>
+      <div id="pgv-clone-box" style="display:none;margin-top:8px">
+        <div class="pbar"><div class="pbar-fill" id="pgv-clone-bar"></div></div>
+        <div class="mini-note" id="pgv-clone-txt"></div>
+      </div>
+      <div id="pgv-out"></div>
+      <div id="pgv-gucs" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">02</span>
+      <span class="section-title">Build an index</span>
+      <span class="section-desc">Rebuilding replaces the table's current index, so there is always exactly one to compare</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div class="ctrl-card">
+        <div class="ctrl-card-title">Index options</div>
+        <div class="field-grid">
+          <label>Access method<select id="pgb-am" onchange="pgvAmChanged()"><option value="hnsw">hnsw</option><option value="ivfflat">ivfflat</option></select></label>
+          <label>Operator class<select id="pgb-opclass"></select></label>
+          <label class="pgb-h">m<input type="number" id="pgb-m" value="16" min="2" max="100"></label>
+          <label class="pgb-h">ef_construction<input type="number" id="pgb-efc" value="64" min="4" max="1000"></label>
+          <label class="pgb-i" style="display:none">lists<input type="number" id="pgb-lists" min="1" max="32768" placeholder="suggested"></label>
+          <label>parallel workers<input type="number" id="pgb-workers" min="0" max="64" placeholder="server setting"></label>
+          <label>maintenance_work_mem<input type="text" id="pgb-mwm" placeholder="e.g. 2GB"></label>
+          <label>Index name<input type="text" id="pgb-name" placeholder="auto"></label>
+        </div>
+        <div class="ctrl-row">
+          <label class="chk"><input type="checkbox" id="pgb-conc"> CONCURRENTLY</label>
+          <label class="chk"><input type="checkbox" id="pgb-replace" checked> replace the existing index</label>
+        </div>
+        <div class="ctrl-row">
+          <button class="run-btn" id="pgb-btn" onclick="pgvBuild()">⚡ CREATE INDEX</button>
+          <button class="run-btn secondary" onclick="pgvUseAdvice()">use suggested values</button>
+          <span class="mini-note" id="pgb-advice" style="margin:0"></span>
+        </div>
+      </div>
+      <div id="pgb-warn"></div>
+      <div id="pgb-live" style="display:none">
+        <div style="display:flex;align-items:center;gap:18px;margin:10px 0">
+          <div class="big-timer" id="pgb-timer">0.0<span class="timer-unit">s</span></div>
+          <div style="flex:1"><div class="pbar"><div class="pbar-fill indeterminate" id="pgb-bar"></div></div>
+          <div class="mini-note" id="pgb-phase"></div></div>
+        </div>
+      </div>
+      <div id="pgb-result"></div>
+      <div id="pgb-sql"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">03</span>
+      <span class="section-title">Indexes &amp; build history</span>
+      <span class="section-desc">HNSW search accuracy is set at query time by ef_search; IVFFlat by probes</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div id="pgv-indexes"></div>
+      <div style="margin-top:14px" id="pgv-history"></div>
+    </div>
+  </div>
+
+</div><!-- /pgv -->
+
+
+<!-- ══════════════════════════ ENGINE COMPARE ══════════════════════════════ -->
+<div class="panel" id="panel-cmp">
+
+  <div class="ctrl-card">
+    <div class="ctrl-card-title">Engines included in builds, searches, sweeps and churn</div>
+    <div class="eng-pick" id="cmp-pick">
+      <label class="chk"><input type="checkbox" id="ce-ivfplus" checked><span class="eng-dot" style="background:#0F6E5A"></span>EDB ivfplus</label>
+      <label class="chk"><input type="checkbox" id="ce-vchordrq" checked><span class="eng-dot" style="background:#5A3A9A"></span>VectorChord</label>
+      <label class="chk"><input type="checkbox" id="ce-hnsw" checked><span class="eng-dot" style="background:#1A5A9A"></span>pgvector HNSW</label>
+      <label class="chk"><input type="checkbox" id="ce-ivfflat" checked><span class="eng-dot" style="background:#9A6A00"></span>pgvector IVFFlat</label>
+      <span class="mini-note" style="margin:0">An engine whose table does not exist yet is skipped with a message, not silently.</span>
+    </div>
+  </div>
+
+  <div class="ctrl-card" id="cache-card">
+    <div class="ctrl-card-title">Cache tools — what makes a "cold" run really cold</div>
+    <div class="eng-pick" id="cache-caps"><span class="mini-note" style="margin:0">checking…</span></div>
+    <div class="ctrl-row" style="margin-top:10px">
+      <button class="run-btn secondary" onclick="cacheTest()">🧊 Test cache cleaning</button>
+      <button class="run-btn secondary" onclick="cacheEnable()">Enable pg_buffercache + pg_prewarm</button>
+      <span class="mini-note" style="margin:0" id="cache-hint"></span>
+    </div>
+    <div id="cache-out"></div>
+    <div class="mini-note">Cold mode evicts the engine's table, index and TOAST from shared_buffers (<code>pg_buffercache_evict_relation</code>, PostgreSQL 18) and from the OS page cache (<code>posix_fadvise</code> per file — no root needed, but the app must run on the database host as a user that can read the data directory). It cannot reach a storage array's own cache.</div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">01</span>
+      <span class="section-title">One table per engine</span>
       <span class="section-desc">Same rows. Build both with matched parameters and compare cost and size</span>
       <span class="chevron open">▼</span>
     </div>
     <div class="section-body open">
       <div id="cmp-kpis"></div>
-      <div class="two-col" id="cmp-cards"></div>
+      <div class="eng-grid" id="cmp-cards"></div>
       <div class="ctrl-card" style="margin-top:14px">
-        <div class="ctrl-card-title">Build both, one after the other</div>
+        <div class="ctrl-card-title">Build every ticked engine, one after the other</div>
         <div class="field-grid">
           <label>ivfplus lists<input type="number" id="cb-vp-lists" value="100" min="1" max="32768"></label>
           <label>vchordrq lists<input type="text" id="cb-vc-lists" value="" placeholder="empty = [ ]  ·  100"></label>
+          <label>HNSW m<input type="number" id="cb-h-m" value="16" min="2" max="100"></label>
+          <label>HNSW ef_construction<input type="number" id="cb-h-efc" value="64" min="4" max="1000"></label>
+          <label>IVFFlat lists<input type="number" id="cb-i-lists" value="100" min="1" max="32768"></label>
           <label>Operator class<select id="cb-opclass"></select></label>
           <label>maintenance_work_mem<input type="text" id="cb-mwm" placeholder="e.g. 1GB (both)"></label>
         </div>
         <div class="ctrl-row">
-          <button class="run-btn" id="cb-btn" onclick="cmpBuildBoth()">⚡ Build both indexes</button>
+          <button class="run-btn" id="cb-btn" onclick="cmpBuildBoth()">⚡ Build indexes</button>
           <button class="run-btn secondary" onclick="cmpSummary()">↻ Refresh</button>
           <span class="mini-note" id="cb-status" style="margin:0"></span>
         </div>
-        <div class="mini-note">Each build keeps whatever other indexes already exist on its table. For a clean comparison keep exactly one vector index per table — the planner picks between several and the results then depend on its choice.</div>
+        <div class="mini-note">vchordrq, HNSW and IVFFlat builds replace the index already on their table, so each table keeps exactly one — the planner picks between several and the results would then depend on its choice. The ivfplus build is additive, as in the Index Build tab.</div>
       </div>
     </div>
   </div>
@@ -1051,7 +1188,7 @@ input[type=password]:focus{border-color:var(--teal)}
   <div class="section">
     <div class="section-header" onclick="toggle(this)">
       <span class="section-num">02</span>
-      <span class="section-title">One query, both engines</span>
+      <span class="section-title">One query, every engine</span>
       <span class="section-desc">Recall is measured against an exact scan; latency is the median of repeated runs</span>
       <span class="chevron open">▼</span>
     </div>
@@ -1064,13 +1201,17 @@ input[type=password]:focus{border-color:var(--teal)}
           <label>Operator class<select id="cs-opclass"></select></label>
           <label>ivfplus.probes<input type="number" id="cs-vp-probes" value="16" min="1" max="32768"></label>
           <label>vchordrq.probes<input type="text" id="cs-vc-probes" value="" placeholder="'' for lists = [ ]"></label>
+          <label>hnsw.ef_search<input type="number" id="cs-h-ef" value="40" min="1" max="1000"></label>
+          <label>ivfflat.probes<input type="number" id="cs-i-probes" value="10" min="1"></label>
+          <label>pgvector iterative_scan<select id="cs-iter"><option value="off">off (default)</option><option value="relaxed_order">relaxed_order</option><option value="strict_order">strict_order</option></select></label>
           <label>vchordrq.epsilon<input type="text" id="cs-eps" placeholder="1.9 (default)"></label>
           <label>category filter<select id="cs-cat"><option value="">none</option></select></label>
           <label>vchordrq.prefilter<select id="cs-pre"><option value="">server default</option><option value="true">on</option><option value="false">off</option></select></label>
           <label>timed runs<input type="number" id="cs-reps" value="3" min="1" max="20"></label>
+          <label>Cache<select id="cs-cache"><option value="warm">warm — warmed up, median of runs</option><option value="cold">cold — evicted first, then timed</option></select></label>
         </div>
         <div class="ctrl-row">
-          <button class="run-btn" onclick="cmpSearch()">🔍 Run on both</button>
+          <button class="run-btn" onclick="cmpSearch()">🔍 Run on every engine</button>
           <label class="chk"><input type="checkbox" id="cs-force" checked> disable seqscan for the approximate runs</label>
         </div>
       </div>
@@ -1089,14 +1230,19 @@ input[type=password]:focus{border-color:var(--teal)}
       <div class="ctrl-card">
         <div class="field-grid">
           <label>k<input type="number" id="cr-k" value="10" min="1" max="200"></label>
-          <label>Query vectors<input type="number" id="cr-q" value="30" min="1" max="200"></label>
+          <label>Query vectors<input type="number" id="cr-q" value="50" min="1" max="500"></label>
+          <label>Cache<select id="cr-cache"><option value="warm">warm — prewarmed, throwaway run first</option><option value="cold">cold — evicted before every pass</option></select></label>
+          <label>Passes per setting<input type="number" id="cr-passes" value="3" min="1" max="9"></label>
           <label>Operator class<select id="cr-opclass"></select></label>
           <label>ivfplus.probes list<input type="text" id="cr-vp" value="1,2,4,8,16,32,64,128"></label>
           <label>vchordrq.probes list<input type="text" id="cr-vc" placeholder="auto from the index's lists"></label>
+          <label>hnsw.ef_search list<input type="text" id="cr-h" placeholder="auto: 10…640, at least k"></label>
+          <label>ivfflat.probes list<input type="text" id="cr-i" placeholder="auto from the index's lists"></label>
           <label>vchordrq.epsilon<input type="text" id="cr-eps" placeholder="1.9 (default)"></label>
+          <label>pgvector iterative_scan<select id="cr-iter"><option value="off">off (default)</option><option value="relaxed_order">relaxed_order</option><option value="strict_order">strict_order</option></select></label>
         </div>
         <div class="ctrl-row">
-          <button class="run-btn" id="cr-btn" onclick="cmpSweep()">🎯 Sweep both</button>
+          <button class="run-btn" id="cr-btn" onclick="cmpSweep()">🎯 Sweep every engine</button>
           <label class="chk"><input type="checkbox" id="cr-force" checked> disable seqscan for the approximate runs</label>
         </div>
         <div class="mini-note">For a two-level vchordrq index give probes per level, one value per list entry, separated by a comma inside each item — e.g. <code>10,100;20,200</code> uses semicolons between sweep points.</div>
@@ -1112,7 +1258,7 @@ input[type=password]:focus{border-color:var(--teal)}
   <div class="section">
     <div class="section-header" onclick="toggle(this)">
       <span class="section-num">04</span>
-      <span class="section-title">Identical churn on both</span>
+      <span class="section-title">Identical churn on every table</span>
       <span class="section-desc">Insert, update and delete the same rows in each table and time the index maintenance</span>
       <span class="chevron open">▼</span>
     </div>
@@ -1121,7 +1267,7 @@ input[type=password]:focus{border-color:var(--teal)}
         <span class="ctrl-label">Inserts</span><input type="number" id="cc-ins" value="5000" min="0" style="width:100px">
         <span class="ctrl-label" style="min-width:auto">Updates</span><input type="number" id="cc-upd" value="2000" min="0" style="width:100px">
         <span class="ctrl-label" style="min-width:auto">Deletes</span><input type="number" id="cc-del" value="1000" min="0" style="width:100px">
-        <button class="run-btn" id="cc-btn" onclick="cmpChurn()">🌪 Apply to both</button>
+        <button class="run-btn" id="cc-btn" onclick="cmpChurn()">🌪 Apply to all</button>
       </div>
       <div class="mini-note">Same new rows and same ids go into both tables, then the same random existing rows are updated and deleted, then each table is vacuumed. Re-run the sweep afterwards to see which engine holds its recall.</div>
       <div id="cc-out"></div>
@@ -2695,7 +2841,7 @@ ENGINE_COLOR.vchordrq='#5A3A9A';
 const CMP_OPCLASSES={vector_l2_ops:'<-> L2',vector_ip_ops:'<#> inner product',vector_cosine_ops:'<=> cosine',
                      halfvec_l2_ops:'<-> L2 · halfvec',halfvec_ip_ops:'<#> ip · halfvec',halfvec_cosine_ops:'<=> cosine · halfvec'};
 function fillCmpSelects(){
-  ['vcb-opclass','cb-opclass','cs-opclass','cr-opclass'].forEach(id=>{
+  ['vcb-opclass','pgb-opclass','cb-opclass','cs-opclass','cr-opclass'].forEach(id=>{
     const el=byId(id); if(!el||el.options.length) return;
     el.innerHTML=Object.entries(CMP_OPCLASSES).map(([k,v])=>`<option value="${k}">${k} — ${escH(v)}</option>`).join('');
   });
@@ -2708,9 +2854,11 @@ switchTab=function(n){
   _switchTab(n);
   if(n==='setup') connLoad(true);
   if(n==='vc'){vcStatus();vcIndexes();}
-  if(n==='cmp'){cmpSummary();cmpCategories();}
+  if(n==='pgv'){pgvStatus();pgvIndexes();}
+  if(n==='cmp'){cmpSummary();cmpCategories();cacheLoad();}
 };
-setInterval(()=>{ if(byId('panel-vc').classList.contains('active') && !vcBusy) {vcStatus();} },4000);
+setInterval(()=>{ if(byId('panel-vc').classList.contains('active') && !vcBusy) {vcStatus();}
+                  if(byId('panel-pgv').classList.contains('active') && !pgvBusy) {pgvStatus();} },4000);
 
 // ── CONNECTION ────────────────────────────────────────────────────────────────
 let connDirty=false;
@@ -2761,6 +2909,7 @@ async function connApply(){
   showToast('Connection applied'); await connLoad(true);
   loadStatus(); loadEnv();
   if(byId('panel-vc').classList.contains('active')){vcStatus();vcIndexes();}
+  if(byId('panel-pgv').classList.contains('active')){pgvStatus();pgvIndexes();}
   if(byId('panel-cmp').classList.contains('active')) cmpSummary();
 }
 async function connForget(){
@@ -2828,7 +2977,7 @@ function vcBuildBody(){
     residual_quantization:tri('vcb-rq'),spherical_centroids:tri('vcb-sph'),
     build_threads:byId('vcb-threads').value,parallel_workers:byId('vcb-workers').value,
     maintenance_work_mem:byId('vcb-mwm').value.trim(),name:byId('vcb-name').value.trim(),
-    rerank_in_table:byId('vcb-rit').checked,concurrently:byId('vcb-conc').checked};
+    rerank_in_table:byId('vcb-rit').checked,concurrently:byId('vcb-conc').checked,replace:byId('vcb-replace').checked};
 }
 async function vcBuild(){
   byId('vcb-result').innerHTML=''; byId('vcb-warn').innerHTML='';
@@ -2894,26 +3043,196 @@ async function vcPrewarm(name){
   d.ok?showOutput('vc-out',true,`prewarmed ${name} in ${d.seconds}s`):byId('vc-out').innerHTML=`<div class="error-box">${escH(d.error)}</div>`;
 }
 
-// ── COMPARE TAB ───────────────────────────────────────────────────────────────
-function engCard(cls,e){
-  if(!e||!e.exists) return `<div class="eng-card ${cls}"><h4><span>${escH(e?e.label:'')}</span><span class="badge ba">no table</span></h4><div class="mini-note">${e?`<code>${escH(e.table)}</code> does not exist yet.`:''}</div></div>`;
+// ── PGVECTOR TAB ──────────────────────────────────────────────────────────────
+let PGS={}, pgvBusy=false, pgvClonePoll=null, pgvBuildPoll=null, pgvAdvice=null;
+function pgvAmChanged(){
+  const h=byId('pgb-am').value==='hnsw';
+  document.querySelectorAll('.pgb-h').forEach(e=>e.style.display=h?'':'none');
+  document.querySelectorAll('.pgb-i').forEach(e=>e.style.display=h?'none':'');
+}
+async function pgvStatus(){
+  const d=await api('/api/pgv/status'); PGS=d;
+  const set=(id,t,col)=>{const e=byId(id); e.textContent=t; e.style.color=col||'';};
+  if(!d.db_ok){ set('pgv-pp-ext','no DB','var(--red)'); return; }
+  byId('pgv-vp-name').textContent=d.vp_table;
+  set('pgv-pp-ext',d.pgvector||'missing',d.pgvector?'var(--green)':'var(--red)');
+  set('pgv-pp-vp',d.vp_exists?fmt(d.vp_rows)+' rows':'missing',d.vp_exists?'':'var(--amber)');
+  const T=d.tables||{}, st=t=>!t||!t.exists?['not cloned','var(--amber)']
+    :[fmt(t.rows)+' rows'+(t.in_sync===false?' ⚠':''), t.in_sync===false?'var(--red)':''];
+  set('pgv-pp-h',...st(T.hnsw)); set('pgv-pp-i',...st(T.ivfflat));
+  const n=['hnsw','ivfflat'].reduce((a,k)=>a+((T[k]&&T[k].indexes)?T[k].indexes.length:0),0);
+  set('pgv-pp-idx',n+' of 2',n===2?'var(--green)':'var(--amber)');
+  let w='';
+  ['hnsw','ivfflat'].forEach(k=>{ if(T[k]&&T[k].exists&&T[k].in_sync===false)
+    w+=`<div class="warn-box">⚠ ${escH(T[k].table)} holds different rows from ${escH(d.vp_table)} (${fmt(T[k].rows)} vs ${fmt(d.vp_rows)}). Re-clone before comparing.</div>`; });
+  byId('pgv-warn').innerHTML=w;
+  pgvAdvice=d.advisor;
+  if(d.advisor) byId('pgb-advice').textContent=`suggested: HNSW m=${d.advisor.hnsw_m}, ef_construction=${d.advisor.hnsw_ef_construction}; IVFFlat lists=${d.advisor.ivfflat_lists} (${d.advisor.ivfflat_rule}), probes≈${d.advisor.ivfflat_probes_start}`;
+  byId('pgv-gucs').innerHTML=(d.gucs&&d.gucs.length)
+    ? `<div class="col-head"><span>hnsw.* and ivfflat.* settings on this server</span><span></span></div>`+
+      tableHtml(['Setting','Value'],d.gucs.map(g=>[`<code>${escH(g.name)}</code>`,escH(g.setting)]),['','num']) : '';
+  if(d.clone&&d.clone.running&&!pgvClonePoll) pgvClonePollStart();
+  if(d.build&&d.build.running&&!pgvBuildPoll) pgvBuildPollStart();
+}
+function pgvClone(which){
+  const names=which==='both'?'both pgvector tables':(which==='hnsw'?(PGS.tables&&PGS.tables.hnsw?PGS.tables.hnsw.table:'the HNSW table'):(PGS.tables&&PGS.tables.ivfflat?PGS.tables.ivfflat.table:'the IVFFlat table'));
+  if(!confirm(`Drop and recreate ${names} from ${PGS.vp_table||'vp_docs'}? Their indexes go with them.`)) return;
+  post('/api/pgv/table/clone',{which}).then(d=>{
+    if(!d.ok){ byId('pgv-out').innerHTML=`<div class="error-box">${escH(d.error)}</div>`; return; }
+    byId('pgv-out').innerHTML=''; pgvClonePollStart();
+  });
+}
+function pgvClonePollStart(){
+  byId('pgv-clone-box').style.display='block'; pgvBusy=true;
+  const tick=async()=>{
+    const s=await api('/api/pgv/table/clone/status');
+    byId('pgv-clone-bar').style.width=(s.pct||0)+'%';
+    byId('pgv-clone-txt').textContent=`${s.phase}${s.current?' · '+s.current:''} — ${fmt(s.done)} / ${fmt(s.total)} rows · ${s.elapsed}s`;
+    if(!s.running){
+      clearInterval(pgvClonePoll); pgvClonePoll=null; pgvBusy=false;
+      if(s.error) byId('pgv-out').innerHTML=`<div class="error-box">${escH(s.error)}</div>`;
+      else if(s.result) showOutput('pgv-out',true,`cloned ${fmt(s.result.rows)} rows in ${s.result.copy_seconds}s`);
+      pgvStatus();
+    }
+  };
+  if(pgvClonePoll) clearInterval(pgvClonePoll);
+  pgvClonePoll=setInterval(tick,600); tick();
+}
+function pgvUseAdvice(){
+  if(!pgvAdvice) return;
+  byId('pgb-m').value=pgvAdvice.hnsw_m; byId('pgb-efc').value=pgvAdvice.hnsw_ef_construction;
+  byId('pgb-lists').value=pgvAdvice.ivfflat_lists;
+}
+async function pgvBuild(){
+  byId('pgb-result').innerHTML=''; byId('pgb-warn').innerHTML='';
+  const am=byId('pgb-am').value;
+  const d=await post('/api/pgv/index/build/start',{am,opclass:byId('pgb-opclass').value,
+    m:byId('pgb-m').value,ef_construction:byId('pgb-efc').value,lists:byId('pgb-lists').value,
+    parallel_workers:byId('pgb-workers').value,maintenance_work_mem:byId('pgb-mwm').value.trim(),
+    name:byId('pgb-name').value.trim(),concurrently:byId('pgb-conc').checked,replace:byId('pgb-replace').checked});
+  if(!d.ok){ byId('pgb-result').innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(d.error)}</div>`; return; }
+  warnList('pgb-warn',d.warnings);
+  byId('pgb-sql').innerHTML=sqlPanel(d.sql,'CREATE INDEX — '+d.name,true);
+  pgvBuildPollStart();
+}
+function pgvBuildPollStart(){
+  byId('pgb-live').style.display='block'; byId('pgb-btn').disabled=true; pgvBusy=true;
+  const tick=async()=>{
+    const s=await api('/api/pgv/index/build/status');
+    byId('pgb-timer').innerHTML=`${Number(s.elapsed||0).toFixed(1)}<span class="timer-unit">s</span>`;
+    const p=s.progress;
+    byId('pgb-phase').textContent=p?`${p.phase||''}${p.tuples_total?` — ${fmt(p.tuples_done)} / ${fmt(p.tuples_total)} tuples`:(p.blocks_total?` — ${fmt(p.blocks_done)} / ${fmt(p.blocks_total)} blocks`:'')}`:'starting…';
+    if(!s.running){
+      clearInterval(pgvBuildPoll); pgvBuildPoll=null; pgvBusy=false;
+      byId('pgb-btn').disabled=false; byId('pgb-live').style.display='none';
+      if(s.error) byId('pgb-result').innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(s.error)}</div>${noticeList(s.notices)}`;
+      else if(s.result){ const r=s.result, o=r.opts||{};
+        byId('pgb-result').innerHTML=(r.graph_spilled?`<div class="warn-box">⚠ The HNSW graph outgrew maintenance_work_mem during the build (the server said so in its notices), which slows the build sharply. Re-run with a larger value to time it fairly.</div>`:'')+
+          `<div class="kpi-row">
+          <div class="kpi"><div class="kpi-label">Build time</div><div class="kpi-val ${r.am==='hnsw'?'blue':'amber'}">${r.seconds}s</div><div class="kpi-sub">${fmt(r.rows_per_sec)} rows/s</div></div>
+          <div class="kpi"><div class="kpi-label">Index size</div><div class="kpi-val">${escH(r.size)}</div><div class="kpi-sub">${r.bytes_per_row} B/row</div></div>
+          <div class="kpi"><div class="kpi-label">${r.am==='hnsw'?'m / ef_construction':'lists'}</div><div class="kpi-val">${r.am==='hnsw'?o.m+' / '+o.ef_construction:o.lists}</div></div>
+          <div class="kpi"><div class="kpi-label">maintenance_work_mem</div><div class="kpi-val">${escH(r.maintenance_work_mem||'server')}</div></div></div>`+
+          (r.notices&&r.notices.length?`<details><summary class="mini-note" style="cursor:pointer">server notices (${r.notices.length})</summary>${noticeList(r.notices)}</details>`:'');
+      }
+      pgvIndexes(); pgvStatus();
+    }
+  };
+  if(pgvBuildPoll) clearInterval(pgvBuildPoll);
+  pgvBuildPoll=setInterval(tick,500); tick();
+}
+async function pgvIndexes(){
+  const d=await api('/api/pgv/index/list'); if(!d.ok) return;
+  byId('pgv-indexes').innerHTML=d.rows.length
+    ? tableHtml(['Index','Method','Table','Built with','Opclass','Size','Valid',''],
+        d.rows.map(r=>[`<code>${escH(r.name)}</code>`,`<span class="badge ${r.am==='hnsw'?'bb':'ba'}">${r.am}</span>`,escH(r.table),
+          r.am==='hnsw'?`m=${r.m??'—'}, ef_construction=${r.ef_construction??'—'}`:`lists=${r.lists?r.lists[0]:'—'}`,
+          escH(r.opclass||'—'),escH(r.size),
+          r.valid?'<span class="badge bg">valid</span>':'<span class="badge br">invalid</span>',
+          `<button class="run-btn danger" onclick="pgvDrop('${escH(r.name)}')">drop</button>`]),
+        ['','','','','','num','',''])
+    : '<div class="loading">No pgvector index yet.</div>';
+  byId('pgv-history').innerHTML=d.history.length
+    ? `<div class="col-head"><span>Builds recorded for pgvector</span><span></span></div>`+
+      tableHtml(['When','Method','Index','Params','Rows','Seconds','rows/s','Size','B/row'],
+        d.history.map(b=>[escH(b.at),`<code>${escH(b.engine)}</code>`,`<code>${escH(b.index_name||'')}</code>`,
+          b.engine==='hnsw'?`m=${b.m}, efc=${b.ef_construction}`:`lists=${b.lists}`,fmt(b.rows),
+          b.build_seconds!==null?Number(b.build_seconds).toFixed(2):'—',fmt(Math.round(b.rows_per_sec||0)),
+          escH(b.size),b.bytes_per_row!==null?Math.round(b.bytes_per_row):'—']),
+        ['','','','','num','num','num','num','num']) : '';
+}
+async function pgvDrop(name){
+  if(!confirm('Drop index '+name+'?')) return;
+  const d=await post('/api/pgv/index/drop',{name}); if(!d.ok) showOutput('pgv-out',false,d.error); pgvIndexes(); pgvStatus();
+}
+
+// ── CACHE TOOLS ───────────────────────────────────────────────────────────────
+async function cacheLoad(){
+  const d=await api('/api/cache/status'); const el=byId('cache-caps'); if(!el) return;
+  if(!d.ok){ el.innerHTML=`<span class="badge br">${escH(d.error||'cannot read')}</span>`; return; }
+  const b=(ok,t,tip)=>`<span class="badge ${ok?'bg':'ba'}" title="${escH(tip||'')}">${ok?'✓':'✗'} ${t}</span>`;
+  el.innerHTML=
+    b(d.os_evict,'OS page cache',d.os_evict?'dropped per relation file with posix_fadvise':(d.same_host===false?'this app is not on the database host, or cannot read the data directory':'unsupported on this platform'))+
+    b(!!d.shared_evict,'shared_buffers'+(d.shared_evict?' ('+d.shared_evict+')':''),d.shared_evict?'':'needs the pg_buffercache extension on PostgreSQL 17 or later')+
+    b(!!(d.extensions||{}).pg_prewarm,'pg_prewarm','used to warm indexes before a warm run')+
+    b(d.can_checkpoint,'CHECKPOINT','dirty pages must be flushed before they can be evicted')+
+    b(d.drop_caches_cmd,'drop_caches command','optional: set VP_DROP_CACHES_CMD')+
+    `<span class="mini-note" style="margin:0">PostgreSQL ${d.pg_major} · shared_buffers ${escH(d.shared_buffers)}</span>`;
+  byId('cache-hint').textContent=d.can_clean?'':'⚠ no cleaning method is available — cold runs will be refused';
+}
+async function cacheEnable(){
+  const d=await post('/api/cache/setup');
+  if(!d.ok){ byId('cache-out').innerHTML=`<div class="error-box">${escH(d.error)}</div>`; return; }
+  byId('cache-out').innerHTML=tableHtml(['Extension','Result'],Object.entries(d.extensions).map(([k,v])=>[`<code>${k}</code>`,escH(v)]));
+  cacheLoad();
+}
+async function cacheTest(){
+  byId('cache-out').innerHTML='<div class="loading"><div class="spinner"></div>Cleaning each engine, then one query cold and one warm…</div>';
+  const d=await post('/api/cache/test',{opclass:byId('cs-opclass').value});
+  if(!d.ok){ byId('cache-out').innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(d.error)}</div>`; return; }
+  byId('cache-out').innerHTML=tableHtml(['Engine','Evicted','Cold query','Warm query','Worked?'],d.engines.map(e=>{
+    const c=e.clean, ev=[c.shared?fmt(c.shared.evicted)+' shared blocks':null,c.os?bytes(c.os.bytes)+' of OS cache':null].filter(Boolean).join(' · ')||'nothing';
+    return [escH(engMeta(e.key).label),ev+(c.errors.length?`<div style="color:var(--red);font-size:11px">${escH(c.errors.join('; '))}</div>`:''),
+      `<b>${e.cold.ms} ms</b> · ${fmt(e.cold.read)} blocks read`,`${e.warm.ms} ms · ${fmt(e.warm.read)} blocks read`,
+      e.effective?'<span class="badge bg">yes</span>':'<span class="badge br">no — still warm</span>'];}),['','','','','']);
+}
+
+// ── COMPARE TAB (any number of engines)
+const ENG=[
+  {key:'ivfplus', label:'EDB ivfplus',      short:'ivfplus',  color:'#0F6E5A', kpi:'teal',   cls:'vp'},
+  {key:'vchordrq',label:'VectorChord',      short:'vchordrq', color:'#5A3A9A', kpi:'purple', cls:'vc'},
+  {key:'hnsw',    label:'pgvector HNSW',    short:'hnsw',     color:'#1A5A9A', kpi:'blue',   cls:'hn'},
+  {key:'ivfflat', label:'pgvector IVFFlat', short:'ivfflat',  color:'#9A6A00', kpi:'amber',  cls:'if'}];
+const engMeta=k=>ENG.find(e=>e.key===k)||{label:k,short:k,color:'#6B6860',kpi:'',cls:''};
+const selEngines=()=>ENG.filter(e=>byId('ce-'+e.key).checked).map(e=>e.key);
+function buildParams(b){
+  if(!b) return '—';
+  if(b.m!==null&&b.m!==undefined) return `m=${b.m}, efc=${b.ef_construction}`;
+  if(b.lists!==null&&b.lists!==undefined) return 'lists '+b.lists;
+  return '—';
+}
+function engCard(e){
+  const meta=engMeta(e.key);
+  if(!e.exists) return `<div class="eng-card ${meta.cls}"><h4><span>${escH(e.label)}</span><span class="badge ba">no table</span></h4><div class="mini-note"><code>${escH(e.table)}</code> does not exist yet.</div></div>`;
   const b=e.last_build;
-  return `<div class="eng-card ${cls}"><h4><span>${escH(e.label)} · <code>${escH(e.engine)}</code></span><span class="badge bb">${fmt(e.rows)} rows</span></h4><dl>
+  return `<div class="eng-card ${meta.cls}"><h4><span>${escH(e.label)} · <code>${escH(e.engine)}</code></span><span class="badge bb">${fmt(e.rows)} rows</span></h4><dl>
     <dt>table</dt><dd>${escH(e.table)}</dd>
     <dt>heap + toast</dt><dd>${bytes(e.heap_bytes)}</dd>
     <dt>vector indexes</dt><dd>${e.indexes.length?e.indexes.map(i=>escH(i.name)+' · '+escH(i.size)).join('<br>'):'none'}</dd>
     <dt>last build</dt><dd>${b&&b.build_seconds!==null?Number(b.build_seconds).toFixed(2)+' s':'—'}</dd>
     <dt>build rate</dt><dd>${b?fmt(Math.round(b.rows_per_sec||0))+' rows/s':'—'}</dd>
     <dt>bytes / row</dt><dd>${b&&b.bytes_per_row!==null?Math.round(b.bytes_per_row):'—'}</dd>
-    <dt>lists</dt><dd>${b&&b.lists!==null&&b.lists!==undefined?b.lists:'—'}</dd></dl></div>`;
+    <dt>built with</dt><dd>${escH(buildParams(b))}</dd></dl></div>`;
 }
 async function cmpSummary(){
   const d=await api('/api/cmp/summary'); if(!d.ok) return;
-  const vp=d.engines.vp, vc=d.engines.vc;
-  byId('cmp-cards').innerHTML=engCard('vp',vp)+engCard('vc',vc);
-  let k='';
-  if(d.build_ratio_vc_over_vp) k+=`<div class="kpi"><div class="kpi-label">Build time</div><div class="kpi-val ${d.build_ratio_vc_over_vp<1?'purple':'teal'}">${d.build_ratio_vc_over_vp}×</div><div class="kpi-sub">VectorChord ÷ Vector Plus</div></div>`;
-  if(d.size_ratio_vc_over_vp) k+=`<div class="kpi"><div class="kpi-label">Index size</div><div class="kpi-val ${d.size_ratio_vc_over_vp<1?'purple':'teal'}">${d.size_ratio_vc_over_vp}×</div><div class="kpi-sub">VectorChord ÷ Vector Plus</div></div>`;
+  byId('cmp-cards').innerHTML=d.order.map(k=>engCard(d.engines[k])).join('');
+  const base=d.baseline?engMeta(d.baseline).short:null; let k='';
+  Object.entries(d.ratios||{}).forEach(([key,r])=>{
+    const m=engMeta(key);
+    if(r.build!==undefined) k+=`<div class="kpi"><div class="kpi-label">${escH(m.short)} build time</div><div class="kpi-val ${m.kpi}">${r.build}×</div><div class="kpi-sub">vs ${escH(base)}</div></div>`;
+    if(r.size!==undefined) k+=`<div class="kpi"><div class="kpi-label">${escH(m.short)} index size</div><div class="kpi-val ${m.kpi}">${r.size}×</div><div class="kpi-sub">vs ${escH(base)}</div></div>`;
+  });
   byId('cmp-kpis').innerHTML=k?`<div class="kpi-row">${k}</div>`:'';
 }
 async function cmpCategories(){
@@ -2924,53 +3243,62 @@ async function cmpRandomId(){
   const d=await api('/api/data/sample?n=50'); if(d.ok&&d.rows.length){ byId('cs-id').value=d.rows[Math.floor(Math.random()*d.rows.length)].id; }
 }
 async function cmpBuildBoth(){
-  const out=byId('cb-status'), btn=byId('cb-btn'); btn.disabled=true;
+  const out=byId('cb-status'), btn=byId('cb-btn'), picked=selEngines();
+  if(!picked.length){ out.textContent='Tick at least one engine above.'; return; }
+  btn.disabled=true;
   const mwm=byId('cb-mwm').value.trim(), opclass=byId('cb-opclass').value;
+  const plan={
+    ivfplus:{start:()=>post('/api/index/build/start',{lists:+byId('cb-vp-lists').value,opclass,maintenance_work_mem:mwm}),status:'/api/index/build/status'},
+    vchordrq:{start:()=>post('/api/vc/index/build/start',{lists:byId('cb-vc-lists').value.trim(),opclass,maintenance_work_mem:mwm,replace:true}),status:'/api/vc/index/build/status'},
+    hnsw:{start:()=>post('/api/pgv/index/build/start',{am:'hnsw',m:byId('cb-h-m').value,ef_construction:byId('cb-h-efc').value,opclass,maintenance_work_mem:mwm,replace:true}),status:'/api/pgv/index/build/status'},
+    ivfflat:{start:()=>post('/api/pgv/index/build/start',{am:'ivfflat',lists:byId('cb-i-lists').value,opclass,maintenance_work_mem:mwm,replace:true}),status:'/api/pgv/index/build/status'}};
   const waitFor=async(url)=>{ for(;;){ const s=await api(url); if(!s.running) return s; await new Promise(r=>setTimeout(r,700)); } };
+  const done=[];
   try{
-    out.textContent='Building ivfplus…';
-    const a=await post('/api/index/build/start',{lists:+byId('cb-vp-lists').value,opclass,maintenance_work_mem:mwm});
-    if(!a.ok){ out.innerHTML=`<span style="color:var(--red)">ivfplus: ${escH(a.error)}</span>`; return; }
-    const sa=await waitFor('/api/index/build/status');
-    if(sa.error){ out.innerHTML=`<span style="color:var(--red)">ivfplus failed: ${escH(sa.error)}</span>`; return; }
-    out.textContent=`ivfplus built in ${sa.result.seconds}s. Building vchordrq…`;
-    const b=await post('/api/vc/index/build/start',{lists:byId('cb-vc-lists').value.trim(),opclass,maintenance_work_mem:mwm});
-    if(!b.ok){ out.innerHTML=`<span style="color:var(--red)">vchordrq: ${escH(b.error)}</span>`; return; }
-    const sb=await waitFor('/api/vc/index/build/status');
-    if(sb.error){ out.innerHTML=`<span style="color:var(--red)">vchordrq failed: ${escH(sb.error)}</span>`; return; }
-    out.textContent=`ivfplus ${sa.result.seconds}s · vchordrq ${sb.result.seconds}s`;
+    for(const key of ENG.map(e=>e.key).filter(k=>picked.includes(k))){
+      const m=engMeta(key);
+      out.textContent=(done.length?done.join(' · ')+' · ':'')+`building ${m.short}…`;
+      const a=await plan[key].start();
+      if(!a.ok){ out.innerHTML=`<span style="color:var(--red)">${escH(m.label)}: ${escH(a.error)}</span>`; return; }
+      const s=await waitFor(plan[key].status);
+      if(s.error){ out.innerHTML=`<span style="color:var(--red)">${escH(m.label)} failed: ${escH(s.error)}</span>`; return; }
+      done.push(`${m.short} ${s.result.seconds}s`);
+    }
+    out.textContent=done.join(' · ');
   } finally { btn.disabled=false; cmpSummary(); }
 }
-function hitCol(title,res,truth){
+function hitCol(title,res,truth,color){
   const ids=new Set(truth.map(r=>r.id));
-  return `<div><div class="col-head"><span>${title}</span><span>${res.ms} ms</span></div>
+  return `<div><div class="col-head" style="${color?`border-bottom:2px solid ${color};padding-bottom:4px`:''}"><span>${escH(title)}</span><span>${res.ms} ms</span></div>
     <div class="hit-list">${res.rows.length?res.rows.map((r,i)=>`<div class="hit ${ids.has(r.id)?'truth':'miss'}">
       <span class="hit-rank">${i+1}</span><span class="hit-title" title="${escH(r.title)}">#${r.id} ${escH(r.title)}</span>
       <span class="hit-score">${r.distance}</span></div>`).join(''):'<div class="hit"><span class="hit-title" style="color:var(--red)">no rows returned</span></div>'}</div>
     <div class="mini-note">index used: <code>${escH(res.plan.index||'none — '+res.plan.nodes.join(' › '))}</code></div></div>`;
 }
 async function cmpSearch(){
-  const out=byId('cs-out'); out.innerHTML='<div class="loading"><div class="spinner"></div>Running exact scan, then both indexes…</div>';
+  const out=byId('cs-out'); const picked=selEngines();
+  if(picked.length<2){ out.innerHTML='<div class="warn-box">Tick at least two engines above to compare.</div>'; return; }
+  out.innerHTML='<div class="loading"><div class="spinner"></div>Running the exact scan, then each index…</div>';
   const tri=id=>{const v=byId(id).value; return v===''?null:v==='true';};
-  const body={opclass:byId('cs-opclass').value,limit:+byId('cs-k').value,vp_probes:+byId('cs-vp-probes').value,
-    vc_probes:byId('cs-vc-probes').value.trim(),epsilon:byId('cs-eps').value.trim()||null,
-    category_id:byId('cs-cat').value||null,prefilter:tri('cs-pre'),reps:+byId('cs-reps').value,force_index:byId('cs-force').checked};
+  const body={engines:picked,opclass:byId('cs-opclass').value,limit:+byId('cs-k').value,
+    vp_probes:+byId('cs-vp-probes').value,vc_probes:byId('cs-vc-probes').value.trim(),
+    hnsw_ef:+byId('cs-h-ef').value,ivf_probes:+byId('cs-i-probes').value,iterative:byId('cs-iter').value,
+    epsilon:byId('cs-eps').value.trim()||null,category_id:byId('cs-cat').value||null,prefilter:tri('cs-pre'),
+    reps:+byId('cs-reps').value,force_index:byId('cs-force').checked,cache_mode:byId('cs-cache').value};
   const id=byId('cs-id').value; if(id) body.id=+id; else body.text=byId('cs-text').value;
   const d=await post('/api/cmp/search',body);
   if(!d.ok){ out.innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(d.error)}</div>`; return; }
-  const pct=v=>v===null||v===undefined?'—':(v*100).toFixed(0)+'%';
-  const rc=v=>v>=.95?'green':(v>=.8?'amber':'red');
-  out.innerHTML=`<div class="kpi-row">
-    <div class="kpi"><div class="kpi-label">Exact scan</div><div class="kpi-val">${d.exact.ms} ms</div><div class="kpi-sub">ground truth</div></div>
-    <div class="kpi"><div class="kpi-label">ivfplus</div><div class="kpi-val teal">${d.ivfplus.ms} ms</div><div class="kpi-sub">${d.speedup_vs_exact.ivfplus??'—'}× vs exact</div></div>
-    <div class="kpi"><div class="kpi-label">vchordrq</div><div class="kpi-val purple">${d.vchordrq.ms} ms</div><div class="kpi-sub">${d.speedup_vs_exact.vchordrq??'—'}× vs exact</div></div>
-    <div class="kpi"><div class="kpi-label">Recall ivfplus</div><div class="kpi-val ${rc(d.recall.ivfplus)}">${pct(d.recall.ivfplus)}</div><div class="kpi-sub">${d.returned.ivfplus} of ${d.k} rows</div></div>
-    <div class="kpi"><div class="kpi-label">Recall vchordrq</div><div class="kpi-val ${rc(d.recall.vchordrq)}">${pct(d.recall.vchordrq)}</div><div class="kpi-sub">${d.returned.vchordrq} of ${d.k} rows</div></div>
-    <div class="kpi"><div class="kpi-label">Same results</div><div class="kpi-val">${d.overlap_between_engines.length}</div><div class="kpi-sub">found by both engines</div></div></div>
+  const rc=v=>v===null||v===undefined?'':(v>=.95?'var(--green)':(v>=.8?'var(--amber)':'var(--red)'));
+  const kpis=`<div class="kpi"><div class="kpi-label">Exact scan</div><div class="kpi-val">${d.exact.ms} ms</div><div class="kpi-sub">ground truth</div></div>`+
+    d.engines.map(o=>{const m=engMeta(o.key); return `<div class="kpi"><div class="kpi-label">${escH(m.short)}</div>
+      <div class="kpi-val ${m.kpi}">${o.result.ms} ms${o.result.cold?' <span style="font-size:11px;color:var(--faint)">cold</span>':''}</div>
+      <div class="kpi-sub">${o.result.cold&&o.result.ms_warm!==null?`warm ${o.result.ms_warm} ms · `:''}recall <b style="color:${rc(o.recall)}">${o.recall===null?'—':(o.recall*100).toFixed(0)+'%'}</b> · ${o.returned} of ${d.k} rows · ${o.speedup??'—'}× vs exact</div></div>`;}).join('')+
+    `<div class="kpi"><div class="kpi-label">Found by all</div><div class="kpi-val">${d.common_to_all.length}</div><div class="kpi-sub">of ${d.k} requested</div></div>`;
+  out.innerHTML=`<div class="kpi-row">${kpis}</div>
     <div class="legend"><i style="background:var(--green-bg);border:1px solid var(--green-bd)"></i>in the exact top ${d.k} &nbsp; <i style="background:var(--surface);border:1px solid var(--border)"></i>not in the exact top ${d.k} &nbsp;·&nbsp; query: ${escH(d.label)}</div>
-    <div class="three-col">${hitCol('Exact (seq scan)',d.exact,d.exact.rows)}${hitCol('EDB Vector Plus · ivfplus',d.ivfplus,d.exact.rows)}${hitCol('VectorChord · vchordrq',d.vchordrq,d.exact.rows)}</div>
+    <div class="hit-grid">${hitCol('Exact (seq scan)',d.exact,d.exact.rows)}${d.engines.map(o=>hitCol(o.label,o.result,d.exact.rows,engMeta(o.key).color)).join('')}</div>
     <div id="cs-notes"></div>`+
-    sqlPanel(`-- ${d.settings.ivfplus.join(';\n-- ')};\n${d.ivfplus.sql.replace(/%s/g,"'[…]'")}\n\n-- ${d.settings.vchordrq.join(';\n-- ')};\n${d.vchordrq.sql.replace(/%s/g,"'[…]'")}`,'queries run (approximate legs)',false);
+    sqlPanel(d.engines.map(o=>`-- ${o.label}\n${o.settings.map(s=>s+';').join('\n')}\n${o.result.sql.replace(/%s/g,"'[…]'")};`).join('\n\n'),'queries run (approximate legs)',false);
   warnList('cs-notes',d.notes);
 }
 function parseList(s,vc){
@@ -2979,37 +3307,50 @@ function parseList(s,vc){
   return s.split(',').map(x=>+x.trim()).filter(x=>x>0);
 }
 async function cmpSweep(){
-  const out=byId('cr-out'), btn=byId('cr-btn'); btn.disabled=true;
-  out.innerHTML='<div class="loading"><div class="spinner"></div>Exact ground truth, then both sweeps… this runs every query at every setting.</div>';
-  const d=await post('/api/cmp/recall',{k:+byId('cr-k').value,queries:+byId('cr-q').value,opclass:byId('cr-opclass').value,
+  const out=byId('cr-out'), btn=byId('cr-btn'); const picked=selEngines();
+  if(picked.length<2){ out.innerHTML='<div class="warn-box">Tick at least two engines above to compare.</div>'; return; }
+  btn.disabled=true;
+  out.innerHTML='<div class="loading"><div class="spinner"></div>Exact ground truth, then every sweep… this runs every query at every setting.</div>';
+  const d=await post('/api/cmp/recall',{engines:picked,k:+byId('cr-k').value,queries:+byId('cr-q').value,opclass:byId('cr-opclass').value,
     vp_probes_list:parseList(byId('cr-vp').value,false),vc_probes_list:parseList(byId('cr-vc').value,true),
-    epsilon:byId('cr-eps').value.trim()||null,force_index:byId('cr-force').checked});
+    hnsw_ef_list:parseList(byId('cr-h').value,false),ivf_probes_list:parseList(byId('cr-i').value,false),
+    epsilon:byId('cr-eps').value.trim()||null,iterative:byId('cr-iter').value,force_index:byId('cr-force').checked,
+    cache_mode:byId('cr-cache').value,passes:+byId('cr-passes').value||null});
   btn.disabled=false;
   if(!d.ok){ out.innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(d.error)}</div>`; return; }
-  out.innerHTML=`<div class="info-box" style="margin:0">${escH(d.note)} Exact scan: ${d.exact_ms} ms. ivfplus used <code>${escH(d.ivfplus.index||'no index')}</code>, vchordrq used <code>${escH(d.vchordrq.index||'no index')}</code>${d.vchordrq.lists?` (lists = [${d.vchordrq.lists.join(', ')}])`:''}.</div><div id="cr-notes"></div>`;
+  const P=d.protocol||{}; let cleanTxt='';
+  if(P.cache_mode==='cold'){ cleanTxt=' Cleaned before every pass: '+d.order.map(k=>{const c=(P.clean||{})[k]; if(!c) return ''; return `${escH(engMeta(k).short)} (${[c.shared?fmt(c.shared.evicted)+' shared blocks':null,c.os?bytes(c.os.bytes)+' OS cache':null].filter(Boolean).join(' + ')||'nothing'})`;}).join(', ')+'.'; }
+  else if(P.prewarm){ cleanTxt=' Prewarmed: '+d.order.map(k=>`${escH(engMeta(k).short)} (${escH((P.prewarm[k]||[]).join(', '))})`).join(', ')+'.'; }
+  out.innerHTML=`<div class="info-box" style="margin:0">${escH(d.note)} Exact scan: ${d.exact_ms} ms (median).${cleanTxt} Indexes used: ${d.order.map(k=>`${escH(engMeta(k).short)} → <code>${escH(d.engines[k].index||'none')}</code>`).join(' · ')}.</div><div id="cr-notes"></div>`;
   warnList('cr-notes',d.notes);
   byId('cr-chart-label').hidden=false; byId('cr-chart-wrap').hidden=false;
-  const mk=(res,label,color,dash)=>({label,data:res.map(r=>({x:r.ms,y:+(r.recall*100).toFixed(2),p:r.param})),
-    borderColor:color,backgroundColor:color,borderDash:dash,showLine:true,tension:.15,pointRadius:4});
-  mkChart('chart-cmp-recall',{type:'scatter',data:{datasets:[
-      mk(d.ivfplus.results,'ivfplus','#0F6E5A',[]),mk(d.vchordrq.results,'vchordrq','#5A3A9A',[5,4])]},
+  const dash={ivfplus:[],vchordrq:[5,4],hnsw:[2,3],ivfflat:[8,3]};
+  mkChart('chart-cmp-recall',{type:'scatter',data:{datasets:d.order.map(k=>{const m=engMeta(k),e=d.engines[k];
+      return {label:m.short,data:e.results.map(r=>({x:r.ms,y:+(r.recall*100).toFixed(2),p:r.param})),
+        borderColor:m.color,backgroundColor:m.color,borderDash:dash[k]||[],showLine:true,tension:.15,pointRadius:4};})},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{position:'bottom',labels:{boxWidth:10}},
-        tooltip:{callbacks:{label:c=>`${c.dataset.label} probes=${c.raw.p||"''"}: ${c.parsed.y}% @ ${c.parsed.x.toFixed(3)} ms`}}},
+        tooltip:{callbacks:{label:c=>`${c.dataset.label} ${c.raw.p===''?"''":c.raw.p}: ${c.parsed.y}% @ ${c.parsed.x.toFixed(3)} ms`}}},
       scales:{x:{type:'logarithmic',title:{display:true,text:'mean latency ms (log)'}},
               y:{min:0,max:100,title:{display:true,text:'recall %'}}}}});
-  const fr=(r)=>r?`<code>${escH(r.param===''?"''":r.param)}</code> · ${(r.recall*100).toFixed(1)}% · <b>${r.ms} ms</b> <span style="color:var(--faint)">p95 ${r.p95_ms}</span>`:'<span class="badge br">never reaches it</span>';
+  const rec=(r)=>`${(r.recall*100).toFixed(1)}%${r.recall_se!==null&&r.recall_se!==undefined?`<span style="color:var(--faint)"> ±${(r.recall_se*100).toFixed(1)}</span>`:''}`;
+  const lat=(r)=>`${r.ms}${r.ms_sd!==null&&r.ms_sd!==undefined?`<span style="color:var(--faint)"> ±${r.ms_sd}</span>`:''}`;
+  const cell=(r)=>r?`<code>${escH(r.param===''?"''":r.param)}</code> · ${rec(r)} · <b>${lat(r)} ms</b> <span style="color:var(--faint)">p95 ${r.p95_ms}</span>`:'<span class="badge br">never reaches it</span>';
   const rows=Object.entries(d.at_floor).map(([f,v])=>{
-    const a=v.ivfplus,b=v.vchordrq; let win='—';
-    if(a&&b) win=a.ms<b.ms?`<span class="badge bt">ivfplus ${(b.ms/a.ms).toFixed(1)}× faster</span>`:`<span class="badge bp">vchordrq ${(a.ms/b.ms).toFixed(1)}× faster</span>`;
-    else if(a||b) win=`<span class="badge ba">${a?'ivfplus':'vchordrq'} only</span>`;
-    return [`≥ ${(f*100).toFixed(0)}%`,fr(a),fr(b),win];});
-  byId('cr-floor').innerHTML=`<div class="col-head"><span>Cheapest setting that clears each recall bar</span><span></span></div>`+tableHtml(['Recall','ivfplus','vchordrq','Faster'],rows);
-  const tbl=(res,pname)=>tableHtml([pname,'Recall','ms','p95 ms','returned','vs exact'],res.map(r=>[
-    `<code>${escH(r.param===''?"''":r.param)}</code>`,`<span class="badge ${r.recall>=.95?'bg':(r.recall>=.8?'ba':'br')}">${(r.recall*100).toFixed(1)}%</span>`,
-    r.ms,r.p95_ms,r.avg_returned,r.speedup?r.speedup+'×':'—']),['','','num','num','num','num']);
-  byId('cr-tables').innerHTML=`<div><div class="col-head"><span>ivfplus</span><span>exact ${d.exact_ms} ms</span></div>${tbl(d.ivfplus.results,'probes')}</div>
-    <div><div class="col-head"><span>vchordrq</span><span>exact ${d.exact_ms} ms</span></div>${tbl(d.vchordrq.results,'probes')}</div>`;
+    const have=d.order.filter(k=>v[k]).sort((a,b)=>v[a].ms-v[b].ms); let win='<span class="badge br">none reach it</span>';
+    if(have.length){ const w=have[0], m=engMeta(w);
+      win=`<span class="badge" style="background:${m.color};color:#fff">${escH(m.short)}</span>`+(have.length>1?` <span style="color:var(--muted);font-size:11px">${(v[have[1]].ms/v[w].ms).toFixed(1)}× faster than ${escH(engMeta(have[1]).short)}</span>`:' <span style="color:var(--muted);font-size:11px">only one reaches it</span>'); }
+    return [`≥ ${(f*100).toFixed(0)}%`].concat(d.order.map(k=>cell(v[k]))).concat([win]);});
+  byId('cr-floor').innerHTML=`<div class="col-head"><span>Cheapest setting that clears each recall bar</span><span></span></div>`+
+    tableHtml(['Recall'].concat(d.order.map(k=>engMeta(k).short)).concat(['Fastest']),rows);
+  const coldMode=P.cache_mode==='cold';
+  const tbl=(res,pname)=>tableHtml([pname,'Recall ±se','ms ±sd','p95 ms'].concat(coldMode?['first query']:[]).concat(['returned','vs exact']),res.map(r=>[
+    `<code>${escH(r.param===''?"''":r.param)}</code>`,`<span class="badge ${r.recall>=.95?'bg':(r.recall>=.8?'ba':'br')}">${rec(r)}</span>`,
+    lat(r),r.p95_ms].concat(coldMode?[r.first_ms]:[]).concat([r.avg_returned,r.speedup?r.speedup+'×':'—'])),
+    ['','','num','num'].concat(coldMode?['num']:[]).concat(['num','num']));
+  byId('cr-tables').innerHTML=d.order.map(k=>{const e=d.engines[k];
+    return `<div><div class="col-head" style="border-bottom:2px solid ${engMeta(k).color};padding-bottom:4px"><span>${escH(e.label)}</span><span>exact ${d.exact_ms} ms</span></div>${tbl(e.results,e.param.split('.').pop())}</div>`;}).join('');
+  byId('cr-tables').className='hit-grid';
 }
 let ccPoll=null;
 async function cmpChurn(){
@@ -3022,11 +3363,13 @@ async function cmpChurn(){
     if(!s.running){
       clearInterval(ccPoll); btn.disabled=false;
       if(s.error){ byId('cc-out').innerHTML=`<div class="error-box">${escH(s.error)}</div>`; return; }
-      const t=s.result.timings, ph=['insert','update','delete','vacuum'], n={insert:s.result.inserts,update:s.result.updates,delete:s.result.deletes,vacuum:null};
-      byId('cc-out').innerHTML=tableHtml(['Phase','Rows','ivfplus s','vchordrq s','vchordrq ÷ ivfplus'],
-        ph.filter(p=>n[p]!==0).map(p=>[p,n[p]===null?'—':fmt(n[p]),t.ivfplus[p],t.vchordrq[p],
-          t.ivfplus[p]>0?(t.vchordrq[p]/t.ivfplus[p]).toFixed(2)+'×':'—']),['','num','num','num','num'])+
-        `<div class="mini-note">index size after: ivfplus ${bytes(s.result.index_bytes.ivfplus)} · vchordrq ${bytes(s.result.index_bytes.vchordrq)} · rows ${fmt(s.result.rows.ivfplus)} / ${fmt(s.result.rows.vchordrq)}. Re-run the sweep to see recall after drift.</div>`;
+      const R=s.result, t=R.timings, ord=R.order, base=ord[0];
+      const ph=['insert','update','delete','vacuum'], n={insert:R.inserts,update:R.updates,delete:R.deletes,vacuum:null};
+      byId('cc-out').innerHTML=tableHtml(['Phase','Rows'].concat(ord.map(k=>engMeta(k).short+' s')),
+        ph.filter(p=>n[p]!==0).map(p=>[p,n[p]===null?'—':fmt(n[p])].concat(ord.map(k=>{
+          const v=t[k][p]; const r=(k!==base&&t[base][p]>0)?` <span style="color:var(--faint);font-size:11px">${(v/t[base][p]).toFixed(1)}×</span>`:'';
+          return v+r;}))),['','num'].concat(ord.map(()=>'num')))+
+        `<div class="mini-note">× is relative to ${escH(engMeta(base).short)}. Index size after: ${ord.map(k=>`${escH(engMeta(k).short)} ${bytes(R.index_bytes[k])}`).join(' · ')}. Rows: ${ord.map(k=>fmt(R.rows[k])).join(' / ')}. Re-run the sweep to see recall after drift.</div>`;
       cmpSummary();
     }
   },700);
