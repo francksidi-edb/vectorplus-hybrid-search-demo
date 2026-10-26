@@ -1,0 +1,4410 @@
+{
+ "deck": "2026-10-23 Vector Search Benchmark Review.pptx",
+ "slides": [
+  {
+   "index": 0,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 1481328,
+     "w": 82296,
+     "h": 960120,
+     "text": ""
+    },
+    {
+     "name": "mbl:title:1",
+     "x": 365760,
+     "y": 1481328,
+     "w": 11460175,
+     "h": 960120,
+     "text": "VECTOR SEARCH BENCHMARK REVIEW"
+    },
+    {
+     "name": "mbl:statement:1",
+     "x": 365760,
+     "y": 2697480,
+     "w": 10088575,
+     "h": 1645920,
+     "text": "EDB Vector Plus, pgvector, VectorChord and ClickHouse on 1M and 2M rows of 768-dimension embeddings."
+    },
+    {
+     "name": "mbl:meta:1",
+     "x": 365760,
+     "y": 5440680,
+     "w": 11460175,
+     "h": 219456,
+     "text": "Postgres 18.6 \u00b7 WarehousePG 7.6 \u00b7 ClickHouse 26.1 \u00b7 22 to 23 October 2026"
+    },
+    {
+     "name": "mbl:byline:1",
+     "x": 365760,
+     "y": 5687568,
+     "w": 11460175,
+     "h": 219456,
+     "text": "Source: six vp-bench-1 exports (runs 1 to 6) from the Vector Plus demo dashboard"
+    }
+   ]
+  },
+  {
+   "index": 1,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 420623,
+     "w": 82296,
+     "h": 420624,
+     "text": ""
+    },
+    {
+     "name": "mbl:title:1",
+     "x": 365760,
+     "y": 420623,
+     "w": 11277295,
+     "h": 420624,
+     "text": "IVFPLUS IS FASTER AND HALF THE SIZE, BUT TOPS OUT AT 0.886 ON POSTGRES"
+    },
+    {
+     "name": "mbl:panel:1",
+     "x": 228600,
+     "y": 1463040,
+     "w": 3789578,
+     "h": 1783080,
+     "text": ""
+    },
+    {
+     "name": "mbl:txt:1",
+     "x": 475488,
+     "y": 1600200,
+     "w": 3295802,
+     "h": 603504,
+     "text": "3.1\u00d7"
+    },
+    {
+     "name": "mbl:txt:2",
+     "x": 475488,
+     "y": 2240280,
+     "w": 3295802,
+     "h": 685800,
+     "text": "faster than IVFFlat on WarehousePG at 90% recall: 5.6 ms against 17.5 ms"
+    },
+    {
+     "name": "mbl:txt:3",
+     "x": 4338218,
+     "y": 1600200,
+     "w": 3515258,
+     "h": 603504,
+     "text": "5.7\u00d7"
+    },
+    {
+     "name": "mbl:txt:4",
+     "x": 4338218,
+     "y": 2240280,
+     "w": 3515258,
+     "h": 685800,
+     "text": "faster than IVFFlat on Postgres at 85% recall: 6.9 ms against 39.4 ms"
+    },
+    {
+     "name": "mbl:txt:5",
+     "x": 8310676,
+     "y": 1600200,
+     "w": 3515258,
+     "h": 603504,
+     "text": "2.1\u00d7"
+    },
+    {
+     "name": "mbl:txt:6",
+     "x": 8310676,
+     "y": 2240280,
+     "w": 3515258,
+     "h": 685800,
+     "text": "smaller index than IVFFlat at 2M rows: 3.55 GiB against 7.64 GiB"
+    },
+    {
+     "name": "mbl:vrule:1",
+     "x": 4109618,
+     "y": 1600200,
+     "w": 0,
+     "h": 1554480
+    },
+    {
+     "name": "mbl:vrule:2",
+     "x": 8082076,
+     "y": 1600200,
+     "w": 0,
+     "h": 1554480
+    },
+    {
+     "name": "mbl:hrule:1",
+     "x": 365760,
+     "y": 3657600,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:7",
+     "x": 365760,
+     "y": 3858768,
+     "w": 3657600,
+     "h": 292608,
+     "text": "Still open"
+    },
+    {
+     "name": "mbl:runs:1",
+     "x": 365760,
+     "y": 4370832,
+     "w": 11460175,
+     "h": 457200,
+     "text": "ivfplus on Postgres plateaus at 0.886 recall. Probes 64 to 256 add latency, up to 51 ms, and no recall."
+    },
+    {
+     "name": "mbl:runs:2",
+     "x": 365760,
+     "y": 4901184,
+     "w": 11460175,
+     "h": 457200,
+     "text": "ClickHouse and ivfplus on WarehousePG were not extended. Their ladders end at 0.76 (ef_search 128) and 0.936 (32 probes)."
+    },
+    {
+     "name": "mbl:runs:3",
+     "x": 365760,
+     "y": 5431536,
+     "w": 11460175,
+     "h": 457200,
+     "text": "Runs 3 and 4 carry latency spikes. The 2M figures keep the quietest of four runs."
+    }
+   ]
+  },
+  {
+   "index": 2,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 2834640,
+     "w": 82296,
+     "h": 658368,
+     "text": ""
+    },
+    {
+     "name": "mbl:txt:1",
+     "x": 365760,
+     "y": 2834640,
+     "w": 11094415,
+     "h": 658368,
+     "text": "THE TESTS"
+    },
+    {
+     "name": "mbl:txt:2",
+     "x": 365760,
+     "y": 3584448,
+     "w": 11094415,
+     "h": 274320,
+     "text": "Engines, data, queries and index builds"
+    }
+   ]
+  },
+  {
+   "index": 3,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 420623,
+     "w": 82296,
+     "h": 420624,
+     "text": ""
+    },
+    {
+     "name": "mbl:title:1",
+     "x": 365760,
+     "y": 420623,
+     "w": 11277295,
+     "h": 420624,
+     "text": "EACH ENGINE RAN ITS OWN INDEX ON ITS OWN COPY OF THE DATA"
+    },
+    {
+     "name": "mbl:txt:1",
+     "x": 365760,
+     "y": 1417320,
+     "w": 2267712,
+     "h": 256032,
+     "text": "ENGINE"
+    },
+    {
+     "name": "mbl:txt:2",
+     "x": 2743200,
+     "y": 1417320,
+     "w": 3730752,
+     "h": 256032,
+     "text": "WHERE IT RAN"
+    },
+    {
+     "name": "mbl:txt:3",
+     "x": 6583680,
+     "y": 1417320,
+     "w": 2633472,
+     "h": 256032,
+     "text": "INDEX"
+    },
+    {
+     "name": "mbl:txt:4",
+     "x": 9326880,
+     "y": 1417320,
+     "w": 2389327,
+     "h": 256032,
+     "text": "BUILD SETTINGS"
+    },
+    {
+     "name": "mbl:hrule:1",
+     "x": 365760,
+     "y": 1728216,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:5",
+     "x": 365760,
+     "y": 1801368,
+     "w": 2267712,
+     "h": 552558,
+     "text": "EDB Vector Plus"
+    },
+    {
+     "name": "mbl:txt:6",
+     "x": 2743200,
+     "y": 1801368,
+     "w": 3730752,
+     "h": 552558,
+     "text": "Postgres 18.6, edb_vectorplus 0.0.5"
+    },
+    {
+     "name": "mbl:txt:7",
+     "x": 6583680,
+     "y": 1801368,
+     "w": 2633472,
+     "h": 552558,
+     "text": "ivfplus (IVF with RaBitQ)"
+    },
+    {
+     "name": "mbl:txt:8",
+     "x": 9326880,
+     "y": 1801368,
+     "w": 2389327,
+     "h": 552558,
+     "text": "lists 1414, rotation on"
+    },
+    {
+     "name": "mbl:hrule:2",
+     "x": 365760,
+     "y": 2353926,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:9",
+     "x": 365760,
+     "y": 2353926,
+     "w": 2267712,
+     "h": 552558,
+     "text": "EDB ivfplus @ WHPG"
+    },
+    {
+     "name": "mbl:txt:10",
+     "x": 2743200,
+     "y": 2353926,
+     "w": 3730752,
+     "h": 552558,
+     "text": "WarehousePG 7.6, 2 segments, optimizer off"
+    },
+    {
+     "name": "mbl:txt:11",
+     "x": 6583680,
+     "y": 2353926,
+     "w": 2633472,
+     "h": 552558,
+     "text": "ivfplus"
+    },
+    {
+     "name": "mbl:txt:12",
+     "x": 9326880,
+     "y": 2353926,
+     "w": 2389327,
+     "h": 552558,
+     "text": "lists 1414"
+    },
+    {
+     "name": "mbl:hrule:3",
+     "x": 365760,
+     "y": 2906485,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:13",
+     "x": 365760,
+     "y": 2906485,
+     "w": 2267712,
+     "h": 552558,
+     "text": "pgvector IVFFlat"
+    },
+    {
+     "name": "mbl:txt:14",
+     "x": 2743200,
+     "y": 2906485,
+     "w": 3730752,
+     "h": 552558,
+     "text": "Postgres 18.6, pgvector 0.8.6"
+    },
+    {
+     "name": "mbl:txt:15",
+     "x": 6583680,
+     "y": 2906485,
+     "w": 2633472,
+     "h": 552558,
+     "text": "ivfflat"
+    },
+    {
+     "name": "mbl:txt:16",
+     "x": 9326880,
+     "y": 2906485,
+     "w": 2389327,
+     "h": 552558,
+     "text": "lists 1414"
+    },
+    {
+     "name": "mbl:hrule:4",
+     "x": 365760,
+     "y": 3459044,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:17",
+     "x": 365760,
+     "y": 3459044,
+     "w": 2267712,
+     "h": 552558,
+     "text": "pgvector IVFFlat @ WHPG"
+    },
+    {
+     "name": "mbl:txt:18",
+     "x": 2743200,
+     "y": 3459044,
+     "w": 3730752,
+     "h": 552558,
+     "text": "WarehousePG 7.6, pgvector 0.7.4"
+    },
+    {
+     "name": "mbl:txt:19",
+     "x": 6583680,
+     "y": 3459044,
+     "w": 2633472,
+     "h": 552558,
+     "text": "ivfflat"
+    },
+    {
+     "name": "mbl:txt:20",
+     "x": 9326880,
+     "y": 3459044,
+     "w": 2389327,
+     "h": 552558,
+     "text": "lists 1414"
+    },
+    {
+     "name": "mbl:hrule:5",
+     "x": 365760,
+     "y": 4011603,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:21",
+     "x": 365760,
+     "y": 4011603,
+     "w": 2267712,
+     "h": 552558,
+     "text": "pgvector HNSW"
+    },
+    {
+     "name": "mbl:txt:22",
+     "x": 2743200,
+     "y": 4011603,
+     "w": 3730752,
+     "h": 552558,
+     "text": "Postgres 18.6, pgvector 0.8.6 (1M only)"
+    },
+    {
+     "name": "mbl:txt:23",
+     "x": 6583680,
+     "y": 4011603,
+     "w": 2633472,
+     "h": 552558,
+     "text": "hnsw"
+    },
+    {
+     "name": "mbl:txt:24",
+     "x": 9326880,
+     "y": 4011603,
+     "w": 2389327,
+     "h": 552558,
+     "text": "m 16, ef_construction 64"
+    },
+    {
+     "name": "mbl:hrule:6",
+     "x": 365760,
+     "y": 4564162,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:25",
+     "x": 365760,
+     "y": 4564162,
+     "w": 2267712,
+     "h": 552558,
+     "text": "VectorChord"
+    },
+    {
+     "name": "mbl:txt:26",
+     "x": 2743200,
+     "y": 4564162,
+     "w": 3730752,
+     "h": 552558,
+     "text": "Postgres 18.6, vchord 1.1.1"
+    },
+    {
+     "name": "mbl:txt:27",
+     "x": 6583680,
+     "y": 4564162,
+     "w": 2633472,
+     "h": 552558,
+     "text": "vchordrq"
+    },
+    {
+     "name": "mbl:txt:28",
+     "x": 9326880,
+     "y": 4564162,
+     "w": 2389327,
+     "h": 552558,
+     "text": "lists [1414]"
+    },
+    {
+     "name": "mbl:hrule:7",
+     "x": 365760,
+     "y": 5116721,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:29",
+     "x": 365760,
+     "y": 5116721,
+     "w": 2267712,
+     "h": 552558,
+     "text": "ClickHouse"
+    },
+    {
+     "name": "mbl:txt:30",
+     "x": 2743200,
+     "y": 5116721,
+     "w": 3730752,
+     "h": 552558,
+     "text": "26.1.2.1 EDB PoC preview build (2M only)"
+    },
+    {
+     "name": "mbl:txt:31",
+     "x": 6583680,
+     "y": 5116721,
+     "w": 2633472,
+     "h": 552558,
+     "text": "vector_similarity (HNSW, bf16)"
+    },
+    {
+     "name": "mbl:txt:32",
+     "x": 9326880,
+     "y": 5116721,
+     "w": 2389327,
+     "h": 552558,
+     "text": "M 16, ef_construction 128"
+    },
+    {
+     "name": "mbl:txt:33",
+     "x": 365760,
+     "y": 5779008,
+     "w": 11460175,
+     "h": 411480,
+     "text": "Lists are 1000 at 1M rows and 1414 at 2M, the square root of the row count. Postgres builds ran with maintenance_work_mem 12 GB, no parallel workers and shared_buffers 128 MB."
+    }
+   ]
+  },
+  {
+   "index": 4,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 420623,
+     "w": 82296,
+     "h": 420624,
+     "text": ""
+    },
+    {
+     "name": "mbl:title:1",
+     "x": 365760,
+     "y": 420623,
+     "w": 11277295,
+     "h": 420624,
+     "text": "EVERY ENGINE HOLDS THE SAME 2,000,000 ROWS"
+    },
+    {
+     "name": "mbl:node:1",
+     "x": 365760,
+     "y": 1417320,
+     "w": 2057400,
+     "h": 4617720,
+     "text": "vp_docs\nPostgres source table, also the ivfplus index"
+    },
+    {
+     "name": "mbl:container:1",
+     "x": 3246120,
+     "y": 1417320,
+     "w": 4892040,
+     "h": 1371600,
+     "text": ""
+    },
+    {
+     "name": "mbl:clabel:1",
+     "x": 5049774,
+     "y": 1316736,
+     "w": 1284732,
+     "h": 201168,
+     "text": ""
+    },
+    {
+     "name": "mbl:clabeltxt:1",
+     "x": 5049774,
+     "y": 1316736,
+     "w": 1284732,
+     "h": 201168,
+     "text": "POSTGRES 18.6"
+    },
+    {
+     "name": "mbl:node:2",
+     "x": 3429000,
+     "y": 1764792,
+     "w": 1417319,
+     "h": 777240,
+     "text": "pgi_docs\nIVFFlat"
+    },
+    {
+     "name": "mbl:node:3",
+     "x": 4983479,
+     "y": 1764792,
+     "w": 1417319,
+     "h": 777240,
+     "text": "pgh_docs\nHNSW"
+    },
+    {
+     "name": "mbl:node:4",
+     "x": 6537959,
+     "y": 1764792,
+     "w": 1417319,
+     "h": 777240,
+     "text": "vc_docs\nVectorChord"
+    },
+    {
+     "name": "mbl:arrow:1",
+     "x": 2423160,
+     "y": 2103120,
+     "w": 822960,
+     "h": 3657
+    },
+    {
+     "name": "mbl:container:2",
+     "x": 3246120,
+     "y": 3040380,
+     "w": 4892040,
+     "h": 1371600,
+     "text": ""
+    },
+    {
+     "name": "mbl:clabel:2",
+     "x": 4972050,
+     "y": 2939796,
+     "w": 1440180,
+     "h": 201168,
+     "text": ""
+    },
+    {
+     "name": "mbl:clabeltxt:2",
+     "x": 4972050,
+     "y": 2939796,
+     "w": 1440180,
+     "h": 201168,
+     "text": "WAREHOUSEPG 7.6"
+    },
+    {
+     "name": "mbl:node:5",
+     "x": 3429000,
+     "y": 3387852,
+     "w": 1417319,
+     "h": 777240,
+     "text": "wvp_docs\nivfplus"
+    },
+    {
+     "name": "mbl:node:6",
+     "x": 4983479,
+     "y": 3387852,
+     "w": 1417319,
+     "h": 777240,
+     "text": "wpgi_docs\nIVFFlat"
+    },
+    {
+     "name": "mbl:arrow:2",
+     "x": 2423160,
+     "y": 3726180,
+     "w": 822960,
+     "h": 3657
+    },
+    {
+     "name": "mbl:container:3",
+     "x": 3246120,
+     "y": 4663440,
+     "w": 4892040,
+     "h": 1371600,
+     "text": ""
+    },
+    {
+     "name": "mbl:clabel:3",
+     "x": 4972050,
+     "y": 4562855,
+     "w": 1440180,
+     "h": 201168,
+     "text": ""
+    },
+    {
+     "name": "mbl:clabeltxt:3",
+     "x": 4972050,
+     "y": 4562855,
+     "w": 1440180,
+     "h": 201168,
+     "text": "CLICKHOUSE 26.1"
+    },
+    {
+     "name": "mbl:node:7",
+     "x": 3429000,
+     "y": 5010912,
+     "w": 1417319,
+     "h": 777240,
+     "text": "ch_docs\nHNSW"
+    },
+    {
+     "name": "mbl:arrow:3",
+     "x": 2423160,
+     "y": 5349240,
+     "w": 822960,
+     "h": 3657
+    },
+    {
+     "name": "mbl:vrule:1",
+     "x": 8458200,
+     "y": 1508760,
+     "w": 0,
+     "h": 4434840
+    },
+    {
+     "name": "mbl:txt:1",
+     "x": 8732520,
+     "y": 1508760,
+     "w": 3090672,
+     "h": 274320,
+     "text": "The rows"
+    },
+    {
+     "name": "mbl:txt:2",
+     "x": 8732520,
+     "y": 1874519,
+     "w": 3090672,
+     "h": 1600200,
+     "text": "Synthetic documents on ten topics. Each embedding is the normalized mean of random word vectors plus noise, 768 dimensions."
+    },
+    {
+     "name": "mbl:txt:3",
+     "x": 8732520,
+     "y": 3840480,
+     "w": 3090672,
+     "h": 274320,
+     "text": "The check"
+    },
+    {
+     "name": "mbl:txt:4",
+     "x": 8732520,
+     "y": 4206240,
+     "w": 3090672,
+     "h": 1828800,
+     "text": "Before each comparison the app counts rows and compares the id range and an id checksum on every table. A mismatch stops the run."
+    }
+   ]
+  },
+  {
+   "index": 5,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 420623,
+     "w": 82296,
+     "h": 420624,
+     "text": ""
+    },
+    {
+     "name": "mbl:title:1",
+     "x": 365760,
+     "y": 420623,
+     "w": 11277295,
+     "h": 420624,
+     "text": "EVERY SWEEP IS SCORED AGAINST AN EXACT SCAN OF THE SAME 50 QUERIES"
+    },
+    {
+     "name": "mbl:node:1",
+     "x": 365760,
+     "y": 1828800,
+     "w": 1962851,
+     "h": 1051560,
+     "text": "50 query vectors"
+    },
+    {
+     "name": "mbl:txt:1",
+     "x": 365760,
+     "y": 3154680,
+     "w": 1962851,
+     "h": 1828800,
+     "text": "Stored rows picked with a fixed seed, plus Gaussian noise of 0.05, then renormalized."
+    },
+    {
+     "name": "mbl:arrow:1",
+     "x": 2328611,
+     "y": 2354580,
+     "w": 411480,
+     "h": 3657
+    },
+    {
+     "name": "mbl:node:2",
+     "x": 2740091,
+     "y": 1828800,
+     "w": 1962851,
+     "h": 1051560,
+     "text": "Exact top-10"
+    },
+    {
+     "name": "mbl:txt:2",
+     "x": 2740091,
+     "y": 3154680,
+     "w": 1962851,
+     "h": 1828800,
+     "text": "A full sequential scan with index scans off. The ground truth for recall, computed once and reused."
+    },
+    {
+     "name": "mbl:arrow:2",
+     "x": 4702942,
+     "y": 2354580,
+     "w": 411480,
+     "h": 3657
+    },
+    {
+     "name": "mbl:node:3",
+     "x": 5114422,
+     "y": 1828800,
+     "w": 1962851,
+     "h": 1051560,
+     "text": "Up to nine settings"
+    },
+    {
+     "name": "mbl:txt:3",
+     "x": 5114422,
+     "y": 3154680,
+     "w": 1962851,
+     "h": 1828800,
+     "text": "Probes 1, 2, 4 and so on to 32, extended to 256 in the last sweep. HNSW and ClickHouse get ef_search = max(k, 4 \u00d7 probes)."
+    },
+    {
+     "name": "mbl:arrow:3",
+     "x": 7077273,
+     "y": 2354580,
+     "w": 411480,
+     "h": 3657
+    },
+    {
+     "name": "mbl:node:4",
+     "x": 7488753,
+     "y": 1828800,
+     "w": 1962851,
+     "h": 1051560,
+     "text": "Three timed passes"
+    },
+    {
+     "name": "mbl:txt:4",
+     "x": 7488753,
+     "y": 3154680,
+     "w": 1962851,
+     "h": 1828800,
+     "text": "One untimed warm-up pass first. Engines are interleaved, indexes prewarmed, JIT off."
+    },
+    {
+     "name": "mbl:arrow:4",
+     "x": 9451604,
+     "y": 2354580,
+     "w": 411480,
+     "h": 3657
+    },
+    {
+     "name": "mbl:node:5",
+     "x": 9863084,
+     "y": 1828800,
+     "w": 1962851,
+     "h": 1051560,
+     "text": "Recall and latency"
+    },
+    {
+     "name": "mbl:txt:5",
+     "x": 9863084,
+     "y": 3154680,
+     "w": 1962851,
+     "h": 1828800,
+     "text": "Recall@10 is the share of the exact top-10 returned. Latency is each query's median over the passes."
+    },
+    {
+     "name": "mbl:hrule:1",
+     "x": 365760,
+     "y": 4846320,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:6",
+     "x": 365760,
+     "y": 5029200,
+     "w": 11460175,
+     "h": 731520,
+     "text": "Each result is the mean over the 50 queries. Recall carries a standard error of 0.01 to 0.05, and p95 is the 95th percentile across queries."
+    }
+   ]
+  },
+  {
+   "index": 6,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 420623,
+     "w": 82296,
+     "h": 420624,
+     "text": ""
+    },
+    {
+     "name": "mbl:title:1",
+     "x": 365760,
+     "y": 420623,
+     "w": 11277295,
+     "h": 420624,
+     "text": "ONE QUERY SHAPE RUNS ON EVERY ENGINE"
+    },
+    {
+     "name": "mbl:txt:1",
+     "x": 365760,
+     "y": 1417320,
+     "w": 5897880,
+     "h": 274320,
+     "text": "Postgres and WarehousePG"
+    },
+    {
+     "name": "mbl:txt:2",
+     "x": 6565392,
+     "y": 1417320,
+     "w": 5260543,
+     "h": 274320,
+     "text": "ClickHouse"
+    },
+    {
+     "name": "mbl:panel:1",
+     "x": 365760,
+     "y": 1801368,
+     "w": 5897880,
+     "h": 2331720,
+     "text": ""
+    },
+    {
+     "name": "mbl:txt:3",
+     "x": 566928,
+     "y": 1947672,
+     "w": 5495544,
+     "h": 2039112,
+     "text": "SET ivfplus.probes = 16;\n-- ivfflat.probes = 16 | vchordrq.probes = '16'\n-- hnsw.ef_search = 64\n\nSELECT id, topic, category_id, title,\n       embedding <-> '[0.0412, -0.0157, \u2026]' AS distance\nFROM public.vp_docs\nORDER BY embedding <-> '[0.0412, -0.0157, \u2026]'\nLIMIT 10;"
+    },
+    {
+     "name": "mbl:panel:2",
+     "x": 6565392,
+     "y": 1801368,
+     "w": 5260543,
+     "h": 2331720,
+     "text": ""
+    },
+    {
+     "name": "mbl:txt:4",
+     "x": 6766560,
+     "y": 1947672,
+     "w": 4858207,
+     "h": 2039112,
+     "text": "SELECT id, topic, category_id, title,\n       L2Distance(embedding, [0.0412, \u2026])\n         AS distance\nFROM default.ch_docs\nORDER BY L2Distance(embedding, [0.0412, \u2026])\nLIMIT 10\nSETTINGS hnsw_candidate_list_size_for_search = 64;"
+    },
+    {
+     "name": "mbl:txt:5",
+     "x": 365760,
+     "y": 4434840,
+     "w": 5897880,
+     "h": 1463040,
+     "text": "Approximate runs set enable_seqscan = off and jit = off, so the planner cannot quietly scan the table.\nThe exact baseline runs the same SELECT with enable_indexscan and enable_bitmapscan off."
+    },
+    {
+     "name": "mbl:txt:6",
+     "x": 6565392,
+     "y": 4434840,
+     "w": 5260543,
+     "h": 1463040,
+     "text": "The vector is a literal of 768 numbers. Before each run the app checks the plan and records which index was used."
+    }
+   ]
+  },
+  {
+   "index": 7,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 420623,
+     "w": 82296,
+     "h": 420624,
+     "text": ""
+    },
+    {
+     "name": "mbl:title:1",
+     "x": 365760,
+     "y": 420623,
+     "w": 11277295,
+     "h": 420624,
+     "text": "ONE LIST OF PROBES SETS THE EFFORT FOR EVERY ENGINE"
+    },
+    {
+     "name": "mbl:txt:1",
+     "x": 365760,
+     "y": 1417320,
+     "w": 2633472,
+     "h": 256032,
+     "text": "ENGINE"
+    },
+    {
+     "name": "mbl:txt:2",
+     "x": 3108960,
+     "y": 1417320,
+     "w": 3639311,
+     "h": 256032,
+     "text": "SETTING"
+    },
+    {
+     "name": "mbl:txt:3",
+     "x": 6858000,
+     "y": 1417320,
+     "w": 2176272,
+     "h": 256032,
+     "text": "VALUE FOR PROBES P"
+    },
+    {
+     "name": "mbl:txt:4",
+     "x": 9144000,
+     "y": 1417320,
+     "w": 2569464,
+     "h": 256032,
+     "text": "MEANING"
+    },
+    {
+     "name": "mbl:hrule:1",
+     "x": 365760,
+     "y": 1728216,
+     "w": 11457432,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:5",
+     "x": 365760,
+     "y": 1801368,
+     "w": 2633472,
+     "h": 545592,
+     "text": "EDB Vector Plus"
+    },
+    {
+     "name": "mbl:txt:6",
+     "x": 3108960,
+     "y": 1801368,
+     "w": 3639311,
+     "h": 545592,
+     "text": "ivfplus.probes"
+    },
+    {
+     "name": "mbl:txt:7",
+     "x": 6858000,
+     "y": 1801368,
+     "w": 2176272,
+     "h": 545592,
+     "text": "p, capped at lists"
+    },
+    {
+     "name": "mbl:txt:8",
+     "x": 9144000,
+     "y": 1801368,
+     "w": 2569464,
+     "h": 545592,
+     "text": "lists scanned per query"
+    },
+    {
+     "name": "mbl:hrule:2",
+     "x": 365760,
+     "y": 2346960,
+     "w": 11457432,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:9",
+     "x": 365760,
+     "y": 2346960,
+     "w": 2633472,
+     "h": 545592,
+     "text": "pgvector IVFFlat"
+    },
+    {
+     "name": "mbl:txt:10",
+     "x": 3108960,
+     "y": 2346960,
+     "w": 3639311,
+     "h": 545592,
+     "text": "ivfflat.probes"
+    },
+    {
+     "name": "mbl:txt:11",
+     "x": 6858000,
+     "y": 2346960,
+     "w": 2176272,
+     "h": 545592,
+     "text": "p, capped at lists"
+    },
+    {
+     "name": "mbl:txt:12",
+     "x": 9144000,
+     "y": 2346960,
+     "w": 2569464,
+     "h": 545592,
+     "text": "lists scanned per query"
+    },
+    {
+     "name": "mbl:hrule:3",
+     "x": 365760,
+     "y": 2892552,
+     "w": 11457432,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:13",
+     "x": 365760,
+     "y": 2892552,
+     "w": 2633472,
+     "h": 545592,
+     "text": "VectorChord"
+    },
+    {
+     "name": "mbl:txt:14",
+     "x": 3108960,
+     "y": 2892552,
+     "w": 3639311,
+     "h": 545592,
+     "text": "vchordrq.probes"
+    },
+    {
+     "name": "mbl:txt:15",
+     "x": 6858000,
+     "y": 2892552,
+     "w": 2176272,
+     "h": 545592,
+     "text": "'p', capped at lists"
+    },
+    {
+     "name": "mbl:txt:16",
+     "x": 9144000,
+     "y": 2892552,
+     "w": 2569464,
+     "h": 545592,
+     "text": "lists scanned per query"
+    },
+    {
+     "name": "mbl:hrule:4",
+     "x": 365760,
+     "y": 3438144,
+     "w": 11457432,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:17",
+     "x": 365760,
+     "y": 3438144,
+     "w": 2633472,
+     "h": 545592,
+     "text": "pgvector HNSW"
+    },
+    {
+     "name": "mbl:txt:18",
+     "x": 3108960,
+     "y": 3438144,
+     "w": 3639311,
+     "h": 545592,
+     "text": "hnsw.ef_search"
+    },
+    {
+     "name": "mbl:txt:19",
+     "x": 6858000,
+     "y": 3438144,
+     "w": 2176272,
+     "h": 545592,
+     "text": "max(k, 4 \u00d7 p)"
+    },
+    {
+     "name": "mbl:txt:20",
+     "x": 9144000,
+     "y": 3438144,
+     "w": 2569464,
+     "h": 545592,
+     "text": "candidate list size"
+    },
+    {
+     "name": "mbl:hrule:5",
+     "x": 365760,
+     "y": 3983736,
+     "w": 11457432,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:21",
+     "x": 365760,
+     "y": 3983736,
+     "w": 2633472,
+     "h": 545592,
+     "text": "ClickHouse"
+    },
+    {
+     "name": "mbl:txt:22",
+     "x": 3108960,
+     "y": 3983736,
+     "w": 3639311,
+     "h": 545592,
+     "text": "hnsw_candidate_list_size_for_search"
+    },
+    {
+     "name": "mbl:txt:23",
+     "x": 6858000,
+     "y": 3983736,
+     "w": 2176272,
+     "h": 545592,
+     "text": "max(k, 4 \u00d7 p)"
+    },
+    {
+     "name": "mbl:txt:24",
+     "x": 9144000,
+     "y": 3983736,
+     "w": 2569464,
+     "h": 545592,
+     "text": "candidate list size"
+    },
+    {
+     "name": "mbl:hrule:6",
+     "x": 365760,
+     "y": 4529328,
+     "w": 11457432,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:25",
+     "x": 365760,
+     "y": 4529328,
+     "w": 2633472,
+     "h": 545592,
+     "text": "WarehousePG twins"
+    },
+    {
+     "name": "mbl:txt:26",
+     "x": 3108960,
+     "y": 4529328,
+     "w": 3639311,
+     "h": 545592,
+     "text": "same as their Postgres engine"
+    },
+    {
+     "name": "mbl:txt:27",
+     "x": 6858000,
+     "y": 4529328,
+     "w": 2176272,
+     "h": 545592,
+     "text": "p, on each of 2 segments"
+    },
+    {
+     "name": "mbl:txt:28",
+     "x": 9144000,
+     "y": 4529328,
+     "w": 2569464,
+     "h": 545592,
+     "text": "more total work per query"
+    },
+    {
+     "name": "mbl:txt:29",
+     "x": 365760,
+     "y": 5257800,
+     "w": 11460175,
+     "h": 822960,
+     "text": "Runs 3 to 5 used p = 1 to 32, which gives HNSW and ClickHouse ef_search 10, 16, 32, 64, 128. Run 6 extended the ladder to 256 probes, where ef_search reaches its cap of 1000. The 1M sweep predates the shared list and used each engine's own list."
+    }
+   ]
+  },
+  {
+   "index": 8,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 420623,
+     "w": 82296,
+     "h": 420624,
+     "text": ""
+    },
+    {
+     "name": "mbl:title:1",
+     "x": 365760,
+     "y": 420623,
+     "w": 11277295,
+     "h": 420624,
+     "text": "EACH INDEX WAS BUILT ONCE, WITH LISTS SET TO \u221aROWS"
+    },
+    {
+     "name": "mbl:panel:1",
+     "x": 365760,
+     "y": 1417320,
+     "w": 11460175,
+     "h": 3017520,
+     "text": ""
+    },
+    {
+     "name": "mbl:txt:1",
+     "x": 566928,
+     "y": 1563624,
+     "w": 11057839,
+     "h": 2724912,
+     "text": "CREATE INDEX \u2026 USING ivfplus   (embedding vector_l2_ops) WITH (lists = 1414, rotation = on);\nCREATE INDEX \u2026 USING ivfflat   (embedding vector_l2_ops) WITH (lists = 1414);\nCREATE INDEX \u2026 USING hnsw      (embedding vector_l2_ops) WITH (m = 16, ef_construction = 64);\nCREATE INDEX \u2026 USING vchordrq  (embedding vector_l2_ops)\n                WITH (options = $$ [build.internal]  lists = [1414] $$);\n\nALTER TABLE ch_docs ADD INDEX vi embedding\n    TYPE vector_similarity('hnsw', 'L2Distance', 768, 'bf16', 16, 128)\n    GRANULARITY 100000000;\nALTER TABLE ch_docs MATERIALIZE INDEX vi;"
+    },
+    {
+     "name": "mbl:txt:2",
+     "x": 365760,
+     "y": 4754880,
+     "w": 11460175,
+     "h": 1188720,
+     "text": "Build time is one CREATE INDEX, or for ClickHouse ADD INDEX plus MATERIALIZE INDEX, measured once per engine.\nPostgres built serially (no parallel workers). WarehousePG builds on its 2 segments at the same time."
+    }
+   ]
+  },
+  {
+   "index": 9,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 2834640,
+     "w": 82296,
+     "h": 658368,
+     "text": ""
+    },
+    {
+     "name": "mbl:txt:1",
+     "x": 365760,
+     "y": 2834640,
+     "w": 11094415,
+     "h": 658368,
+     "text": "THE RESULTS"
+    },
+    {
+     "name": "mbl:txt:2",
+     "x": 365760,
+     "y": 3584448,
+     "w": 11094415,
+     "h": 274320,
+     "text": "1M and 2M rows, recall against latency"
+    }
+   ]
+  },
+  {
+   "index": 10,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 420623,
+     "w": 82296,
+     "h": 420624,
+     "text": ""
+    },
+    {
+     "name": "mbl:title:1",
+     "x": 365760,
+     "y": 420623,
+     "w": 11277295,
+     "h": 420624,
+     "text": "SIX SWEEPS; THE 2M FIGURES USE THE QUIETEST OF FOUR RUNS"
+    },
+    {
+     "name": "mbl:txt:1",
+     "x": 365760,
+     "y": 1417320,
+     "w": 621792,
+     "h": 256032,
+     "text": "RUN"
+    },
+    {
+     "name": "mbl:txt:2",
+     "x": 1097280,
+     "y": 1417320,
+     "w": 1627631,
+     "h": 256032,
+     "text": "SAVED"
+    },
+    {
+     "name": "mbl:txt:3",
+     "x": 2834640,
+     "y": 1417320,
+     "w": 804672,
+     "h": 256032,
+     "text": "ROWS"
+    },
+    {
+     "name": "mbl:txt:4",
+     "x": 3749039,
+     "y": 1417320,
+     "w": 987552,
+     "h": 256032,
+     "text": "ENGINES"
+    },
+    {
+     "name": "mbl:txt:5",
+     "x": 4846320,
+     "y": 1417320,
+     "w": 6869887,
+     "h": 256032,
+     "text": "WHAT TO KNOW"
+    },
+    {
+     "name": "mbl:hrule:1",
+     "x": 365760,
+     "y": 1728216,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:6",
+     "x": 365760,
+     "y": 1801368,
+     "w": 621792,
+     "h": 560832,
+     "text": "1"
+    },
+    {
+     "name": "mbl:txt:7",
+     "x": 1097280,
+     "y": 1801368,
+     "w": 1627631,
+     "h": 560832,
+     "text": "22 Oct, 11:12"
+    },
+    {
+     "name": "mbl:txt:8",
+     "x": 2834640,
+     "y": 1801368,
+     "w": 804672,
+     "h": 560832,
+     "text": "1M"
+    },
+    {
+     "name": "mbl:txt:9",
+     "x": 3749039,
+     "y": 1801368,
+     "w": 987552,
+     "h": 560832,
+     "text": "6"
+    },
+    {
+     "name": "mbl:txt:10",
+     "x": 4846320,
+     "y": 1801368,
+     "w": 6869887,
+     "h": 560832,
+     "text": "Includes HNSW; each engine used its own setting list; a single run."
+    },
+    {
+     "name": "mbl:hrule:2",
+     "x": 365760,
+     "y": 2362200,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:11",
+     "x": 365760,
+     "y": 2362200,
+     "w": 621792,
+     "h": 560832,
+     "text": "2"
+    },
+    {
+     "name": "mbl:txt:12",
+     "x": 1097280,
+     "y": 2362200,
+     "w": 1627631,
+     "h": 560832,
+     "text": "22 Oct, 16:09"
+    },
+    {
+     "name": "mbl:txt:13",
+     "x": 2834640,
+     "y": 2362200,
+     "w": 804672,
+     "h": 560832,
+     "text": "2M"
+    },
+    {
+     "name": "mbl:txt:14",
+     "x": 3749039,
+     "y": 2362200,
+     "w": 987552,
+     "h": 560832,
+     "text": "5"
+    },
+    {
+     "name": "mbl:txt:15",
+     "x": 4846320,
+     "y": 2362200,
+     "w": 6869887,
+     "h": 560832,
+     "text": "Set aside: the WarehousePG IVFFlat index was rebuilt afterwards (recall at 16 probes 0.928, then 0.916)."
+    },
+    {
+     "name": "mbl:hrule:3",
+     "x": 365760,
+     "y": 2923032,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:16",
+     "x": 365760,
+     "y": 2923032,
+     "w": 621792,
+     "h": 560832,
+     "text": "3"
+    },
+    {
+     "name": "mbl:txt:17",
+     "x": 1097280,
+     "y": 2923032,
+     "w": 1627631,
+     "h": 560832,
+     "text": "23 Oct, 06:33"
+    },
+    {
+     "name": "mbl:txt:18",
+     "x": 2834640,
+     "y": 2923032,
+     "w": 804672,
+     "h": 560832,
+     "text": "2M"
+    },
+    {
+     "name": "mbl:txt:19",
+     "x": 3749039,
+     "y": 2923032,
+     "w": 987552,
+     "h": 560832,
+     "text": "6"
+    },
+    {
+     "name": "mbl:txt:20",
+     "x": 4846320,
+     "y": 2923032,
+     "w": 6869887,
+     "h": 560832,
+     "text": "First sweep with ClickHouse; the exact baseline was computed here."
+    },
+    {
+     "name": "mbl:hrule:4",
+     "x": 365760,
+     "y": 3483864,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:21",
+     "x": 365760,
+     "y": 3483864,
+     "w": 621792,
+     "h": 560832,
+     "text": "4"
+    },
+    {
+     "name": "mbl:txt:22",
+     "x": 1097280,
+     "y": 3483864,
+     "w": 1627631,
+     "h": 560832,
+     "text": "23 Oct, 07:54"
+    },
+    {
+     "name": "mbl:txt:23",
+     "x": 2834640,
+     "y": 3483864,
+     "w": 804672,
+     "h": 560832,
+     "text": "2M"
+    },
+    {
+     "name": "mbl:txt:24",
+     "x": 3749039,
+     "y": 3483864,
+     "w": 987552,
+     "h": 560832,
+     "text": "6"
+    },
+    {
+     "name": "mbl:txt:25",
+     "x": 4846320,
+     "y": 3483864,
+     "w": 6869887,
+     "h": 560832,
+     "text": "ClickHouse again; the baseline was reused."
+    },
+    {
+     "name": "mbl:hrule:5",
+     "x": 365760,
+     "y": 4044696,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:26",
+     "x": 365760,
+     "y": 4044696,
+     "w": 621792,
+     "h": 560832,
+     "text": "5"
+    },
+    {
+     "name": "mbl:txt:27",
+     "x": 1097280,
+     "y": 4044696,
+     "w": 1627631,
+     "h": 560832,
+     "text": "23 Oct, 08:19"
+    },
+    {
+     "name": "mbl:txt:28",
+     "x": 2834640,
+     "y": 4044696,
+     "w": 804672,
+     "h": 560832,
+     "text": "2M"
+    },
+    {
+     "name": "mbl:txt:29",
+     "x": 3749039,
+     "y": 4044696,
+     "w": 987552,
+     "h": 560832,
+     "text": "5"
+    },
+    {
+     "name": "mbl:txt:30",
+     "x": 4846320,
+     "y": 4044696,
+     "w": 6869887,
+     "h": 560832,
+     "text": "No ClickHouse; the baseline was reused; the cleanest latency of runs 3 to 5."
+    },
+    {
+     "name": "mbl:hrule:6",
+     "x": 365760,
+     "y": 4605528,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:31",
+     "x": 365760,
+     "y": 4605528,
+     "w": 621792,
+     "h": 560832,
+     "text": "6"
+    },
+    {
+     "name": "mbl:txt:32",
+     "x": 1097280,
+     "y": 4605528,
+     "w": 1627631,
+     "h": 560832,
+     "text": "23 Oct, 10:28"
+    },
+    {
+     "name": "mbl:txt:33",
+     "x": 2834640,
+     "y": 4605528,
+     "w": 804672,
+     "h": 560832,
+     "text": "2M"
+    },
+    {
+     "name": "mbl:txt:34",
+     "x": 3749039,
+     "y": 4605528,
+     "w": 987552,
+     "h": 560832,
+     "text": "4"
+    },
+    {
+     "name": "mbl:txt:35",
+     "x": 4846320,
+     "y": 4605528,
+     "w": 6869887,
+     "h": 560832,
+     "text": "Ladder extended to 256 probes; no ClickHouse or WarehousePG ivfplus; reproduces run 5."
+    },
+    {
+     "name": "mbl:txt:36",
+     "x": 365760,
+     "y": 5349240,
+     "w": 11460175,
+     "h": 777240,
+     "text": "Recall is identical in runs 3 to 6, because the queries, the exact baseline and the indexes did not change. For each 2M setting the figure used here is the lowest latency of the runs that measured it; settings above 32 probes come from run 6 alone."
+    }
+   ]
+  },
+  {
+   "index": 11,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 420623,
+     "w": 82296,
+     "h": 420624,
+     "text": ""
+    },
+    {
+     "name": "mbl:title:1",
+     "x": 365760,
+     "y": 420623,
+     "w": 11277295,
+     "h": 420624,
+     "text": "AT 1M ROWS IVFPLUS ON WAREHOUSEPG REACHED 90% RECALL IN 4 MS"
+    },
+    {
+     "name": "mbl:chart:1",
+     "x": 365760,
+     "y": 1417320,
+     "w": 8138160,
+     "h": 4709160
+    },
+    {
+     "name": "mbl:vrule:1",
+     "x": 8732520,
+     "y": 1508760,
+     "w": 0,
+     "h": 4526280
+    },
+    {
+     "name": "mbl:panel:1",
+     "x": 8897112,
+     "y": 1463040,
+     "w": 3035808,
+     "h": 1600200,
+     "text": ""
+    },
+    {
+     "name": "mbl:txt:1",
+     "x": 9006840,
+     "y": 1554480,
+     "w": 2816352,
+     "h": 566928,
+     "text": "4.0 ms"
+    },
+    {
+     "name": "mbl:txt:2",
+     "x": 9006840,
+     "y": 2148840,
+     "w": 2816352,
+     "h": 868680,
+     "text": "ivfplus on WarehousePG at 91% recall, 16 probes"
+    },
+    {
+     "name": "mbl:txt:3",
+     "x": 9006840,
+     "y": 3291839,
+     "w": 2816352,
+     "h": 603504,
+     "text": "12.6 ms"
+    },
+    {
+     "name": "mbl:txt:4",
+     "x": 9006840,
+     "y": 3931920,
+     "w": 2816352,
+     "h": 457200,
+     "text": "IVFFlat on WarehousePG at 95% recall"
+    },
+    {
+     "name": "mbl:txt:5",
+     "x": 9006840,
+     "y": 4389120,
+     "w": 2816352,
+     "h": 603504,
+     "text": "16.9 ms"
+    },
+    {
+     "name": "mbl:txt:6",
+     "x": 9006840,
+     "y": 5029200,
+     "w": 2816352,
+     "h": 457200,
+     "text": "pgvector HNSW at 92% recall, ef_search 320"
+    },
+    {
+     "name": "mbl:txt:7",
+     "x": 9006840,
+     "y": 5486400,
+     "w": 2816352,
+     "h": 640080,
+     "text": "ivfplus on Postgres reached 0.88 after 16 probes, the end of its list. At 2M it plateaus at 0.886."
+    }
+   ]
+  },
+  {
+   "index": 12,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 420623,
+     "w": 82296,
+     "h": 420624,
+     "text": ""
+    },
+    {
+     "name": "mbl:title:1",
+     "x": 365760,
+     "y": 420623,
+     "w": 11277295,
+     "h": 420624,
+     "text": "AT 2M ROWS THE ORDER HOLDS: WAREHOUSEPG IVFPLUS STAYS UNDER 7 MS"
+    },
+    {
+     "name": "mbl:chart:1",
+     "x": 365760,
+     "y": 1417320,
+     "w": 8138160,
+     "h": 4709160
+    },
+    {
+     "name": "mbl:vrule:1",
+     "x": 8732520,
+     "y": 1508760,
+     "w": 0,
+     "h": 4526280
+    },
+    {
+     "name": "mbl:panel:1",
+     "x": 8897112,
+     "y": 1463040,
+     "w": 3035808,
+     "h": 1600200,
+     "text": ""
+    },
+    {
+     "name": "mbl:txt:1",
+     "x": 9006840,
+     "y": 1554480,
+     "w": 2816352,
+     "h": 566928,
+     "text": "6.1 ms"
+    },
+    {
+     "name": "mbl:txt:2",
+     "x": 9006840,
+     "y": 2148840,
+     "w": 2816352,
+     "h": 868680,
+     "text": "ivfplus on WarehousePG at 94% recall, 32 probes"
+    },
+    {
+     "name": "mbl:txt:3",
+     "x": 9006840,
+     "y": 3291839,
+     "w": 2816352,
+     "h": 603504,
+     "text": "19.3 ms"
+    },
+    {
+     "name": "mbl:txt:4",
+     "x": 9006840,
+     "y": 3931920,
+     "w": 2816352,
+     "h": 457200,
+     "text": "IVFFlat on WarehousePG at 92% recall"
+    },
+    {
+     "name": "mbl:txt:5",
+     "x": 9006840,
+     "y": 4389120,
+     "w": 2816352,
+     "h": 603504,
+     "text": "47.3 ms"
+    },
+    {
+     "name": "mbl:txt:6",
+     "x": 9006840,
+     "y": 5029200,
+     "w": 2816352,
+     "h": 685800,
+     "text": "VectorChord at 90% recall; IVFFlat on Postgres took 52.2 ms"
+    },
+    {
+     "name": "mbl:txt:7",
+     "x": 9006840,
+     "y": 5532120,
+     "w": 2816352,
+     "h": 594360,
+     "text": "ivfplus on Postgres plateaus at 0.886 and ClickHouse stopped at 0.76; neither reached 90%."
+    }
+   ]
+  },
+  {
+   "index": 13,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 420623,
+     "w": 82296,
+     "h": 420624,
+     "text": ""
+    },
+    {
+     "name": "mbl:title:1",
+     "x": 365760,
+     "y": 420623,
+     "w": 11277295,
+     "h": 420624,
+     "text": "AT EQUAL RECALL IVFPLUS IS 1.3 TO 6.2X FASTER THAN IVFFLAT"
+    },
+    {
+     "name": "mbl:txt:1",
+     "x": 365760,
+     "y": 1417320,
+     "w": 3364991,
+     "h": 256032,
+     "text": "LATENCY AT EQUAL RECALL, 2M ROWS"
+    },
+    {
+     "name": "mbl:txt:2",
+     "x": 3840480,
+     "y": 1417320,
+     "w": 1170431,
+     "h": 256032,
+     "text": "60%"
+    },
+    {
+     "name": "mbl:txt:3",
+     "x": 5120640,
+     "y": 1417320,
+     "w": 1170431,
+     "h": 256032,
+     "text": "75%"
+    },
+    {
+     "name": "mbl:txt:4",
+     "x": 6400800,
+     "y": 1417320,
+     "w": 1170431,
+     "h": 256032,
+     "text": "85%"
+    },
+    {
+     "name": "mbl:txt:5",
+     "x": 7680960,
+     "y": 1417320,
+     "w": 1170431,
+     "h": 256032,
+     "text": "90%"
+    },
+    {
+     "name": "mbl:txt:6",
+     "x": 8961120,
+     "y": 1417320,
+     "w": 1170431,
+     "h": 256032,
+     "text": "95%"
+    },
+    {
+     "name": "mbl:txt:7",
+     "x": 10241280,
+     "y": 1417320,
+     "w": 1170431,
+     "h": 256032,
+     "text": "99%"
+    },
+    {
+     "name": "mbl:txt:8",
+     "x": 11521440,
+     "y": 1417320,
+     "w": 194767,
+     "h": 256032,
+     "text": ""
+    },
+    {
+     "name": "mbl:hrule:1",
+     "x": 365760,
+     "y": 1728216,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:9",
+     "x": 365760,
+     "y": 1801368,
+     "w": 3364991,
+     "h": 507492,
+     "text": "EDB ivfplus @ WHPG"
+    },
+    {
+     "name": "mbl:txt:10",
+     "x": 3840480,
+     "y": 1801368,
+     "w": 1170431,
+     "h": 507492,
+     "text": "3.7 ms"
+    },
+    {
+     "name": "mbl:txt:11",
+     "x": 5120640,
+     "y": 1801368,
+     "w": 1170431,
+     "h": 507492,
+     "text": "4.5 ms"
+    },
+    {
+     "name": "mbl:txt:12",
+     "x": 6400800,
+     "y": 1801368,
+     "w": 1170431,
+     "h": 507492,
+     "text": "5.1 ms"
+    },
+    {
+     "name": "mbl:txt:13",
+     "x": 7680960,
+     "y": 1801368,
+     "w": 1170431,
+     "h": 507492,
+     "text": "5.6 ms"
+    },
+    {
+     "name": "mbl:txt:14",
+     "x": 8961120,
+     "y": 1801368,
+     "w": 1170431,
+     "h": 507492,
+     "text": "not reached"
+    },
+    {
+     "name": "mbl:txt:15",
+     "x": 10241280,
+     "y": 1801368,
+     "w": 1170431,
+     "h": 507492,
+     "text": "not reached"
+    },
+    {
+     "name": "mbl:txt:16",
+     "x": 11521440,
+     "y": 1801368,
+     "w": 194767,
+     "h": 507492,
+     "text": ""
+    },
+    {
+     "name": "mbl:hrule:2",
+     "x": 365760,
+     "y": 2308860,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:17",
+     "x": 365760,
+     "y": 2308860,
+     "w": 3364991,
+     "h": 507492,
+     "text": "pgvector IVFFlat @ WHPG"
+    },
+    {
+     "name": "mbl:txt:18",
+     "x": 3840480,
+     "y": 2308860,
+     "w": 1170431,
+     "h": 507492,
+     "text": "4.8 ms"
+    },
+    {
+     "name": "mbl:txt:19",
+     "x": 5120640,
+     "y": 2308860,
+     "w": 1170431,
+     "h": 507492,
+     "text": "7.9 ms"
+    },
+    {
+     "name": "mbl:txt:20",
+     "x": 6400800,
+     "y": 2308860,
+     "w": 1170431,
+     "h": 507492,
+     "text": "12.9 ms"
+    },
+    {
+     "name": "mbl:txt:21",
+     "x": 7680960,
+     "y": 2308860,
+     "w": 1170431,
+     "h": 507492,
+     "text": "17.5 ms"
+    },
+    {
+     "name": "mbl:txt:22",
+     "x": 8961120,
+     "y": 2308860,
+     "w": 1170431,
+     "h": 507492,
+     "text": "28.5 ms"
+    },
+    {
+     "name": "mbl:txt:23",
+     "x": 10241280,
+     "y": 2308860,
+     "w": 1170431,
+     "h": 507492,
+     "text": "58.2 ms"
+    },
+    {
+     "name": "mbl:txt:24",
+     "x": 11521440,
+     "y": 2308860,
+     "w": 194767,
+     "h": 507492,
+     "text": ""
+    },
+    {
+     "name": "mbl:hrule:3",
+     "x": 365760,
+     "y": 2816352,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:25",
+     "x": 365760,
+     "y": 2816352,
+     "w": 3364991,
+     "h": 507492,
+     "text": "EDB Vector Plus"
+    },
+    {
+     "name": "mbl:txt:26",
+     "x": 3840480,
+     "y": 2816352,
+     "w": 1170431,
+     "h": 507492,
+     "text": "2.6 ms"
+    },
+    {
+     "name": "mbl:txt:27",
+     "x": 5120640,
+     "y": 2816352,
+     "w": 1170431,
+     "h": 507492,
+     "text": "3.8 ms"
+    },
+    {
+     "name": "mbl:txt:28",
+     "x": 6400800,
+     "y": 2816352,
+     "w": 1170431,
+     "h": 507492,
+     "text": "6.9 ms"
+    },
+    {
+     "name": "mbl:txt:29",
+     "x": 7680960,
+     "y": 2816352,
+     "w": 1170431,
+     "h": 507492,
+     "text": "not reached"
+    },
+    {
+     "name": "mbl:txt:30",
+     "x": 8961120,
+     "y": 2816352,
+     "w": 1170431,
+     "h": 507492,
+     "text": "not reached"
+    },
+    {
+     "name": "mbl:txt:31",
+     "x": 10241280,
+     "y": 2816352,
+     "w": 1170431,
+     "h": 507492,
+     "text": "not reached"
+    },
+    {
+     "name": "mbl:txt:32",
+     "x": 11521440,
+     "y": 2816352,
+     "w": 194767,
+     "h": 507492,
+     "text": ""
+    },
+    {
+     "name": "mbl:hrule:4",
+     "x": 365760,
+     "y": 3323844,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:33",
+     "x": 365760,
+     "y": 3323844,
+     "w": 3364991,
+     "h": 507492,
+     "text": "pgvector IVFFlat"
+    },
+    {
+     "name": "mbl:txt:34",
+     "x": 3840480,
+     "y": 3323844,
+     "w": 1170431,
+     "h": 507492,
+     "text": "11.0 ms"
+    },
+    {
+     "name": "mbl:txt:35",
+     "x": 5120640,
+     "y": 3323844,
+     "w": 1170431,
+     "h": 507492,
+     "text": "23.8 ms"
+    },
+    {
+     "name": "mbl:txt:36",
+     "x": 6400800,
+     "y": 3323844,
+     "w": 1170431,
+     "h": 507492,
+     "text": "39.4 ms"
+    },
+    {
+     "name": "mbl:txt:37",
+     "x": 7680960,
+     "y": 3323844,
+     "w": 1170431,
+     "h": 507492,
+     "text": "50.7 ms"
+    },
+    {
+     "name": "mbl:txt:38",
+     "x": 8961120,
+     "y": 3323844,
+     "w": 1170431,
+     "h": 507492,
+     "text": "87.3 ms"
+    },
+    {
+     "name": "mbl:txt:39",
+     "x": 10241280,
+     "y": 3323844,
+     "w": 1170431,
+     "h": 507492,
+     "text": "179 ms"
+    },
+    {
+     "name": "mbl:txt:40",
+     "x": 11521440,
+     "y": 3323844,
+     "w": 194767,
+     "h": 507492,
+     "text": ""
+    },
+    {
+     "name": "mbl:hrule:5",
+     "x": 365760,
+     "y": 3831335,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:41",
+     "x": 365760,
+     "y": 3831336,
+     "w": 3364991,
+     "h": 507492,
+     "text": "VectorChord"
+    },
+    {
+     "name": "mbl:txt:42",
+     "x": 3840480,
+     "y": 3831336,
+     "w": 1170431,
+     "h": 507492,
+     "text": "14.3 ms"
+    },
+    {
+     "name": "mbl:txt:43",
+     "x": 5120640,
+     "y": 3831336,
+     "w": 1170431,
+     "h": 507492,
+     "text": "25.2 ms"
+    },
+    {
+     "name": "mbl:txt:44",
+     "x": 6400800,
+     "y": 3831336,
+     "w": 1170431,
+     "h": 507492,
+     "text": "37.8 ms"
+    },
+    {
+     "name": "mbl:txt:45",
+     "x": 7680960,
+     "y": 3831336,
+     "w": 1170431,
+     "h": 507492,
+     "text": "46.5 ms"
+    },
+    {
+     "name": "mbl:txt:46",
+     "x": 8961120,
+     "y": 3831336,
+     "w": 1170431,
+     "h": 507492,
+     "text": "69.7 ms"
+    },
+    {
+     "name": "mbl:txt:47",
+     "x": 10241280,
+     "y": 3831336,
+     "w": 1170431,
+     "h": 507492,
+     "text": "not reached"
+    },
+    {
+     "name": "mbl:txt:48",
+     "x": 11521440,
+     "y": 3831336,
+     "w": 194767,
+     "h": 507492,
+     "text": ""
+    },
+    {
+     "name": "mbl:hrule:6",
+     "x": 365760,
+     "y": 4338828,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:49",
+     "x": 365760,
+     "y": 4338828,
+     "w": 3364991,
+     "h": 507492,
+     "text": "ClickHouse"
+    },
+    {
+     "name": "mbl:txt:50",
+     "x": 3840480,
+     "y": 4338828,
+     "w": 1170431,
+     "h": 507492,
+     "text": "10.9 ms"
+    },
+    {
+     "name": "mbl:txt:51",
+     "x": 5120640,
+     "y": 4338828,
+     "w": 1170431,
+     "h": 507492,
+     "text": "11.9 ms"
+    },
+    {
+     "name": "mbl:txt:52",
+     "x": 6400800,
+     "y": 4338828,
+     "w": 1170431,
+     "h": 507492,
+     "text": "not reached"
+    },
+    {
+     "name": "mbl:txt:53",
+     "x": 7680960,
+     "y": 4338828,
+     "w": 1170431,
+     "h": 507492,
+     "text": "not reached"
+    },
+    {
+     "name": "mbl:txt:54",
+     "x": 8961120,
+     "y": 4338828,
+     "w": 1170431,
+     "h": 507492,
+     "text": "not reached"
+    },
+    {
+     "name": "mbl:txt:55",
+     "x": 10241280,
+     "y": 4338828,
+     "w": 1170431,
+     "h": 507492,
+     "text": "not reached"
+    },
+    {
+     "name": "mbl:txt:56",
+     "x": 11521440,
+     "y": 4338828,
+     "w": 194767,
+     "h": 507492,
+     "text": ""
+    },
+    {
+     "name": "mbl:txt:57",
+     "x": 365760,
+     "y": 4956048,
+     "w": 3383279,
+     "h": 365760,
+     "text": "ivfplus vs IVFFlat on WarehousePG"
+    },
+    {
+     "name": "mbl:txt:58",
+     "x": 3840480,
+     "y": 4956048,
+     "w": 1170431,
+     "h": 365760,
+     "text": "1.3\u00d7"
+    },
+    {
+     "name": "mbl:txt:59",
+     "x": 5120640,
+     "y": 4956048,
+     "w": 1170431,
+     "h": 365760,
+     "text": "1.8\u00d7"
+    },
+    {
+     "name": "mbl:txt:60",
+     "x": 6400800,
+     "y": 4956048,
+     "w": 1170431,
+     "h": 365760,
+     "text": "2.5\u00d7"
+    },
+    {
+     "name": "mbl:txt:61",
+     "x": 7680959,
+     "y": 4956048,
+     "w": 1170431,
+     "h": 365760,
+     "text": "3.1\u00d7"
+    },
+    {
+     "name": "mbl:txt:62",
+     "x": 8961120,
+     "y": 4956048,
+     "w": 1170431,
+     "h": 365760,
+     "text": "\u2013"
+    },
+    {
+     "name": "mbl:txt:63",
+     "x": 10241280,
+     "y": 4956048,
+     "w": 1170431,
+     "h": 365760,
+     "text": "\u2013"
+    },
+    {
+     "name": "mbl:txt:64",
+     "x": 365760,
+     "y": 5367528,
+     "w": 3383279,
+     "h": 365760,
+     "text": "ivfplus vs IVFFlat on Postgres"
+    },
+    {
+     "name": "mbl:txt:65",
+     "x": 3840480,
+     "y": 5367528,
+     "w": 1170431,
+     "h": 365760,
+     "text": "4.3\u00d7"
+    },
+    {
+     "name": "mbl:txt:66",
+     "x": 5120640,
+     "y": 5367528,
+     "w": 1170431,
+     "h": 365760,
+     "text": "6.2\u00d7"
+    },
+    {
+     "name": "mbl:txt:67",
+     "x": 6400800,
+     "y": 5367528,
+     "w": 1170431,
+     "h": 365760,
+     "text": "5.7\u00d7"
+    },
+    {
+     "name": "mbl:txt:68",
+     "x": 7680959,
+     "y": 5367528,
+     "w": 1170431,
+     "h": 365760,
+     "text": "\u2013"
+    },
+    {
+     "name": "mbl:txt:69",
+     "x": 8961120,
+     "y": 5367528,
+     "w": 1170431,
+     "h": 365760,
+     "text": "\u2013"
+    },
+    {
+     "name": "mbl:txt:70",
+     "x": 10241280,
+     "y": 5367528,
+     "w": 1170431,
+     "h": 365760,
+     "text": "\u2013"
+    },
+    {
+     "name": "mbl:txt:71",
+     "x": 365760,
+     "y": 5815584,
+     "w": 11460175,
+     "h": 365760,
+     "text": "Interpolated along each measured curve, lowest of the repeats. ivfplus on Postgres plateaus at 0.886, so its comparison ends there; \u201cnot reached\u201d means the engine never got that far."
+    }
+   ]
+  },
+  {
+   "index": 14,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 420623,
+     "w": 82296,
+     "h": 420624,
+     "text": ""
+    },
+    {
+     "name": "mbl:title:1",
+     "x": 365760,
+     "y": 420623,
+     "w": 11277295,
+     "h": 420624,
+     "text": "IVFPLUS INDEXES ARE HALF THE SIZE; BUILD TIME MATCHES IVFFLAT"
+    },
+    {
+     "name": "mbl:txt:1",
+     "x": 365760,
+     "y": 1417320,
+     "w": 5501487,
+     "h": 274320,
+     "text": "Build time, seconds"
+    },
+    {
+     "name": "mbl:chart:1",
+     "x": 365760,
+     "y": 1737360,
+     "w": 5501487,
+     "h": 3566160
+    },
+    {
+     "name": "mbl:txt:2",
+     "x": 6324447,
+     "y": 1417320,
+     "w": 5501487,
+     "h": 274320,
+     "text": "Index size, GiB"
+    },
+    {
+     "name": "mbl:chart:2",
+     "x": 6324447,
+     "y": 1737360,
+     "w": 5501487,
+     "h": 3566160
+    },
+    {
+     "name": "mbl:vrule:1",
+     "x": 6095847,
+     "y": 1691640,
+     "w": 0,
+     "h": 3566160
+    },
+    {
+     "name": "mbl:hrule:1",
+     "x": 365760,
+     "y": 5257800,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:3",
+     "x": 365760,
+     "y": 5413248,
+     "w": 11460175,
+     "h": 731520,
+     "text": "Per row: ivfplus 1,908 bytes, IVFFlat 4,100, VectorChord 4,268, ClickHouse 1,637. A raw 768-dimension vector is 3,072 bytes. Builds are single measurements; the WarehousePG builds ran on 2 segments."
+    }
+   ]
+  },
+  {
+   "index": 15,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 420623,
+     "w": 82296,
+     "h": 420624,
+     "text": ""
+    },
+    {
+     "name": "mbl:title:1",
+     "x": 365760,
+     "y": 420623,
+     "w": 11277295,
+     "h": 420624,
+     "text": "DOUBLING THE ROWS ADDS 32 TO 56% LATENCY AND 2.5 TO 3.1X BUILD TIME"
+    },
+    {
+     "name": "mbl:txt:1",
+     "x": 365760,
+     "y": 1417320,
+     "w": 2633472,
+     "h": 256032,
+     "text": "ENGINE"
+    },
+    {
+     "name": "mbl:txt:2",
+     "x": 3108960,
+     "y": 1417320,
+     "w": 2221991,
+     "h": 256032,
+     "text": "LATENCY AT 16 PROBES"
+    },
+    {
+     "name": "mbl:txt:3",
+     "x": 5440679,
+     "y": 1417320,
+     "w": 2039112,
+     "h": 256032,
+     "text": "RECALL AT 16 PROBES"
+    },
+    {
+     "name": "mbl:txt:4",
+     "x": 7589519,
+     "y": 1417320,
+     "w": 1901952,
+     "h": 256032,
+     "text": "BUILD TIME"
+    },
+    {
+     "name": "mbl:txt:5",
+     "x": 9601200,
+     "y": 1417320,
+     "w": 2112264,
+     "h": 256032,
+     "text": "INDEX SIZE"
+    },
+    {
+     "name": "mbl:hrule:1",
+     "x": 365760,
+     "y": 1728216,
+     "w": 11457432,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:6",
+     "x": 365760,
+     "y": 1801368,
+     "w": 2633472,
+     "h": 618134,
+     "text": "EDB Vector Plus"
+    },
+    {
+     "name": "mbl:txt:7",
+     "x": 3108960,
+     "y": 1801368,
+     "w": 2221991,
+     "h": 618134,
+     "text": "4.3 \u2192 5.7 ms  (\u00d71.31)"
+    },
+    {
+     "name": "mbl:txt:8",
+     "x": 5440679,
+     "y": 1801368,
+     "w": 2039112,
+     "h": 618134,
+     "text": "0.882 \u2192 0.834"
+    },
+    {
+     "name": "mbl:txt:9",
+     "x": 7589519,
+     "y": 1801368,
+     "w": 1901952,
+     "h": 618134,
+     "text": "\u00d72.5"
+    },
+    {
+     "name": "mbl:txt:10",
+     "x": 9601200,
+     "y": 1801368,
+     "w": 2112264,
+     "h": 618134,
+     "text": "\u00d72.0"
+    },
+    {
+     "name": "mbl:hrule:2",
+     "x": 365760,
+     "y": 2419502,
+     "w": 11457432,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:11",
+     "x": 365760,
+     "y": 2419502,
+     "w": 2633472,
+     "h": 618134,
+     "text": "EDB ivfplus @ WHPG"
+    },
+    {
+     "name": "mbl:txt:12",
+     "x": 3108960,
+     "y": 2419502,
+     "w": 2221991,
+     "h": 618134,
+     "text": "4.0 \u2192 5.3 ms  (\u00d71.32)"
+    },
+    {
+     "name": "mbl:txt:13",
+     "x": 5440679,
+     "y": 2419502,
+     "w": 2039112,
+     "h": 618134,
+     "text": "0.914 \u2192 0.874"
+    },
+    {
+     "name": "mbl:txt:14",
+     "x": 7589519,
+     "y": 2419502,
+     "w": 1901952,
+     "h": 618134,
+     "text": "\u00d73.1"
+    },
+    {
+     "name": "mbl:txt:15",
+     "x": 9601200,
+     "y": 2419502,
+     "w": 2112264,
+     "h": 618134,
+     "text": "\u00d71.9"
+    },
+    {
+     "name": "mbl:hrule:3",
+     "x": 365760,
+     "y": 3037636,
+     "w": 11457432,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:16",
+     "x": 365760,
+     "y": 3037636,
+     "w": 2633472,
+     "h": 618134,
+     "text": "pgvector IVFFlat"
+    },
+    {
+     "name": "mbl:txt:17",
+     "x": 3108960,
+     "y": 3037636,
+     "w": 2221991,
+     "h": 618134,
+     "text": "34.8 \u2192 52.2 ms  (\u00d71.50)"
+    },
+    {
+     "name": "mbl:txt:18",
+     "x": 5440679,
+     "y": 3037636,
+     "w": 2039112,
+     "h": 618134,
+     "text": "0.938 \u2192 0.906"
+    },
+    {
+     "name": "mbl:txt:19",
+     "x": 7589519,
+     "y": 3037636,
+     "w": 1901952,
+     "h": 618134,
+     "text": "\u00d72.5"
+    },
+    {
+     "name": "mbl:txt:20",
+     "x": 9601200,
+     "y": 3037636,
+     "w": 2112264,
+     "h": 618134,
+     "text": "\u00d72.0"
+    },
+    {
+     "name": "mbl:hrule:4",
+     "x": 365760,
+     "y": 3655771,
+     "w": 11457432,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:21",
+     "x": 365760,
+     "y": 3655771,
+     "w": 2633472,
+     "h": 618134,
+     "text": "pgvector IVFFlat @ WHPG"
+    },
+    {
+     "name": "mbl:txt:22",
+     "x": 3108960,
+     "y": 3655771,
+     "w": 2221991,
+     "h": 618134,
+     "text": "12.6 \u2192 19.3 ms  (\u00d71.53)"
+    },
+    {
+     "name": "mbl:txt:23",
+     "x": 5440679,
+     "y": 3655771,
+     "w": 2039112,
+     "h": 618134,
+     "text": "0.946 \u2192 0.916"
+    },
+    {
+     "name": "mbl:txt:24",
+     "x": 7589519,
+     "y": 3655771,
+     "w": 1901952,
+     "h": 618134,
+     "text": "\u00d73.0"
+    },
+    {
+     "name": "mbl:txt:25",
+     "x": 9601200,
+     "y": 3655771,
+     "w": 2112264,
+     "h": 618134,
+     "text": "\u00d72.0"
+    },
+    {
+     "name": "mbl:hrule:5",
+     "x": 365760,
+     "y": 4273905,
+     "w": 11457432,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:26",
+     "x": 365760,
+     "y": 4273905,
+     "w": 2633472,
+     "h": 618134,
+     "text": "VectorChord"
+    },
+    {
+     "name": "mbl:txt:27",
+     "x": 3108960,
+     "y": 4273905,
+     "w": 2221991,
+     "h": 618134,
+     "text": "33.6 \u2192 47.3 ms  (\u00d71.41)"
+    },
+    {
+     "name": "mbl:txt:28",
+     "x": 5440679,
+     "y": 4273905,
+     "w": 2039112,
+     "h": 618134,
+     "text": "0.914 \u2192 0.904"
+    },
+    {
+     "name": "mbl:txt:29",
+     "x": 7589519,
+     "y": 4273905,
+     "w": 1901952,
+     "h": 618134,
+     "text": "\u00d73.1"
+    },
+    {
+     "name": "mbl:txt:30",
+     "x": 9601200,
+     "y": 4273905,
+     "w": 2112264,
+     "h": 618134,
+     "text": "\u00d72.0"
+    },
+    {
+     "name": "mbl:txt:31",
+     "x": 365760,
+     "y": 5074920,
+     "w": 11460175,
+     "h": 1005840,
+     "text": "Doubling the rows doubles the index and multiplies build time by 2.5 to 3.1. Query latency grows by less than the data, but recall at the same probes falls by 0.01 to 0.05, so a larger table needs a few more probes for the same recall. The 1M figures are a single run."
+    }
+   ]
+  },
+  {
+   "index": 16,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 420623,
+     "w": 82296,
+     "h": 420624,
+     "text": ""
+    },
+    {
+     "name": "mbl:title:1",
+     "x": 365760,
+     "y": 420623,
+     "w": 11277295,
+     "h": 420624,
+     "text": "WAREHOUSEPG CUTS IVFFLAT LATENCY 2.5X, BUT IVFPLUS MAINLY GAINS RECALL"
+    },
+    {
+     "name": "mbl:txt:1",
+     "x": 365760,
+     "y": 1417320,
+     "w": 2999232,
+     "h": 256032,
+     "text": "ENGINE AND PROBES"
+    },
+    {
+     "name": "mbl:txt:2",
+     "x": 3474720,
+     "y": 1417320,
+     "w": 2542032,
+     "h": 256032,
+     "text": "POSTGRES"
+    },
+    {
+     "name": "mbl:txt:3",
+     "x": 6126479,
+     "y": 1417320,
+     "w": 2542032,
+     "h": 256032,
+     "text": "WAREHOUSEPG"
+    },
+    {
+     "name": "mbl:txt:4",
+     "x": 8778240,
+     "y": 1417320,
+     "w": 1444752,
+     "h": 256032,
+     "text": "LATENCY GAIN"
+    },
+    {
+     "name": "mbl:txt:5",
+     "x": 10332719,
+     "y": 1417320,
+     "w": 1383487,
+     "h": 256032,
+     "text": "RECALL GAIN"
+    },
+    {
+     "name": "mbl:hrule:1",
+     "x": 365760,
+     "y": 1728216,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:6",
+     "x": 365760,
+     "y": 1801368,
+     "w": 2999232,
+     "h": 669798,
+     "text": "ivfplus, 16 probes"
+    },
+    {
+     "name": "mbl:txt:7",
+     "x": 3474720,
+     "y": 1801368,
+     "w": 2542032,
+     "h": 669798,
+     "text": "5.7 ms \u00b7 recall 0.834"
+    },
+    {
+     "name": "mbl:txt:8",
+     "x": 6126479,
+     "y": 1801368,
+     "w": 2542032,
+     "h": 669798,
+     "text": "5.3 ms \u00b7 recall 0.874"
+    },
+    {
+     "name": "mbl:txt:9",
+     "x": 8778240,
+     "y": 1801368,
+     "w": 1444752,
+     "h": 669798,
+     "text": "1.07\u00d7"
+    },
+    {
+     "name": "mbl:txt:10",
+     "x": 10332719,
+     "y": 1801368,
+     "w": 1383487,
+     "h": 669798,
+     "text": "+0.040"
+    },
+    {
+     "name": "mbl:hrule:2",
+     "x": 365760,
+     "y": 2471166,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:11",
+     "x": 365760,
+     "y": 2471166,
+     "w": 2999232,
+     "h": 669798,
+     "text": "ivfplus, 32 probes"
+    },
+    {
+     "name": "mbl:txt:12",
+     "x": 3474720,
+     "y": 2471166,
+     "w": 2542032,
+     "h": 669798,
+     "text": "10.0 ms \u00b7 recall 0.880"
+    },
+    {
+     "name": "mbl:txt:13",
+     "x": 6126479,
+     "y": 2471166,
+     "w": 2542032,
+     "h": 669798,
+     "text": "6.1 ms \u00b7 recall 0.936"
+    },
+    {
+     "name": "mbl:txt:14",
+     "x": 8778240,
+     "y": 2471166,
+     "w": 1444752,
+     "h": 669798,
+     "text": "1.64\u00d7"
+    },
+    {
+     "name": "mbl:txt:15",
+     "x": 10332719,
+     "y": 2471166,
+     "w": 1383487,
+     "h": 669798,
+     "text": "+0.056"
+    },
+    {
+     "name": "mbl:hrule:3",
+     "x": 365760,
+     "y": 3140964,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:16",
+     "x": 365760,
+     "y": 3140964,
+     "w": 2999232,
+     "h": 669798,
+     "text": "IVFFlat, 16 probes"
+    },
+    {
+     "name": "mbl:txt:17",
+     "x": 3474720,
+     "y": 3140964,
+     "w": 2542032,
+     "h": 669798,
+     "text": "52.2 ms \u00b7 recall 0.906"
+    },
+    {
+     "name": "mbl:txt:18",
+     "x": 6126479,
+     "y": 3140964,
+     "w": 2542032,
+     "h": 669798,
+     "text": "19.3 ms \u00b7 recall 0.916"
+    },
+    {
+     "name": "mbl:txt:19",
+     "x": 8778240,
+     "y": 3140964,
+     "w": 1444752,
+     "h": 669798,
+     "text": "2.71\u00d7"
+    },
+    {
+     "name": "mbl:txt:20",
+     "x": 10332719,
+     "y": 3140964,
+     "w": 1383487,
+     "h": 669798,
+     "text": "+0.010"
+    },
+    {
+     "name": "mbl:hrule:4",
+     "x": 365760,
+     "y": 3810762,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:21",
+     "x": 365760,
+     "y": 3810762,
+     "w": 2999232,
+     "h": 669798,
+     "text": "IVFFlat, 32 probes"
+    },
+    {
+     "name": "mbl:txt:22",
+     "x": 3474720,
+     "y": 3810762,
+     "w": 2542032,
+     "h": 669798,
+     "text": "107.7 ms \u00b7 recall 0.968"
+    },
+    {
+     "name": "mbl:txt:23",
+     "x": 6126479,
+     "y": 3810762,
+     "w": 2542032,
+     "h": 669798,
+     "text": "41.1 ms \u00b7 recall 0.982"
+    },
+    {
+     "name": "mbl:txt:24",
+     "x": 8778240,
+     "y": 3810762,
+     "w": 1444752,
+     "h": 669798,
+     "text": "2.62\u00d7"
+    },
+    {
+     "name": "mbl:txt:25",
+     "x": 10332719,
+     "y": 3810762,
+     "w": 1383487,
+     "h": 669798,
+     "text": "+0.014"
+    },
+    {
+     "name": "mbl:txt:26",
+     "x": 365760,
+     "y": 4709160,
+     "w": 5486400,
+     "h": 1371600,
+     "text": "IVFFlat spends 50 ms or more per query on Postgres, so splitting its lists over two segments pays off. ivfplus already answers in 5 to 10 ms there, which leaves little for a second segment to save."
+    },
+    {
+     "name": "mbl:txt:27",
+     "x": 6263640,
+     "y": 4709160,
+     "w": 5559552,
+     "h": 1371600,
+     "text": "Probes apply on each segment, so the same setting searches more lists in total and returns higher recall. Compare at equal recall. WarehousePG also runs Postgres 12 with pgvector 0.7.4."
+    },
+    {
+     "name": "mbl:vrule:1",
+     "x": 6096304,
+     "y": 4736592,
+     "w": 0,
+     "h": 1143000
+    }
+   ]
+  },
+  {
+   "index": 17,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 420623,
+     "w": 82296,
+     "h": 420624,
+     "text": ""
+    },
+    {
+     "name": "mbl:title:1",
+     "x": 365760,
+     "y": 420623,
+     "w": 11277295,
+     "h": 420624,
+     "text": "CLICKHOUSE HAS NOT REACHED 90% RECALL; ITS LATENCY IS FLAT AT 11 MS"
+    },
+    {
+     "name": "mbl:chart:1",
+     "x": 365760,
+     "y": 1417320,
+     "w": 7589520,
+     "h": 4297680
+    },
+    {
+     "name": "mbl:vrule:1",
+     "x": 8229600,
+     "y": 1508760,
+     "w": 0,
+     "h": 4114800
+    },
+    {
+     "name": "mbl:txt:1",
+     "x": 8503920,
+     "y": 1508760,
+     "w": 3319272,
+     "h": 603504,
+     "text": "0.76"
+    },
+    {
+     "name": "mbl:txt:2",
+     "x": 8503920,
+     "y": 2148840,
+     "w": 3319272,
+     "h": 914400,
+     "text": "best recall, at ef_search 128. pgvector HNSW at 1M rows needed ef_search 640 to reach 0.94."
+    },
+    {
+     "name": "mbl:txt:3",
+     "x": 8503920,
+     "y": 3200400,
+     "w": 3319272,
+     "h": 603504,
+     "text": "11 ms"
+    },
+    {
+     "name": "mbl:txt:4",
+     "x": 8503920,
+     "y": 3840480,
+     "w": 3319272,
+     "h": 914400,
+     "text": "at every setting from 10 to 128. A fixed per-query cost, the HTTP round trip included, seems to dominate."
+    },
+    {
+     "name": "mbl:txt:5",
+     "x": 8503920,
+     "y": 4892040,
+     "w": 3319272,
+     "h": 603504,
+     "text": "465 s"
+    },
+    {
+     "name": "mbl:txt:6",
+     "x": 8503920,
+     "y": 5532120,
+     "w": 3319272,
+     "h": 640080,
+     "text": "to build, with a 3.05 GiB index (M 16, ef_construction 128, bf16)."
+    },
+    {
+     "name": "mbl:txt:7",
+     "x": 365760,
+     "y": 5852160,
+     "w": 7589520,
+     "h": 320040,
+     "text": "Two latency spikes (68 and 76 ms) hit one setting in each run and did not repeat."
+    }
+   ]
+  },
+  {
+   "index": 18,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 420623,
+     "w": 82296,
+     "h": 420624,
+     "text": ""
+    },
+    {
+     "name": "mbl:title:1",
+     "x": 365760,
+     "y": 420623,
+     "w": 11277295,
+     "h": 420624,
+     "text": "AT A 90% BAR WAREHOUSEPG IVFPLUS RANKS FIRST; AT 95% IVFFLAT TAKES OVER"
+    },
+    {
+     "name": "mbl:txt:1",
+     "x": 365760,
+     "y": 1417320,
+     "w": 667512,
+     "h": 256032,
+     "text": "RANK"
+    },
+    {
+     "name": "mbl:txt:2",
+     "x": 1143000,
+     "y": 1417320,
+     "w": 2770632,
+     "h": 256032,
+     "text": "ENGINE"
+    },
+    {
+     "name": "mbl:txt:3",
+     "x": 4023360,
+     "y": 1417320,
+     "w": 850392,
+     "h": 256032,
+     "text": "SCORE"
+    },
+    {
+     "name": "mbl:txt:4",
+     "x": 4983480,
+     "y": 1417320,
+     "w": 1581912,
+     "h": 256032,
+     "text": "LATENCY AT BAR"
+    },
+    {
+     "name": "mbl:txt:5",
+     "x": 6675120,
+     "y": 1417320,
+     "w": 1124712,
+     "h": 256032,
+     "text": "P95"
+    },
+    {
+     "name": "mbl:txt:6",
+     "x": 7909560,
+     "y": 1417320,
+     "w": 1261872,
+     "h": 256032,
+     "text": "BEST RECALL"
+    },
+    {
+     "name": "mbl:txt:7",
+     "x": 9281160,
+     "y": 1417320,
+     "w": 1078992,
+     "h": 256032,
+     "text": "BUILD"
+    },
+    {
+     "name": "mbl:txt:8",
+     "x": 10469880,
+     "y": 1417320,
+     "w": 1246327,
+     "h": 256032,
+     "text": "INDEX"
+    },
+    {
+     "name": "mbl:hrule:1",
+     "x": 365760,
+     "y": 1728216,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:9",
+     "x": 365760,
+     "y": 1801368,
+     "w": 667512,
+     "h": 522732,
+     "text": "1"
+    },
+    {
+     "name": "mbl:txt:10",
+     "x": 1143000,
+     "y": 1801368,
+     "w": 2770632,
+     "h": 522732,
+     "text": "EDB ivfplus @ WHPG"
+    },
+    {
+     "name": "mbl:txt:11",
+     "x": 4023360,
+     "y": 1801368,
+     "w": 850392,
+     "h": 522732,
+     "text": "90.9"
+    },
+    {
+     "name": "mbl:txt:12",
+     "x": 4983480,
+     "y": 1801368,
+     "w": 1581912,
+     "h": 522732,
+     "text": "6.1 ms"
+    },
+    {
+     "name": "mbl:txt:13",
+     "x": 6675120,
+     "y": 1801368,
+     "w": 1124712,
+     "h": 522732,
+     "text": "10.9 ms"
+    },
+    {
+     "name": "mbl:txt:14",
+     "x": 7909560,
+     "y": 1801368,
+     "w": 1261872,
+     "h": 522732,
+     "text": "0.936"
+    },
+    {
+     "name": "mbl:txt:15",
+     "x": 9281160,
+     "y": 1801368,
+     "w": 1078992,
+     "h": 522732,
+     "text": "650 s"
+    },
+    {
+     "name": "mbl:txt:16",
+     "x": 10469880,
+     "y": 1801368,
+     "w": 1246327,
+     "h": 522732,
+     "text": "3.49 GiB"
+    },
+    {
+     "name": "mbl:hrule:2",
+     "x": 365760,
+     "y": 2324100,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:17",
+     "x": 365760,
+     "y": 2324100,
+     "w": 667512,
+     "h": 522732,
+     "text": "2"
+    },
+    {
+     "name": "mbl:txt:18",
+     "x": 1143000,
+     "y": 2324100,
+     "w": 2770632,
+     "h": 522732,
+     "text": "pgvector IVFFlat @ WHPG"
+    },
+    {
+     "name": "mbl:txt:19",
+     "x": 4023360,
+     "y": 2324100,
+     "w": 850392,
+     "h": 522732,
+     "text": "53.3"
+    },
+    {
+     "name": "mbl:txt:20",
+     "x": 4983480,
+     "y": 2324100,
+     "w": 1581912,
+     "h": 522732,
+     "text": "19.3 ms"
+    },
+    {
+     "name": "mbl:txt:21",
+     "x": 6675120,
+     "y": 2324100,
+     "w": 1124712,
+     "h": 522732,
+     "text": "38.5 ms"
+    },
+    {
+     "name": "mbl:txt:22",
+     "x": 7909560,
+     "y": 2324100,
+     "w": 1261872,
+     "h": 522732,
+     "text": "1.000"
+    },
+    {
+     "name": "mbl:txt:23",
+     "x": 9281160,
+     "y": 2324100,
+     "w": 1078992,
+     "h": 522732,
+     "text": "406 s"
+    },
+    {
+     "name": "mbl:txt:24",
+     "x": 10469880,
+     "y": 2324100,
+     "w": 1246327,
+     "h": 522732,
+     "text": "6.20 GiB"
+    },
+    {
+     "name": "mbl:hrule:3",
+     "x": 365760,
+     "y": 2846832,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:25",
+     "x": 365760,
+     "y": 2846832,
+     "w": 667512,
+     "h": 522732,
+     "text": "3"
+    },
+    {
+     "name": "mbl:txt:26",
+     "x": 1143000,
+     "y": 2846832,
+     "w": 2770632,
+     "h": 522732,
+     "text": "VectorChord"
+    },
+    {
+     "name": "mbl:txt:27",
+     "x": 4023360,
+     "y": 2846832,
+     "w": 850392,
+     "h": 522732,
+     "text": "38.4"
+    },
+    {
+     "name": "mbl:txt:28",
+     "x": 4983480,
+     "y": 2846832,
+     "w": 1581912,
+     "h": 522732,
+     "text": "47.3 ms"
+    },
+    {
+     "name": "mbl:txt:29",
+     "x": 6675120,
+     "y": 2846832,
+     "w": 1124712,
+     "h": 522732,
+     "text": "133 ms"
+    },
+    {
+     "name": "mbl:txt:30",
+     "x": 7909560,
+     "y": 2846832,
+     "w": 1261872,
+     "h": 522732,
+     "text": "0.988"
+    },
+    {
+     "name": "mbl:txt:31",
+     "x": 9281160,
+     "y": 2846832,
+     "w": 1078992,
+     "h": 522732,
+     "text": "471 s"
+    },
+    {
+     "name": "mbl:txt:32",
+     "x": 10469880,
+     "y": 2846832,
+     "w": 1246327,
+     "h": 522732,
+     "text": "7.95 GiB"
+    },
+    {
+     "name": "mbl:hrule:4",
+     "x": 365760,
+     "y": 3369564,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:33",
+     "x": 365760,
+     "y": 3369564,
+     "w": 667512,
+     "h": 522732,
+     "text": "4"
+    },
+    {
+     "name": "mbl:txt:34",
+     "x": 1143000,
+     "y": 3369564,
+     "w": 2770632,
+     "h": 522732,
+     "text": "pgvector IVFFlat"
+    },
+    {
+     "name": "mbl:txt:35",
+     "x": 4023360,
+     "y": 3369564,
+     "w": 850392,
+     "h": 522732,
+     "text": "34.3"
+    },
+    {
+     "name": "mbl:txt:36",
+     "x": 4983480,
+     "y": 3369564,
+     "w": 1581912,
+     "h": 522732,
+     "text": "52.2 ms"
+    },
+    {
+     "name": "mbl:txt:37",
+     "x": 6675120,
+     "y": 3369564,
+     "w": 1124712,
+     "h": 522732,
+     "text": "83.3 ms"
+    },
+    {
+     "name": "mbl:txt:38",
+     "x": 7909560,
+     "y": 3369564,
+     "w": 1261872,
+     "h": 522732,
+     "text": "1.000"
+    },
+    {
+     "name": "mbl:txt:39",
+     "x": 9281160,
+     "y": 3369564,
+     "w": 1078992,
+     "h": 522732,
+     "text": "685 s"
+    },
+    {
+     "name": "mbl:txt:40",
+     "x": 10469880,
+     "y": 3369564,
+     "w": 1246327,
+     "h": 522732,
+     "text": "7.64 GiB"
+    },
+    {
+     "name": "mbl:hrule:5",
+     "x": 365760,
+     "y": 3892296,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:41",
+     "x": 365760,
+     "y": 3892296,
+     "w": 667512,
+     "h": 522732,
+     "text": "DNQ"
+    },
+    {
+     "name": "mbl:txt:42",
+     "x": 1143000,
+     "y": 3892296,
+     "w": 2770632,
+     "h": 522732,
+     "text": "ClickHouse"
+    },
+    {
+     "name": "mbl:txt:43",
+     "x": 4023360,
+     "y": 3892296,
+     "w": 850392,
+     "h": 522732,
+     "text": "(39.7)"
+    },
+    {
+     "name": "mbl:txt:44",
+     "x": 4983480,
+     "y": 3892296,
+     "w": 1581912,
+     "h": 522732,
+     "text": "not reached"
+    },
+    {
+     "name": "mbl:txt:45",
+     "x": 6675120,
+     "y": 3892296,
+     "w": 1124712,
+     "h": 522732,
+     "text": ""
+    },
+    {
+     "name": "mbl:txt:46",
+     "x": 7909560,
+     "y": 3892296,
+     "w": 1261872,
+     "h": 522732,
+     "text": "0.760"
+    },
+    {
+     "name": "mbl:txt:47",
+     "x": 9281160,
+     "y": 3892296,
+     "w": 1078992,
+     "h": 522732,
+     "text": "465 s"
+    },
+    {
+     "name": "mbl:txt:48",
+     "x": 10469880,
+     "y": 3892296,
+     "w": 1246327,
+     "h": 522732,
+     "text": "3.05 GiB"
+    },
+    {
+     "name": "mbl:hrule:6",
+     "x": 365760,
+     "y": 4415028,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:49",
+     "x": 365760,
+     "y": 4415028,
+     "w": 667512,
+     "h": 522732,
+     "text": "DNQ"
+    },
+    {
+     "name": "mbl:txt:50",
+     "x": 1143000,
+     "y": 4415028,
+     "w": 2770632,
+     "h": 522732,
+     "text": "EDB Vector Plus"
+    },
+    {
+     "name": "mbl:txt:51",
+     "x": 4023360,
+     "y": 4415028,
+     "w": 850392,
+     "h": 522732,
+     "text": "(34.1)"
+    },
+    {
+     "name": "mbl:txt:52",
+     "x": 4983480,
+     "y": 4415028,
+     "w": 1581912,
+     "h": 522732,
+     "text": "not reached"
+    },
+    {
+     "name": "mbl:txt:53",
+     "x": 6675120,
+     "y": 4415028,
+     "w": 1124712,
+     "h": 522732,
+     "text": ""
+    },
+    {
+     "name": "mbl:txt:54",
+     "x": 7909560,
+     "y": 4415028,
+     "w": 1261872,
+     "h": 522732,
+     "text": "0.886"
+    },
+    {
+     "name": "mbl:txt:55",
+     "x": 9281160,
+     "y": 4415028,
+     "w": 1078992,
+     "h": 522732,
+     "text": "678 s"
+    },
+    {
+     "name": "mbl:txt:56",
+     "x": 10469880,
+     "y": 4415028,
+     "w": 1246327,
+     "h": 522732,
+     "text": "3.55 GiB"
+    },
+    {
+     "name": "mbl:txt:57",
+     "x": 365760,
+     "y": 5138928,
+     "w": 11460175,
+     "h": 960120,
+     "text": "Score: latency 40, p95 10, best recall 10, build 15, index size 15; maintenance was not measured. An engine that never reaches the bar is DNQ and ranks below every engine that does.\nIVFFlat on WarehousePG leads at a 95% bar (91.5) and at a 99% bar (91.5). ivfplus on WarehousePG (best 0.936) is DNQ there because its ladder ended at 32 probes; at 99% only the two IVFFlat engines qualify."
+    }
+   ]
+  },
+  {
+   "index": 19,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 420623,
+     "w": 82296,
+     "h": 420624,
+     "text": ""
+    },
+    {
+     "name": "mbl:title:1",
+     "x": 365760,
+     "y": 420623,
+     "w": 11277295,
+     "h": 420624,
+     "text": "RUNS 3 AND 4 CARRY LATENCY SPIKES; RUN 6 REPRODUCES RUN 5"
+    },
+    {
+     "name": "mbl:txt:1",
+     "x": 365760,
+     "y": 1417320,
+     "w": 3273552,
+     "h": 256032,
+     "text": "SAME SETTING, FOUR RUNS"
+    },
+    {
+     "name": "mbl:txt:2",
+     "x": 3749040,
+     "y": 1417320,
+     "w": 1444752,
+     "h": 256032,
+     "text": "RUN 3"
+    },
+    {
+     "name": "mbl:txt:3",
+     "x": 5303520,
+     "y": 1417320,
+     "w": 1444752,
+     "h": 256032,
+     "text": "RUN 4"
+    },
+    {
+     "name": "mbl:txt:4",
+     "x": 6858000,
+     "y": 1417320,
+     "w": 1444752,
+     "h": 256032,
+     "text": "RUN 5"
+    },
+    {
+     "name": "mbl:txt:5",
+     "x": 8412480,
+     "y": 1417320,
+     "w": 1444752,
+     "h": 256032,
+     "text": "RUN 6"
+    },
+    {
+     "name": "mbl:txt:6",
+     "x": 9966960,
+     "y": 1417320,
+     "w": 1749247,
+     "h": 256032,
+     "text": ""
+    },
+    {
+     "name": "mbl:hrule:1",
+     "x": 365760,
+     "y": 1728216,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:7",
+     "x": 365760,
+     "y": 1801368,
+     "w": 3273552,
+     "h": 612648,
+     "text": "EDB Vector Plus, 16 probes"
+    },
+    {
+     "name": "mbl:txt:8",
+     "x": 3749040,
+     "y": 1801368,
+     "w": 1444752,
+     "h": 612648,
+     "text": "66.5 ms"
+    },
+    {
+     "name": "mbl:txt:9",
+     "x": 5303520,
+     "y": 1801368,
+     "w": 1444752,
+     "h": 612648,
+     "text": "5.9 ms"
+    },
+    {
+     "name": "mbl:txt:10",
+     "x": 6858000,
+     "y": 1801368,
+     "w": 1444752,
+     "h": 612648,
+     "text": "5.8 ms"
+    },
+    {
+     "name": "mbl:txt:11",
+     "x": 8412480,
+     "y": 1801368,
+     "w": 1444752,
+     "h": 612648,
+     "text": "5.7 ms"
+    },
+    {
+     "name": "mbl:txt:12",
+     "x": 9966960,
+     "y": 1801368,
+     "w": 1749247,
+     "h": 612648,
+     "text": ""
+    },
+    {
+     "name": "mbl:hrule:2",
+     "x": 365760,
+     "y": 2414016,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:13",
+     "x": 365760,
+     "y": 2414016,
+     "w": 3273552,
+     "h": 612648,
+     "text": "VectorChord, 8 probes"
+    },
+    {
+     "name": "mbl:txt:14",
+     "x": 3749040,
+     "y": 2414016,
+     "w": 1444752,
+     "h": 612648,
+     "text": "427 ms"
+    },
+    {
+     "name": "mbl:txt:15",
+     "x": 5303520,
+     "y": 2414016,
+     "w": 1444752,
+     "h": 612648,
+     "text": "186 ms"
+    },
+    {
+     "name": "mbl:txt:16",
+     "x": 6858000,
+     "y": 2414016,
+     "w": 1444752,
+     "h": 612648,
+     "text": "28.3 ms"
+    },
+    {
+     "name": "mbl:txt:17",
+     "x": 8412480,
+     "y": 2414016,
+     "w": 1444752,
+     "h": 612648,
+     "text": "28.2 ms"
+    },
+    {
+     "name": "mbl:txt:18",
+     "x": 9966960,
+     "y": 2414016,
+     "w": 1749247,
+     "h": 612648,
+     "text": ""
+    },
+    {
+     "name": "mbl:hrule:3",
+     "x": 365760,
+     "y": 3026664,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:19",
+     "x": 365760,
+     "y": 3026664,
+     "w": 3273552,
+     "h": 612648,
+     "text": "pgvector IVFFlat, 32 probes"
+    },
+    {
+     "name": "mbl:txt:20",
+     "x": 3749040,
+     "y": 3026664,
+     "w": 1444752,
+     "h": 612648,
+     "text": "231 ms"
+    },
+    {
+     "name": "mbl:txt:21",
+     "x": 5303520,
+     "y": 3026664,
+     "w": 1444752,
+     "h": 612648,
+     "text": "110 ms"
+    },
+    {
+     "name": "mbl:txt:22",
+     "x": 6858000,
+     "y": 3026664,
+     "w": 1444752,
+     "h": 612648,
+     "text": "108 ms"
+    },
+    {
+     "name": "mbl:txt:23",
+     "x": 8412480,
+     "y": 3026664,
+     "w": 1444752,
+     "h": 612648,
+     "text": "108 ms"
+    },
+    {
+     "name": "mbl:txt:24",
+     "x": 9966960,
+     "y": 3026664,
+     "w": 1749247,
+     "h": 612648,
+     "text": ""
+    },
+    {
+     "name": "mbl:hrule:4",
+     "x": 365760,
+     "y": 3639312,
+     "w": 11460175,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:25",
+     "x": 365760,
+     "y": 3639312,
+     "w": 3273552,
+     "h": 612648,
+     "text": "IVFFlat @ WHPG, 32 probes"
+    },
+    {
+     "name": "mbl:txt:26",
+     "x": 3749040,
+     "y": 3639312,
+     "w": 1444752,
+     "h": 612648,
+     "text": "43.2 ms"
+    },
+    {
+     "name": "mbl:txt:27",
+     "x": 5303520,
+     "y": 3639312,
+     "w": 1444752,
+     "h": 612648,
+     "text": "224 ms"
+    },
+    {
+     "name": "mbl:txt:28",
+     "x": 6858000,
+     "y": 3639312,
+     "w": 1444752,
+     "h": 612648,
+     "text": "45.3 ms"
+    },
+    {
+     "name": "mbl:txt:29",
+     "x": 8412480,
+     "y": 3639312,
+     "w": 1444752,
+     "h": 612648,
+     "text": "41.1 ms"
+    },
+    {
+     "name": "mbl:txt:30",
+     "x": 9966960,
+     "y": 3639312,
+     "w": 1749247,
+     "h": 612648,
+     "text": ""
+    },
+    {
+     "name": "mbl:txt:31",
+     "x": 365760,
+     "y": 4480560,
+     "w": 11460175,
+     "h": 1645920,
+     "text": "Run 6 repeats run 5's settings from 1 to 32 probes: 22 of 24 latencies agree within 10%, the median ratio is 0.99, and recall is identical. Run 6 carries no warning that ClickHouse was running, and run 5 had no ClickHouse engine.\nIn runs 3 and 4, 7 and 6 of 30 settings ran more than 1.5 times slower than in run 5; both included ClickHouse on the same host. This deck keeps the lowest latency per setting."
+    }
+   ]
+  },
+  {
+   "index": 20,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 2834640,
+     "w": 82296,
+     "h": 658368,
+     "text": ""
+    },
+    {
+     "name": "mbl:txt:1",
+     "x": 365760,
+     "y": 2834640,
+     "w": 11094415,
+     "h": 658368,
+     "text": "WHAT IS STILL OPEN"
+    },
+    {
+     "name": "mbl:txt:2",
+     "x": 365760,
+     "y": 3584448,
+     "w": 11094415,
+     "h": 274320,
+     "text": "Gaps in the data and the next sweep"
+    }
+   ]
+  },
+  {
+   "index": 21,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 420623,
+     "w": 82296,
+     "h": 420624,
+     "text": ""
+    },
+    {
+     "name": "mbl:title:1",
+     "x": 365760,
+     "y": 420623,
+     "w": 11277295,
+     "h": 420624,
+     "text": "TWO LADDERS STILL END EARLY: IVFPLUS ON WAREHOUSEPG AND CLICKHOUSE"
+    },
+    {
+     "name": "mbl:tab:1",
+     "x": 365760,
+     "y": 1417320,
+     "w": 5501487,
+     "h": 274320,
+     "text": "NOT MEASURED YET"
+    },
+    {
+     "name": "mbl:tab:2",
+     "x": 6324447,
+     "y": 1417320,
+     "w": 5501487,
+     "h": 274320,
+     "text": "LIMITS OF WHAT WAS MEASURED"
+    },
+    {
+     "name": "mbl:runs:1",
+     "x": 365760,
+     "y": 1984248,
+     "w": 5501487,
+     "h": 822960,
+     "text": "ivfplus on WarehousePG past 32 probes: recall was still rising at 0.936."
+    },
+    {
+     "name": "mbl:hrule:1",
+     "x": 365760,
+     "y": 2852928,
+     "w": 5501487,
+     "h": 0
+    },
+    {
+     "name": "mbl:runs:2",
+     "x": 365760,
+     "y": 3008376,
+     "w": 5501487,
+     "h": 822960,
+     "text": "ClickHouse above ef_search 128: recall was still rising at 0.76."
+    },
+    {
+     "name": "mbl:hrule:2",
+     "x": 365760,
+     "y": 3877056,
+     "w": 5501487,
+     "h": 0
+    },
+    {
+     "name": "mbl:runs:3",
+     "x": 365760,
+     "y": 4032504,
+     "w": 5501487,
+     "h": 822960,
+     "text": "Why ivfplus on Postgres stops at 0.886: the cause is not yet known."
+    },
+    {
+     "name": "mbl:hrule:3",
+     "x": 365760,
+     "y": 4901184,
+     "w": 5501487,
+     "h": 0
+    },
+    {
+     "name": "mbl:runs:4",
+     "x": 365760,
+     "y": 5056632,
+     "w": 5501487,
+     "h": 822960,
+     "text": "pgvector HNSW at 2M rows, and churn: inserts, updates and deletes."
+    },
+    {
+     "name": "mbl:runs:5",
+     "x": 6324447,
+     "y": 1984248,
+     "w": 5501487,
+     "h": 822960,
+     "text": "Settings above 32 probes: one run each, so no repeat to take the lowest of."
+    },
+    {
+     "name": "mbl:hrule:4",
+     "x": 6324447,
+     "y": 2852928,
+     "w": 5501488,
+     "h": 0
+    },
+    {
+     "name": "mbl:runs:6",
+     "x": 6324447,
+     "y": 3008376,
+     "w": 5501487,
+     "h": 822960,
+     "text": "Synthetic embeddings, 50 queries: recall standard errors of 0.01 to 0.05."
+    },
+    {
+     "name": "mbl:hrule:5",
+     "x": 6324447,
+     "y": 3877056,
+     "w": 5501488,
+     "h": 0
+    },
+    {
+     "name": "mbl:runs:7",
+     "x": 6324447,
+     "y": 4032504,
+     "w": 5501487,
+     "h": 822960,
+     "text": "ClickHouse shared the host with Postgres in runs 3 and 4."
+    },
+    {
+     "name": "mbl:hrule:6",
+     "x": 6324447,
+     "y": 4901184,
+     "w": 5501488,
+     "h": 0
+    },
+    {
+     "name": "mbl:runs:8",
+     "x": 6324447,
+     "y": 5056632,
+     "w": 5501487,
+     "h": 822960,
+     "text": "WarehousePG runs Postgres 12: with pgvector 0.7.4, an older stack."
+    },
+    {
+     "name": "mbl:vrule:1",
+     "x": 6095847,
+     "y": 1920240,
+     "w": 0,
+     "h": 3931920
+    }
+   ]
+  },
+  {
+   "index": 22,
+   "shapes": [
+    {
+     "name": "mbl:gbar:1",
+     "x": 219456,
+     "y": 420623,
+     "w": 82296,
+     "h": 420624,
+     "text": ""
+    },
+    {
+     "name": "mbl:title:1",
+     "x": 365760,
+     "y": 420623,
+     "w": 11277295,
+     "h": 420624,
+     "text": "THE NEXT SWEEP SHOULD FINISH TWO LADDERS AND EXPLAIN ONE CEILING"
+    },
+    {
+     "name": "mbl:txt:1",
+     "x": 365760,
+     "y": 2057400,
+     "w": 2590723,
+     "h": 822960,
+     "text": "01"
+    },
+    {
+     "name": "mbl:hrule:1",
+     "x": 365760,
+     "y": 3017520,
+     "w": 2590723,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:2",
+     "x": 365760,
+     "y": 3200400,
+     "w": 2590723,
+     "h": 365760,
+     "text": "Finish the ladder"
+    },
+    {
+     "name": "mbl:txt:3",
+     "x": 365760,
+     "y": 3703320,
+     "w": 2590723,
+     "h": 2194560,
+     "text": "Probes 64 to 256 for ivfplus on WarehousePG, and ef_search up to 1000 for ClickHouse."
+    },
+    {
+     "name": "mbl:txt:4",
+     "x": 3322243,
+     "y": 2057400,
+     "w": 2590723,
+     "h": 822960,
+     "text": "02"
+    },
+    {
+     "name": "mbl:hrule:2",
+     "x": 3322243,
+     "y": 3017520,
+     "w": 2590724,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:5",
+     "x": 3322243,
+     "y": 3200400,
+     "w": 2590723,
+     "h": 365760,
+     "text": "Explain the ceiling"
+    },
+    {
+     "name": "mbl:txt:6",
+     "x": 3322243,
+     "y": 3703320,
+     "w": 2590723,
+     "h": 2194560,
+     "text": "Rebuild ivfplus on Postgres with other lists, rotation and store_vectors settings, and see whether recall passes 0.9."
+    },
+    {
+     "name": "mbl:txt:7",
+     "x": 6278727,
+     "y": 2057400,
+     "w": 2590723,
+     "h": 822960,
+     "text": "03"
+    },
+    {
+     "name": "mbl:hrule:3",
+     "x": 6278727,
+     "y": 3017520,
+     "w": 2590724,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:8",
+     "x": 6278727,
+     "y": 3200400,
+     "w": 2590723,
+     "h": 365760,
+     "text": "Repeat on a quiet host"
+    },
+    {
+     "name": "mbl:txt:9",
+     "x": 6278727,
+     "y": 3703320,
+     "w": 2590723,
+     "h": 2194560,
+     "text": "Run each sweep three times with ClickHouse stopped, using the Repeats and quiet-host options now in the dashboard."
+    },
+    {
+     "name": "mbl:txt:10",
+     "x": 9235211,
+     "y": 2057400,
+     "w": 2590723,
+     "h": 822960,
+     "text": "04"
+    },
+    {
+     "name": "mbl:hrule:4",
+     "x": 9235211,
+     "y": 3017520,
+     "w": 2590724,
+     "h": 0
+    },
+    {
+     "name": "mbl:txt:11",
+     "x": 9235211,
+     "y": 3200400,
+     "w": 2590723,
+     "h": 365760,
+     "text": "Fill the gaps"
+    },
+    {
+     "name": "mbl:txt:12",
+     "x": 9235211,
+     "y": 3703320,
+     "w": 2590723,
+     "h": 2194560,
+     "text": "pgvector HNSW at 2M rows, a churn run for maintenance cost, then 10M rows."
+    }
+   ]
+  }
+ ]
+}
