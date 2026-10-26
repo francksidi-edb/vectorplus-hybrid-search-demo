@@ -235,6 +235,28 @@ input[type=password]:focus{border-color:var(--teal)}
 .eng-pick{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
 .eng-pick label.chk{font-size:13px;color:var(--text)}
 .eng-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:3px}
+.field-grid textarea,#wh-session{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:6px 9px;border-radius:var(--r);outline:none;resize:vertical}
+#wh-session:focus{border-color:var(--teal)}
+.conn-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(520px,1fr));gap:16px}
+.conn-card{border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;background:var(--surface)}
+.conn-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.conn-title{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.conn-pill{font-size:12.5px;font-weight:600;padding:3px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);white-space:nowrap}
+.conn-pill.on{background:var(--green-bg);color:var(--green);border-color:var(--green-bd)}
+.conn-pill.err{background:var(--red-bg);color:var(--red);border-color:var(--red-bd)}
+.conn-pill.busy{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-bd)}
+.conn-active{font-size:12.5px;line-height:1.5;margin-bottom:12px;padding:8px 10px;border-radius:var(--r);background:var(--surface2);word-break:break-word}
+.conn-chip.on::before,.conn-chip.err::before{content:'●';margin-right:5px}
+.conn-chip.on::before{color:var(--green)}.conn-chip.err::before{color:var(--red)}
+.conn-chip.err{border-color:var(--red-bd);color:var(--red)}
+#conn-banner{display:none;margin:0 0 14px;padding:9px 14px;border-radius:var(--r);background:var(--red-bg);border:1px solid var(--red-bd);color:var(--red);font-size:13px;cursor:pointer}
+.vstep{display:flex;gap:9px;font-size:12.5px;padding:4px 0;border-bottom:1px solid var(--border)}
+.vstep:last-child{border-bottom:0}
+.vstep .ic{flex:0 0 18px;font-weight:700;text-align:center}
+.vstep .ic.ok{color:var(--green)}.vstep .ic.bad{color:var(--red)}.vstep .ic.na{color:var(--faint)}
+.vhint{margin-top:2px;color:var(--muted);font-size:12px;white-space:pre-wrap}
+.vbox{margin-top:10px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface)}
+.eng-card.ch{border-top:3px solid #C2410C}
 </style>
 </head>
 <body>
@@ -274,7 +296,11 @@ input[type=password]:focus{border-color:var(--teal)}
   <div class="tab" id="tab-maint"   onclick="switchTab('maint')">🩺 Health &amp; Maintenance</div>
   <div class="tab" id="tab-vc"      onclick="switchTab('vc')">🌀 VectorChord</div>
   <div class="tab" id="tab-pgv"     onclick="switchTab('pgv')">🐘 pgvector</div>
+  <div class="tab" id="tab-wh"      onclick="switchTab('wh')">🏭 WarehousePG</div>
+  <div class="tab" id="tab-chd"     onclick="switchTab('chd')">🟡 ClickHouse</div>
   <div class="tab" id="tab-cmp"     onclick="switchTab('cmp')">⚔ Engine Compare</div>
+  <div class="tab" id="tab-bench"   onclick="switchTab('bench')">🏆 Benchmark</div>
+  <div class="tab" id="tab-score"   onclick="switchTab('score')">📐 Scoring</div>
   <div class="tab" id="tab-history" onclick="switchTab('history')">📈 History &amp; Compare</div>
   <div class="tab" id="tab-querylog" onclick="switchTab('querylog')">🧾 Query Log</div>
   <div class="tab" id="tab-sqleditor" onclick="switchTab('sqleditor')">🔎 SQL Editor</div>
@@ -284,37 +310,99 @@ input[type=password]:focus{border-color:var(--teal)}
 
 <!-- ══════════════════════════ SETUP ═══════════════════════════════════════ -->
 <div class="panel active" id="panel-setup">
-  <div class="section">
+    <div class="section">
     <div class="section-header" onclick="toggle(this)">
       <span class="section-num">00</span>
-      <span class="section-title">Connection</span>
-      <span class="section-desc">Point the whole dashboard at a database — no restart needed</span>
+      <span class="section-title">Connections</span>
+      <span class="section-desc">Press Connect to use a connection — the badges below are checked live, not remembered</span>
       <span class="chevron open">▼</span>
     </div>
     <div class="section-body open">
-      <div class="info-box" id="conn-state">Reading current connection…</div>
-      <div class="field-grid">
-        <label>Host<input type="text" id="conn-host" oninput="connDirty=true"></label>
-        <label>Port<input type="number" id="conn-port" min="1" max="65535" oninput="connDirty=true"></label>
-        <label>User<input type="text" id="conn-user" oninput="connDirty=true"></label>
-        <label>Password<input type="password" id="conn-pass" autocomplete="new-password" placeholder="(unchanged)" oninput="connDirty=true"></label>
-        <label>Database<input type="text" id="conn-db" oninput="connDirty=true"></label>
-        <label>Schema<input type="text" id="conn-schema" oninput="connDirty=true"></label>
+      <div class="conn-grid">
+
+        <div class="conn-card" id="pg-card">
+          <div class="conn-head"><span class="conn-title">PostgreSQL</span><span class="conn-pill busy" id="pill-pg">◌ checking…</span></div>
+          <div class="conn-active" id="conn-state">Checking the connection…</div>
+          <div class="field-grid">
+            <label>Host<input type="text" id="conn-host" oninput="connDirty=true"></label>
+            <label>Port<input type="number" id="conn-port" min="1" max="65535" oninput="connDirty=true"></label>
+            <label>User<input type="text" id="conn-user" oninput="connDirty=true"></label>
+            <label>Password<input type="password" id="conn-pass" autocomplete="new-password" placeholder="(unchanged)" oninput="connDirty=true"></label>
+            <label>Database<input type="text" id="conn-db" oninput="connDirty=true"></label>
+            <label>Schema<input type="text" id="conn-schema" oninput="connDirty=true"></label>
+          </div>
+          <div class="ctrl-row">
+            <button class="run-btn" onclick="connApply()">🔌 Connect</button>
+            <button class="run-btn secondary" onclick="connTest()">⚡ Test only</button>
+            <button class="run-btn danger" id="conn-forget" onclick="connForget()" style="margin-left:auto;display:none">Forget saved</button>
+          </div>
+          <div id="conn-result"></div>
+        </div>
+
+        <div class="conn-card" id="wh-conn-card">
+          <div class="conn-head"><span class="conn-title">WarehousePG — second connection</span><span class="conn-pill off" id="pill-wh">○ Not connected</span></div>
+          <div class="conn-active" id="wh-state">Not in use. Fill in the details and press Connect.</div>
+          <div class="field-grid">
+            <label>Host<input type="text" id="wh-host" oninput="whDirty=true"></label>
+            <label>Port<input type="number" id="wh-port" min="1" max="65535" oninput="whDirty=true"></label>
+            <label>User<input type="text" id="wh-user" oninput="whDirty=true"></label>
+            <label>Password<input type="password" id="wh-pass" autocomplete="new-password" placeholder="(unchanged)" oninput="whDirty=true"></label>
+            <label>Database<input type="text" id="wh-db" oninput="whDirty=true"></label>
+            <label>Schema<input type="text" id="wh-schema" oninput="whDirty=true"></label>
+            <label>Distribution clause for its tables<input type="text" id="wh-dist" placeholder="DISTRIBUTED BY (id)" oninput="whDirty=true"></label>
+          </div>
+          <label style="display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px">
+            Session settings — run first on every WarehousePG connection, one per line
+            <textarea id="wh-session" rows="3" oninput="whDirty=true" style="text-transform:none;letter-spacing:0"></textarea></label>
+          <div class="ctrl-row">
+            <button class="run-btn" onclick="whConnApply()">🔌 Connect</button>
+            <button class="run-btn secondary" id="wh-disconnect" onclick="whDisconnect()" style="display:none">⏏ Disconnect</button>
+            <button class="run-btn secondary" onclick="whConnTest()">⚡ Test only</button>
+          </div>
+          <div id="wh-conn-result"></div>
+        </div>
+
+        <div class="conn-card" id="ch-conn-card">
+          <div class="conn-head"><span class="conn-title">ClickHouse — same machine</span>
+            <span style="display:flex;gap:6px;flex-wrap:wrap"><span class="conn-pill off" id="pill-chsvc">○ service ?</span><span class="conn-pill off" id="pill-ch">○ Not connected</span></span></div>
+          <div class="conn-active" id="ch-state">Checking…</div>
+          <div class="field-grid">
+            <label>Host<input type="text" id="ch-host" oninput="chDirty=true"></label>
+            <label>HTTP port<input type="number" id="ch-port" min="1" max="65535" oninput="chDirty=true" title="ClickHouse's HTTP interface — 8123 by default. The native port (9000) is not used."></label>
+            <label>User<input type="text" id="ch-user" oninput="chDirty=true"></label>
+            <label>Password<input type="password" id="ch-pass" autocomplete="new-password" placeholder="(unchanged)" oninput="chDirty=true"></label>
+            <label>Database<input type="text" id="ch-db" oninput="chDirty=true"></label>
+            <label>systemd service name<input type="text" id="ch-service" oninput="chDirty=true"></label>
+          </div>
+          <div class="ctrl-row">
+            <button class="run-btn secondary" id="ch-start" onclick="chService('start')">▶ Start service</button>
+            <button class="run-btn secondary" id="ch-stop" onclick="chService('stop')">■ Stop service</button>
+            <button class="run-btn" onclick="chConnect()">🔌 Connect</button>
+            <button class="run-btn secondary" id="ch-disconnect" onclick="chDisconnect()" style="display:none">⏏ Disconnect</button>
+            <button class="run-btn secondary" onclick="chValidate()">✔ Validate</button>
+          </div>
+          <div class="mini-note" id="ch-svc-note" style="margin-top:0"></div>
+          <div id="ch-conn-result"></div>
+          <details style="margin-top:8px"><summary class="mini-note" style="cursor:pointer;margin:0">Check it by hand in a shell</summary>
+<pre class="mini-note" style="white-space:pre-wrap;font-family:var(--mono);line-height:1.7;margin:6px 0 0">systemctl is-active clickhouse-server          # service:  active
+ss -ltnp | grep -E ':8123|:9000'               # ports:    both listening
+curl -s localhost:8123/ping                    # HTTP:     Ok.
+curl -s 'localhost:8123/?query=SELECT%20version(),currentUser()'     # login + version
+clickhouse-client -q "SELECT version(), currentUser(), uptime()"
+clickhouse-client -q "SELECT name, value FROM system.settings WHERE name LIKE '%vector_similarity%'"
+sudo -n -l | grep clickhouse                   # as the app user: may it start / stop the service?</pre></details>
+        </div>
+
       </div>
-      <div class="ctrl-row">
-        <button class="run-btn secondary" onclick="connTest()">⚡ Test connection</button>
-        <button class="run-btn" onclick="connApply()">✓ Apply</button>
-        <label class="chk"><input type="checkbox" id="conn-save"> remember as the default on this server</label>
-        <label class="chk"><input type="checkbox" id="conn-savepw"> include the password in the file</label>
-        <button class="run-btn danger" id="conn-forget" onclick="connForget()" style="margin-left:auto;display:none">Forget saved</button>
+      <div class="ctrl-row" style="margin-top:12px">
+        <label class="chk"><input type="checkbox" id="conn-save"> remember these connections as the default on this server (all three)</label>
+        <label class="chk"><input type="checkbox" id="conn-savepw"> include the passwords in the file</label>
       </div>
-      <div id="conn-result"></div>
-      <div class="mini-note">Applying switches every tab at once, so it is refused while a load, build, clone or churn is running. A saved connection is written to <code id="conn-file">~/.vectorplus_demo_connection.json</code> (mode 600, outside the folder the app serves); command-line flags still override it. The password is only stored if you tick the box.</div>
+      <div class="mini-note">Connect checks the connection first and only switches if it works, so a typo never leaves you disconnected. It is refused while a load, build, clone or churn is running. Remembered settings are written to <code id="conn-file">~/.vectorplus_demo_connection.json</code> (mode 600, outside the folder the app serves); command-line flags still override them. Passwords are only stored if you tick the box. The WarehousePG default <code>optimizer = off</code> is unknown to plain PostgreSQL, which will say so; its tables use the distribution clause above and index builds there never use CONCURRENTLY. Disconnect keeps the WarehousePG settings filled in.</div>
     </div>
   </div>
 
-
-  <div class="section">
+<div class="section">
     <div class="section-header" onclick="toggle(this)">
       <span class="section-num">01</span>
       <span class="section-title">Extension &amp; Server</span>
@@ -432,6 +520,10 @@ input[type=password]:focus{border-color:var(--teal)}
           <label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)"
                  title="Binary COPY is about half the bytes of the text format and skips float formatting and parsing. Falls back to text automatically if the server refuses it.">
             <input type="checkbox" id="gen-binary" checked> binary COPY
+          </label>
+          <label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)"
+                 title="COPY into a table that already has a vector index inserts every row into that index one at a time: about 40 times slower, and the index must be rebuilt afterwards anyway. Untick only if you want to measure that.">
+            <input type="checkbox" id="gen-dropvec" checked> drop vector indexes first
           </label>
           <button class="run-btn" id="gen-start-btn" onclick="genStart()">▶ Generate &amp; load</button>
           <button class="run-btn secondary" onclick="genStop()">■ Stop</button>
@@ -1083,7 +1175,7 @@ input[type=password]:focus{border-color:var(--teal)}
           <label>Access method<select id="pgb-am" onchange="pgvAmChanged()"><option value="hnsw">hnsw</option><option value="ivfflat">ivfflat</option></select></label>
           <label>Operator class<select id="pgb-opclass"></select></label>
           <label class="pgb-h">m<input type="number" id="pgb-m" value="16" min="2" max="100"></label>
-          <label class="pgb-h">ef_construction<input type="number" id="pgb-efc" value="64" min="4" max="1000"></label>
+          <label class="pgb-h">ef_construction<input type="number" id="pgb-efc" value="128" title="128 matches the ClickHouse default, so the two HNSW builds are comparable" min="4" max="1000"></label>
           <label class="pgb-i" style="display:none">lists<input type="number" id="pgb-lists" min="1" max="32768" placeholder="suggested"></label>
           <label>parallel workers<input type="number" id="pgb-workers" min="0" max="64" placeholder="server setting"></label>
           <label>maintenance_work_mem<input type="text" id="pgb-mwm" placeholder="e.g. 2GB"></label>
@@ -1128,6 +1220,246 @@ input[type=password]:focus{border-color:var(--teal)}
 </div><!-- /pgv -->
 
 
+<!-- ══════════════════════════ WAREHOUSEPG ═════════════════════════════════ -->
+<div class="panel" id="panel-wh">
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">01</span>
+      <span class="section-title">WarehousePG &amp; its tables</span>
+      <span class="section-desc">The same rows as Postgres, in a second cluster, one table per engine</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div class="info-box">
+        WarehousePG splits each table across segments and runs every query on all of them in parallel, so <code>probes</code> and
+        <code>ef_search</code> apply <b>per segment</b>. Index parameters are copied unchanged from the Postgres indexes — the same
+        <code>lists</code>, not divided by the segment count. Every connection runs your session settings first
+        (<code>optimizer = off</code> by default). Rows are streamed from <code id="wh-src-name">vp_docs</code>, keeping the same ids and embeddings.
+      </div>
+      <div id="wh-warn"></div>
+      <div class="pipeline">
+        <div class="pipe-node"><div class="pipe-label">connection</div><div class="pipe-name" id="wh-pp-conn">—</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><div class="pipe-label">segments</div><div class="pipe-name" id="wh-pp-seg">—</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><div class="pipe-label">ivfplus table</div><div class="pipe-name" id="wh-pp-vp">—</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><div class="pipe-label">HNSW table</div><div class="pipe-name" id="wh-pp-h">—</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><div class="pipe-label">IVFFlat table</div><div class="pipe-name" id="wh-pp-i">—</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><div class="pipe-label">indexes</div><div class="pipe-name" id="wh-pp-idx">—</div></div>
+      </div>
+      <div id="wh-applied" class="eng-pick" style="margin-bottom:10px"></div>
+      <div class="ctrl-row">
+        <button class="run-btn danger" onclick="whSync('all')">⇄ Drop, recreate &amp; sync all three tables</button>
+        <button class="run-btn secondary" onclick="whSync('ivfplus')">ivfplus table only</button>
+        <button class="run-btn secondary" onclick="whSync('hnsw')">HNSW table only</button>
+        <button class="run-btn secondary" onclick="whSync('ivfflat')">IVFFlat table only</button>
+      </div>
+      <div class="mini-note">Re-sync after any reload or churn of the Postgres table. Churn from the Engine Compare tab keeps both clusters identical on its own.</div>
+      <div id="wh-sync-box" style="display:none;margin-top:8px">
+        <div class="pbar"><div class="pbar-fill" id="wh-sync-bar"></div></div>
+        <div class="mini-note" id="wh-sync-txt"></div>
+      </div>
+      <div id="wh-out"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">02</span>
+      <span class="section-title">Build an index on WarehousePG</span>
+      <span class="section-desc">Leave a parameter blank to copy it from the Postgres index of the same method</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div class="ctrl-card">
+        <div class="ctrl-card-title">Index options</div>
+        <div class="field-grid">
+          <label>Access method<select id="whb-am" onchange="whAmChanged()"><option value="ivfplus">ivfplus</option><option value="hnsw">hnsw</option><option value="ivfflat">ivfflat</option></select></label>
+          <label>Operator class<select id="whb-opclass"></select></label>
+          <label class="whb-l">lists<input type="number" id="whb-lists" min="1" max="32768" placeholder="same as Postgres"></label>
+          <label class="whb-h" style="display:none">m<input type="number" id="whb-m" min="2" max="100" placeholder="same as Postgres"></label>
+          <label class="whb-h" style="display:none">ef_construction<input type="number" id="whb-efc" min="4" max="1000" placeholder="same as Postgres"></label>
+          <label>maintenance_work_mem<input type="text" id="whb-mwm" placeholder="e.g. 1GB"></label>
+          <label>Index name<input type="text" id="whb-name" placeholder="auto"></label>
+        </div>
+        <div class="ctrl-row">
+          <label class="chk whb-r"><input type="checkbox" id="whb-rot" checked> rotation = on (ivfplus)</label>
+          <label class="chk"><input type="checkbox" id="whb-replace" checked> replace the existing index</label>
+          <span class="mini-note" style="margin:0">CREATE INDEX CONCURRENTLY is not offered here.</span>
+        </div>
+        <div class="ctrl-row">
+          <button class="run-btn" id="whb-btn" onclick="whBuild()">⚡ CREATE INDEX on WarehousePG</button>
+        </div>
+      </div>
+      <div id="whb-warn"></div>
+      <div id="whb-live" style="display:none">
+        <div style="display:flex;align-items:center;gap:18px;margin:10px 0">
+          <div class="big-timer" id="whb-timer">0.0<span class="timer-unit">s</span></div>
+          <div style="flex:1"><div class="pbar"><div class="pbar-fill indeterminate"></div></div>
+          <div class="mini-note">building across all segments…</div></div>
+        </div>
+      </div>
+      <div id="whb-result"></div>
+      <div id="whb-sql"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">03</span>
+      <span class="section-title">Indexes &amp; build history</span>
+      <span class="section-desc">Index sizes are the total across segments</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div id="wh-indexes"></div>
+      <div style="margin-top:14px" id="wh-history"></div>
+    </div>
+  </div>
+
+</div><!-- /wh -->
+
+
+<!-- ══════════════════════════ CLICKHOUSE ══════════════════════════════════ -->
+<div class="panel" id="panel-chd">
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">01</span>
+      <span class="section-title">ClickHouse &amp; its table</span>
+      <span class="section-desc">The same rows as Postgres, streamed straight across, merged into one part</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div class="info-box">
+        ClickHouse's vector index is <code>vector_similarity('hnsw', …)</code>. The table holds the same ids, text and embeddings as
+        <code id="chd-src-name">vp_docs</code>, copied directly from Postgres and checked afterwards (row count, id range and an id checksum).
+        ClickHouse builds one HNSW graph per data part, so the sync ends by merging the table into a single part.
+        It is queried over HTTP, so its latency includes the request round trip, which Postgres engines do not pay.
+        Connect to it first on the <b>Setup</b> page.
+      </div>
+      <div id="chd-warn"></div>
+      <div class="pipeline">
+        <div class="pipe-node"><div class="pipe-label">connection</div><div class="pipe-name" id="chd-pp-conn">—</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><div class="pipe-label">version</div><div class="pipe-name" id="chd-pp-ver">—</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><div class="pipe-label">Postgres source</div><div class="pipe-name" id="chd-pp-src">—</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><div class="pipe-label">ClickHouse table</div><div class="pipe-name" id="chd-pp-tbl">—</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><div class="pipe-label">identical</div><div class="pipe-name" id="chd-pp-sync">—</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><div class="pipe-label">vector index</div><div class="pipe-name" id="chd-pp-idx">—</div></div>
+      </div>
+      <div class="ctrl-row">
+        <button class="run-btn danger" onclick="chdSync()">⇄ Drop, recreate &amp; sync the table from Postgres</button>
+        <span class="mini-note" style="margin:0">Re-sync after any reload of the Postgres table. Churn from Engine Compare keeps all tables identical on its own.</span>
+      </div>
+      <div id="chd-sync-box" style="display:none;margin-top:8px">
+        <div class="pbar"><div class="pbar-fill" id="chd-sync-bar"></div></div>
+        <div class="mini-note" id="chd-sync-txt"></div>
+      </div>
+      <div id="chd-out"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">02</span>
+      <span class="section-title">Build the vector index</span>
+      <span class="section-desc">ALTER TABLE … ADD INDEX, then MATERIALIZE INDEX over the existing rows — that is the timed build</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div class="ctrl-card">
+        <div class="ctrl-card-title">Index options</div>
+        <div class="field-grid">
+          <label>Distance<select id="chdb-opclass"><option value="vector_l2_ops">L2Distance</option><option value="vector_cosine_ops">cosineDistance</option></select></label>
+          <label>Quantization<select id="chdb-quant"><option value="bf16">bf16 (default)</option><option value="f32">f32 (exact)</option><option value="f16">f16</option><option value="i8">i8</option><option value="b1">b1</option></select></label>
+          <label>M<input type="number" id="chdb-m" value="16" min="2" max="200"></label>
+          <label>ef_construction<input type="number" id="chdb-efc" value="128" min="4" max="4000"></label>
+        </div>
+        <div class="ctrl-row">
+          <label class="chk"><input type="checkbox" id="chdb-replace" checked> replace the existing index</label>
+          <button class="run-btn" id="chdb-btn" onclick="chdBuild()">⚡ ADD + MATERIALIZE INDEX</button>
+          <span class="mini-note" style="margin:0">Search accuracy is <code>hnsw_candidate_list_size_for_search</code>; the sweep sets it from the shared probes value (max(k, 4 × probes)), as for pgvector HNSW.</span>
+        </div>
+      </div>
+      <div id="chdb-warn"></div>
+      <div id="chdb-live" style="display:none">
+        <div style="display:flex;align-items:center;gap:18px;margin:10px 0">
+          <div class="big-timer" id="chdb-timer">0.0<span class="timer-unit">s</span></div>
+          <div style="flex:1"><div class="pbar"><div class="pbar-fill indeterminate"></div></div>
+          <div class="mini-note" id="chdb-phase"></div></div>
+        </div>
+      </div>
+      <div id="chdb-result"></div>
+      <div id="chdb-sql"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">03</span>
+      <span class="section-title">Index &amp; build history</span>
+      <span class="section-desc">Index size is the compressed size of the secondary index across data parts</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div id="chd-indexes"></div>
+      <div style="margin-top:14px" id="chd-history"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">04</span>
+      <span class="section-title">QBit — precision chosen at query time</span>
+      <span class="section-desc">The same rows with the vector stored as bit planes. No index: every query scans every row</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div class="info-box">
+        QBit stores each Float32 as 32 bit planes. <code>L2DistanceTransposed(embedding, vector, bits)</code> reads only the top
+        <i>bits</i> planes of every number, so one table serves every precision and the trade-off is made per query, with nothing to
+        build or tune in advance. It is a brute-force scan, so latency grows with the table; reading fewer bits saves I/O, not the
+        work of rebuilding each number. The table is made from <code>ch_docs</code> inside ClickHouse, then checked against it.
+        The sweep maps the shared probes value p to <code>min(p, 32)</code> bits.
+      </div>
+      <div id="chq-warn"></div>
+      <div class="pipeline">
+        <div class="pipe-node"><div class="pipe-label">Array table</div><div class="pipe-name" id="chq-pp-src">—</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><div class="pipe-label">QBit table</div><div class="pipe-name" id="chq-pp-tbl">—</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><div class="pipe-label">vector column</div><div class="pipe-name" id="chq-pp-size">—</div></div>
+        <span class="pipe-arrow">→</span>
+        <div class="pipe-node"><div class="pipe-label">identical</div><div class="pipe-name" id="chq-pp-sync">—</div></div>
+      </div>
+      <div class="ctrl-row">
+        <button class="run-btn" id="chq-btn" onclick="chqBuild()">⇄ Create (or rebuild) the QBit table from ch_docs</button>
+        <button class="run-btn danger" onclick="chqDrop()">drop</button>
+        <span class="mini-note" style="margin:0">Churn in Engine Compare keeps it identical on its own.</span>
+      </div>
+      <div id="chq-live" style="display:none">
+        <div style="display:flex;align-items:center;gap:18px;margin:10px 0">
+          <div class="big-timer" id="chq-timer">0.0<span class="timer-unit">s</span></div>
+          <div style="flex:1"><div class="pbar"><div class="pbar-fill indeterminate"></div></div><div class="mini-note" id="chq-phase"></div></div>
+        </div>
+      </div>
+      <div id="chq-result"></div>
+      <div id="chq-sql"></div>
+    </div>
+  </div>
+
+</div><!-- /chd -->
+
+
 <!-- ══════════════════════════ ENGINE COMPARE ══════════════════════════════ -->
 <div class="panel" id="panel-cmp">
 
@@ -1138,7 +1470,13 @@ input[type=password]:focus{border-color:var(--teal)}
       <label class="chk"><input type="checkbox" id="ce-vchordrq" checked><span class="eng-dot" style="background:#5A3A9A"></span>VectorChord</label>
       <label class="chk"><input type="checkbox" id="ce-hnsw" checked><span class="eng-dot" style="background:#1A5A9A"></span>pgvector HNSW</label>
       <label class="chk"><input type="checkbox" id="ce-ivfflat" checked><span class="eng-dot" style="background:#9A6A00"></span>pgvector IVFFlat</label>
-      <span class="mini-note" style="margin:0">An engine whose table does not exist yet is skipped with a message, not silently.</span>
+      <label class="chk"><input type="checkbox" id="ce-clickhouse" disabled><span class="eng-dot" style="background:#C2410C"></span>ClickHouse</label>
+      <label class="chk"><input type="checkbox" id="ce-clickhouse_qbit" disabled title="Brute force with a precision dial: every query scans every row"><span class="eng-dot" style="background:#8E2C48"></span>ClickHouse QBit</label>
+      <span style="border-left:1px solid var(--border);height:18px"></span>
+      <label class="chk"><input type="checkbox" id="ce-w_ivfplus" disabled><span class="eng-dot" style="background:#4FA58F"></span>ivfplus @ WHPG</label>
+      <label class="chk"><input type="checkbox" id="ce-w_hnsw" disabled><span class="eng-dot" style="background:#6FA0D6"></span>HNSW @ WHPG</label>
+      <label class="chk"><input type="checkbox" id="ce-w_ivfflat" disabled><span class="eng-dot" style="background:#D6A84F"></span>IVFFlat @ WHPG</label>
+      <span class="mini-note" style="margin:0" id="ce-wh-hint">WarehousePG engines appear here once the second connection is enabled and its tables are synced.</span>
     </div>
   </div>
 
@@ -1170,7 +1508,7 @@ input[type=password]:focus{border-color:var(--teal)}
           <label>ivfplus lists<input type="number" id="cb-vp-lists" value="100" min="1" max="32768"></label>
           <label>vchordrq lists<input type="text" id="cb-vc-lists" value="" placeholder="empty = [ ]  ·  100"></label>
           <label>HNSW m<input type="number" id="cb-h-m" value="16" min="2" max="100"></label>
-          <label>HNSW ef_construction<input type="number" id="cb-h-efc" value="64" min="4" max="1000"></label>
+          <label>HNSW ef_construction<input type="number" id="cb-h-efc" value="128" title="Kept equal to ClickHouse's 128 so the two HNSW builds are comparable" min="4" max="1000"></label>
           <label>IVFFlat lists<input type="number" id="cb-i-lists" value="100" min="1" max="32768"></label>
           <label>Operator class<select id="cb-opclass"></select></label>
           <label>maintenance_work_mem<input type="text" id="cb-mwm" placeholder="e.g. 1GB (both)"></label>
@@ -1180,7 +1518,7 @@ input[type=password]:focus{border-color:var(--teal)}
           <button class="run-btn secondary" onclick="cmpSummary()">↻ Refresh</button>
           <span class="mini-note" id="cb-status" style="margin:0"></span>
         </div>
-        <div class="mini-note">vchordrq, HNSW and IVFFlat builds replace the index already on their table, so each table keeps exactly one — the planner picks between several and the results would then depend on its choice. The ivfplus build is additive, as in the Index Build tab.</div>
+        <div class="mini-note">vchordrq, HNSW and IVFFlat builds replace the index already on their table, so each table keeps exactly one — the planner picks between several and the results would then depend on its choice. The ivfplus build on Postgres is additive, as in the Index Build tab. WarehousePG engines are built with the same lists / m / ef_construction values as their Postgres twins, and cold mode is warm-only for them.</div>
       </div>
     </div>
   </div>
@@ -1199,10 +1537,7 @@ input[type=password]:focus{border-color:var(--teal)}
           <label>…or row id<span style="display:flex;gap:6px"><input type="number" id="cs-id" placeholder="blank = use text" style="flex:1"><button class="run-btn secondary" type="button" onclick="cmpRandomId()" title="pick a random existing row">🎲</button></span></label>
           <label>k<input type="number" id="cs-k" value="10" min="1" max="200"></label>
           <label>Operator class<select id="cs-opclass"></select></label>
-          <label>ivfplus.probes<input type="number" id="cs-vp-probes" value="16" min="1" max="32768"></label>
-          <label>vchordrq.probes<input type="text" id="cs-vc-probes" value="" placeholder="'' for lists = [ ]"></label>
-          <label>hnsw.ef_search<input type="number" id="cs-h-ef" value="40" min="1" max="1000"></label>
-          <label>ivfflat.probes<input type="number" id="cs-i-probes" value="10" min="1"></label>
+          <label>Probes (every engine)<input type="number" id="cs-probes" value="16" min="1" max="32768" title="ivfplus / IVFFlat / VectorChord: probes, capped at the index's lists. HNSW: ef_search = max(k, 4 x probes)."></label>
           <label>pgvector iterative_scan<select id="cs-iter"><option value="off">off (default)</option><option value="relaxed_order">relaxed_order</option><option value="strict_order">strict_order</option></select></label>
           <label>vchordrq.epsilon<input type="text" id="cs-eps" placeholder="1.9 (default)"></label>
           <label>category filter<select id="cs-cat"><option value="">none</option></select></label>
@@ -1211,7 +1546,7 @@ input[type=password]:focus{border-color:var(--teal)}
           <label>Cache<select id="cs-cache"><option value="warm">warm — warmed up, median of runs</option><option value="cold">cold — evicted first, then timed</option></select></label>
         </div>
         <div class="ctrl-row">
-          <button class="run-btn" onclick="cmpSearch()">🔍 Run on every engine</button>
+          <button class="run-btn" id="cs-btn" onclick="cmpSearch()">🔍 Run on every engine</button>
           <label class="chk"><input type="checkbox" id="cs-force" checked> disable seqscan for the approximate runs</label>
         </div>
       </div>
@@ -1233,19 +1568,21 @@ input[type=password]:focus{border-color:var(--teal)}
           <label>Query vectors<input type="number" id="cr-q" value="50" min="1" max="500"></label>
           <label>Cache<select id="cr-cache"><option value="warm">warm — prewarmed, throwaway run first</option><option value="cold">cold — evicted before every pass</option></select></label>
           <label>Passes per setting<input type="number" id="cr-passes" value="3" min="1" max="9"></label>
+          <label>Repeats<input type="number" id="cr-repeats" value="1" min="1" max="5" title="Run the whole sweep this many times. Each repeat is saved as its own run; the Benchmark can then take the lowest or the median latency."></label>
+          <label>Run label (saved to Benchmark)<input type="text" id="cr-label" placeholder="e.g. 2M rows, cold, 3 passes"></label>
           <label>Operator class<select id="cr-opclass"></select></label>
-          <label>ivfplus.probes list<input type="text" id="cr-vp" value="1,2,4,8,16,32,64,128"></label>
-          <label>vchordrq.probes list<input type="text" id="cr-vc" placeholder="auto from the index's lists"></label>
-          <label>hnsw.ef_search list<input type="text" id="cr-h" placeholder="auto: 10…640, at least k"></label>
-          <label>ivfflat.probes list<input type="text" id="cr-i" placeholder="auto from the index's lists"></label>
+          <label>Probes list (every engine)<input type="text" id="cr-probes" value="1,2,4,8,16,32,64,128,256" title="One list drives all engines. HNSW and ClickHouse use max(k, 4 x probes), capped at 1000."></label>
           <label>vchordrq.epsilon<input type="text" id="cr-eps" placeholder="1.9 (default)"></label>
           <label>pgvector iterative_scan<select id="cr-iter"><option value="off">off (default)</option><option value="relaxed_order">relaxed_order</option><option value="strict_order">strict_order</option></select></label>
         </div>
         <div class="ctrl-row">
           <button class="run-btn" id="cr-btn" onclick="cmpSweep()">🎯 Sweep every engine</button>
           <label class="chk"><input type="checkbox" id="cr-force" checked> disable seqscan for the approximate runs</label>
+          <button class="run-btn secondary" onclick="crPreset()" title="k 10, 50 queries, warm, 3 passes, 3 repeats, probes up to 256">📋 Recommended protocol</button>
+          <label class="chk" id="cr-quiet-wrap"><input type="checkbox" id="cr-quiet"> stop ClickHouse during the sweep</label>
         </div>
-        <div class="mini-note">For a two-level vchordrq index give probes per level, one value per list entry, separated by a comma inside each item — e.g. <code>10,100;20,200</code> uses semicolons between sweep points.</div>
+        <div class="mini-note" id="cr-quiet-hint" style="margin-top:0"></div>
+        <div class="mini-note">One list of <b>probes</b> drives every engine. ivfplus, IVFFlat and VectorChord use it as <code>probes</code> (never above their <code>lists</code>; repeated values after capping are dropped). HNSW has no probes, so it uses <code>ef_search = max(k, 4 × probes)</code> — the results show the actual <code>ef_search</code>. The default ladder runs to 256 probes, which gives HNSW and ClickHouse their ef_search cap of 1000. ClickHouse QBit reads min(probes, 32) bits of each number.</div>
       </div>
       <div id="cr-out"></div>
       <div class="chart-label" style="margin-top:12px" id="cr-chart-label" hidden>Recall (%) against mean latency — further up and left is better</div>
@@ -1275,6 +1612,249 @@ input[type=password]:focus{border-color:var(--teal)}
   </div>
 
 </div><!-- /cmp -->
+
+
+<!-- ══════════════════════════ BENCHMARK ═══════════════════════════════════ -->
+<div class="panel" id="panel-bench">
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">01</span>
+      <span class="section-title">Ranking</span>
+      <span class="section-desc">Every sweep is saved automatically. Pick a scale, a recall bar, and see who wins</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div id="bm-empty"></div>
+      <div class="ctrl-card" id="bm-controls">
+        <div class="field-grid">
+          <label>Data scale<select id="bm-scale" onchange="benchScaleChanged()"></select></label>
+          <label>Run used at this scale<select id="bm-run" onchange="benchRunChanged()"></select></label>
+          <label>Recall bar an engine must reach<select id="bm-floor" onchange="benchRender()"><option value="0.9">≥ 90%</option><option value="0.95" selected>≥ 95%</option><option value="0.99">≥ 99%</option></select></label>
+        </div>
+        <div class="ctrl-row">
+          <label class="chk"><input type="checkbox" id="bm-gate" checked onchange="benchRender()"> engines that miss the recall bar are ranked below every engine that reaches it, whatever their other numbers</label>
+        </div>
+        <div class="ctrl-row">
+          <label class="chk">latency across repeats <select id="bn-agg" onchange="benchRender()" title="When several runs measured the same index, which latency to use"><option value="best">lowest of the repeats</option><option value="median">median of the repeats</option><option value="selected">selected run only</option></select></label>
+        </div>
+        <div class="ctrl-row">
+          <label class="chk"><input type="checkbox" id="bn-merge" checked onchange="benchRender()"> combine runs at this scale: an engine missing from the selected run is taken from the newest run with the same <code>k</code>, operator class and cache mode</label>
+        </div>
+        <details>
+          <summary class="mini-note" style="cursor:pointer;margin:6px 0">Scoring weights (relative; unused or unavailable metrics are dropped and the rest rescaled)</summary>
+          <div class="field-grid" style="margin-top:8px">
+            <label>Latency at the recall bar<input type="number" id="bm-w-lat" value="40" min="0" max="100" oninput="benchRender()"></label>
+            <label>p95 latency at the bar<input type="number" id="bm-w-p95" value="10" min="0" max="100" oninput="benchRender()"></label>
+            <label>Best recall reached<input type="number" id="bm-w-rec" value="10" min="0" max="100" oninput="benchRender()"></label>
+            <label>Index build time<input type="number" id="bm-w-build" value="15" min="0" max="100" oninput="benchRender()"></label>
+            <label>Index size<input type="number" id="bm-w-size" value="15" min="0" max="100" oninput="benchRender()"></label>
+            <label>Maintenance (churn)<input type="number" id="bm-w-maint" value="10" min="0" max="100" oninput="benchRender()"></label>
+          </div>
+        </details>
+        <div class="eng-pick" id="bm-include" style="margin-top:6px"></div>
+      </div>
+      <div id="bm-winner"></div>
+      <div id="bm-warn"></div>
+      <div id="bm-rank"></div>
+      <div class="mini-note" id="bm-rank-note"></div>
+      <div class="mini-note"><a href="#" onclick="switchTab('score');return false">How are these points counted? →</a></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">02</span>
+      <span class="section-title">Charts for this scale</span>
+      <span class="section-desc" id="bm-charts-desc">—</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div class="chart-label">Recall against mean latency — further up and left is better; the dashed line is your recall bar</div>
+      <div class="chart-wrap tall"><canvas id="bm-ch-curves"></canvas></div>
+      <div class="hit-grid" style="margin-top:14px">
+        <div><div class="chart-label">Latency at the recall bar (ms)</div><div class="chart-wrap"><canvas id="bm-ch-lat"></canvas></div></div>
+        <div><div class="chart-label">Index build time (s)</div><div class="chart-wrap"><canvas id="bm-ch-build"></canvas></div></div>
+        <div><div class="chart-label">Index size (MiB)</div><div class="chart-wrap"><canvas id="bm-ch-size"></canvas></div></div>
+      </div>
+      <div class="hit-grid" style="margin-top:14px">
+        <div><div class="chart-label">Where each score comes from (weighted points)</div><div class="chart-wrap tall"><canvas id="bm-ch-score"></canvas></div></div>
+        <div><div class="chart-label">Profile per engine — each axis scored 0–100, best engine = 100</div><div class="chart-wrap tall"><canvas id="bm-ch-radar"></canvas></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">03</span>
+      <span class="section-title">How it scales</span>
+      <span class="section-desc">Needs saved runs at two or more data sizes — e.g. 2M and 10M</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div id="bm-scale-info"></div>
+      <div class="hit-grid">
+        <div><div class="chart-label">Latency at the recall bar vs rows</div><div class="chart-wrap"><canvas id="bm-ch-sc-lat"></canvas></div></div>
+        <div><div class="chart-label">Build time vs rows</div><div class="chart-wrap"><canvas id="bm-ch-sc-build"></canvas></div></div>
+        <div><div class="chart-label">Index size vs rows (MiB)</div><div class="chart-wrap"><canvas id="bm-ch-sc-size"></canvas></div></div>
+      </div>
+      <div id="bm-scale-table" style="margin-top:14px"></div>
+      <div id="bm-rank-table" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">04</span>
+      <span class="section-title">Maintenance under churn</span>
+      <span class="section-desc">Identical inserts, updates and deletes applied to every table</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div id="bm-churn"></div>
+      <div class="chart-wrap" id="bm-churn-wrap" hidden><canvas id="bm-ch-churn"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">05</span>
+      <span class="section-title">Saved runs, export &amp; report</span>
+      <span class="section-desc">Label and annotate runs, hide the throwaway ones, move results between machines</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div class="ctrl-row">
+        <button class="run-btn" onclick="benchReport()">📄 Download report (HTML)</button>
+        <button class="run-btn secondary" onclick="benchExport(false)">⬇ Export all runs (JSON)</button>
+        <button class="run-btn secondary" onclick="byId('bm-import').click()">⬆ Import runs</button>
+        <input type="file" id="bm-import" accept=".json,application/json" style="display:none" onchange="benchImport(this)">
+        <label class="chk"><input type="checkbox" id="bm-showhidden" onchange="benchRenderRuns()"> show hidden</label>
+        <span class="mini-note" style="margin:0" id="bm-store"></span>
+      </div>
+      <div id="bm-import-out"></div>
+      <div id="bm-runs" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">06</span>
+      <span class="section-title">Method &amp; caveats</span>
+      <span class="section-desc">What these numbers do and do not show</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open"><div id="bm-method"></div></div>
+  </div>
+
+</div><!-- /bench -->
+
+
+<!-- ══════════════════════════ SCORING EXPLAINED ═══════════════════════════ -->
+<div class="panel" id="panel-score">
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">01</span>
+      <span class="section-title">How points are counted</span>
+      <span class="section-desc">Five steps, no hidden factors — every number below can be reproduced by hand</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div class="hit-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+        <div class="eng-card vp"><h4><span>① Measure</span></h4><div class="mini-note" style="margin:0;font-size:12.5px;color:var(--text)">Each engine has up to six measurements from a saved sweep: latency at the recall bar, p95 latency, best recall reached, build time, index size, and maintenance (churn) time.</div></div>
+        <div class="eng-card vc"><h4><span>② Compare with the best</span></h4><div class="mini-note" style="margin:0;font-size:12.5px;color:var(--text)">For each measurement the best engine in the ranking sets the yardstick. An engine's <b>ratio</b> is best ÷ value (value ÷ best for recall). The best scores 1.0; twice as slow or twice as large scores 0.5.</div></div>
+        <div class="eng-card hn"><h4><span>③ Weight</span></h4><div class="mini-note" style="margin:0;font-size:12.5px;color:var(--text)">Each measurement is worth a share of 100 points in proportion to its weight. Measurements that are switched off or missing for any engine are dropped, and the rest are rescaled to still add up to 100.</div></div>
+        <div class="eng-card if"><h4><span>④ Add up</span></h4><div class="mini-note" style="margin:0;font-size:12.5px;color:var(--text)">Points for a measurement = its share × the ratio. The score is the sum, so 100 is only possible by being best at everything.</div></div>
+        <div class="eng-card" style="border-top:3px solid var(--red)"><h4><span>⑤ Gate</span></h4><div class="mini-note" style="margin:0;font-size:12.5px;color:var(--text)">An engine that never reaches the recall bar is <b>DNQ</b>: it gets 0 points for latency and p95, and is ranked below every engine that did reach it, whatever its score.</div></div>
+      </div>
+      <div class="info-box" style="margin-top:14px;font-family:var(--mono);font-size:12.5px;line-height:1.8">
+        share(metric) = 100 × weight(metric) ÷ (sum of the weights in use)<br>
+        ratio = best ÷ value &nbsp;&nbsp;(latency, p95, build time, index size, maintenance — lower is better)<br>
+        ratio = value ÷ best &nbsp;&nbsp;(best recall — higher is better)<br>
+        points(engine, metric) = share(metric) × ratio<br>
+        score(engine) = Σ points(engine, metric)
+      </div>
+      <div class="ctrl-row"><button class="run-btn secondary" onclick="switchTab('bench')">← Back to the Benchmark (change weights, recall bar, engines there)</button></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">02</span>
+      <span class="section-title">Your weights, right now</span>
+      <span class="section-desc" id="sc-run-desc">from the run selected on the Benchmark tab</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open"><div id="sc-weights"></div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">03</span>
+      <span class="section-title">A worked example</span>
+      <span class="section-desc">Pick an engine and see its points metric by metric</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div class="ctrl-row"><span class="ctrl-label">Engine</span><select id="sc-engine" onchange="scoreExample()" style="min-width:260px"></select></div>
+      <div id="sc-example"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">04</span>
+      <span class="section-title">Where every engine gained and lost points</span>
+      <span class="section-desc">Darker green = closer to the maximum for that measurement</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open"><div id="sc-matrix"></div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">05</span>
+      <span class="section-title">What each measurement is</span>
+      <span class="section-desc">Exactly where each number comes from</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Measurement</th><th>Better is</th><th>Where it comes from</th></tr></thead><tbody>
+        <tr><td><b>Latency at the bar</b></td><td>lower</td><td>Of the sweep settings that reached the recall bar, the one with the lowest mean latency — the cheapest way that engine found to clear the bar. Engines that never reach the bar have no value.</td></tr>
+        <tr><td><b>p95 at the bar</b></td><td>lower</td><td>The 95th-percentile latency of that same setting — the slow tail, not the average.</td></tr>
+        <tr><td><b>Best recall</b></td><td>higher</td><td>The highest recall reached anywhere in the sweep, however slowly. It shows each engine's ceiling, not its quality at the bar; it counts for little by default.</td></tr>
+        <tr><td><b>Build time</b></td><td>lower</td><td>The recorded seconds of the <code>CREATE INDEX</code> that produced the index measured. On WarehousePG the segments build in parallel.</td></tr>
+        <tr><td><b>Index size</b></td><td>lower</td><td>Size of that index when the sweep ran. On WarehousePG it is the total across segments.</td></tr>
+        <tr><td><b>Maintenance</b></td><td>lower</td><td>Insert + update + delete + vacuum seconds from the churn run saved at the same data size. Counted only if every engine in the ranking has it; otherwise dropped and the rest rescaled.</td></tr>
+      </tbody></table></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggle(this)">
+      <span class="section-num">06</span>
+      <span class="section-title">Rules, edge cases and how to read the result</span>
+      <span class="section-desc">The things that surprise people</span>
+      <span class="chevron open">▼</span>
+    </div>
+    <div class="section-body open">
+      <ul style="line-height:1.7;margin:0 0 0 18px;font-size:13.5px">
+        <li><b>The "best" depends on who is ranked.</b> Untick an engine on the Benchmark tab and every other engine's ratios — and points — change, because the yardstick moves.</li>
+        <li><b>A DNQ engine's score can look higher than a ranked one's.</b> It keeps the points it earned on recall, build time and size, but it is placed below every engine that reached the bar. The gate decides the order; the score does not. On the Benchmark tab its score is shown greyed in brackets for that reason.</li>
+        <li><b>Ties</b> in score are broken by the lower latency at the bar.</li>
+        <li><b>Ratios compress big gaps.</b> An engine 3× slower than the best earns a third of the latency points; one 30× slower earns almost none, and so does one 300× slower. Differences between the slowest engines barely show in the score — look at the latency column and the charts for those.</li>
+        <li><b>Rounding:</b> points are computed from unrounded measurements, so adding the rounded figures shown can differ by a tenth.</li>
+        <li><b>The score is a summary, not a measurement.</b> Changing the weights can change the order. The measurement columns and charts are the evidence; the score is one way of weighing them.</li>
+        <li><b>WarehousePG engines are not on the same hardware as the Postgres ones.</b> Queries run on every segment in parallel, and probes apply per segment, so their lead in latency is not a like-for-like win over a single node.</li>
+        <li><b>Runs are comparable only if their setup is.</b> Different <code>k</code>, probe lists, cache mode or data change the numbers; the Benchmark tab warns when scaling runs differ.</li>
+        <li><b>"DNQ" can mean "needs more probes".</b> If the probe list stops at 32 and an engine reached 88% there, it may reach the bar at 64 or 128. Extend the list before concluding it cannot.</li>
+        <li><b>The data is synthetic</b> unless you loaded your own. Confirm any ranking on your own embeddings before deciding.</li>
+      </ul>
+    </div>
+  </div>
+
+</div><!-- /score -->
 
 
 <!-- ══════════════════════════ HISTORY & COMPARE ═══════════════════════════ -->
@@ -1817,7 +2397,8 @@ async function genStart(){
   const body={rows:+document.getElementById('gen-rows').value,
               batch:+document.getElementById('gen-batch').value,
               seed:+document.getElementById('gen-seed').value,
-              binary:binary};
+              binary:binary,
+              drop_vector_indexes:document.getElementById('gen-dropvec').checked};
   const d=await post('/api/data/generate/start', body);
   if(!d.ok){ showOutput('gen-output', false, d.error); return; }
   warnList('gen-output', d.warnings);
@@ -1870,6 +2451,10 @@ async function genStatus(){
   if(s.copy_format)           meta += ` · ${s.copy_format} COPY`;
   if(s.copy_seconds  != null) meta += ` · copy ${s.copy_seconds}s`;
   if(s.index_seconds != null) meta += ` · index ${s.index_seconds}s`;
+  if(s.running && s.gen_seconds!=null && s.copy_live_seconds!=null){
+    meta += ` | generating ${s.gen_seconds}s, in COPY ${s.copy_live_seconds}s`;
+    if(s.copy_live_seconds>5 && s.done/s.copy_live_seconds<3000) meta += ' | COPY is the slow part - is there an index on the table?';
+  }
   document.getElementById('gen-meta').textContent = meta;
 
   if(!s.running){
@@ -2841,7 +3426,7 @@ ENGINE_COLOR.vchordrq='#5A3A9A';
 const CMP_OPCLASSES={vector_l2_ops:'<-> L2',vector_ip_ops:'<#> inner product',vector_cosine_ops:'<=> cosine',
                      halfvec_l2_ops:'<-> L2 · halfvec',halfvec_ip_ops:'<#> ip · halfvec',halfvec_cosine_ops:'<=> cosine · halfvec'};
 function fillCmpSelects(){
-  ['vcb-opclass','pgb-opclass','cb-opclass','cs-opclass','cr-opclass'].forEach(id=>{
+  ['vcb-opclass','pgb-opclass','whb-opclass','cb-opclass','cs-opclass','cr-opclass'].forEach(id=>{
     const el=byId(id); if(!el||el.options.length) return;
     el.innerHTML=Object.entries(CMP_OPCLASSES).map(([k,v])=>`<option value="${k}">${k} — ${escH(v)}</option>`).join('');
   });
@@ -2852,16 +3437,23 @@ fillCmpSelects();
 const _switchTab=switchTab;
 switchTab=function(n){
   _switchTab(n);
-  if(n==='setup') connLoad(true);
+  if(n==='setup'){ connLoad(true); whConnLoad(true); chLoad(true); }
+  if(n==='cmp'){ chLoad(false).then(crQuietHint); }
   if(n==='vc'){vcStatus();vcIndexes();}
   if(n==='pgv'){pgvStatus();pgvIndexes();}
-  if(n==='cmp'){cmpSummary();cmpCategories();cacheLoad();}
+  if(n==='wh'){whStatus();whIndexes();whAmChanged();}
+  if(n==='chd'){chdStatus();chdIndexes();}
+  if(n==='cmp'){cmpSummary();cmpCategories();cacheLoad();cmpSweepResume();cmpSearchResume();}
+  if(n==='bench'){benchLoad(true);}
+  if(n==='score'){scoreOpen();}
 };
 setInterval(()=>{ if(byId('panel-vc').classList.contains('active') && !vcBusy) {vcStatus();}
-                  if(byId('panel-pgv').classList.contains('active') && !pgvBusy) {pgvStatus();} },4000);
+                  if(byId('panel-pgv').classList.contains('active') && !pgvBusy) {pgvStatus();}
+                  if(byId('panel-wh').classList.contains('active') && !whBusy) {whStatus();}
+                  if(byId('panel-chd').classList.contains('active') && !chdBusy) {chdStatus();} },4000);
 
 // ── CONNECTION ────────────────────────────────────────────────────────────────
-let connDirty=false;
+let connDirty=false, CONN_SOURCE='';
 async function connLoad(force){
   let d; try{ d=await api('/api/conn'); }catch(e){ return; }
   if(!d.ok) return;
@@ -2874,7 +3466,7 @@ async function connLoad(force){
     byId('conn-pass').placeholder=d.has_password?'(unchanged)':'(none set)';
     connDirty=false;
   }
-  byId('conn-state').innerHTML=`Connected as <b>${escH(label)}</b> — source: ${escH(d.source)}`;
+  CONN_SOURCE=d.source||'';
   byId('conn-forget').style.display=d.saved_exists?'':'none';
   if(byId('conn-file')) byId('conn-file').textContent=d.saved_file;
 }
@@ -2906,7 +3498,7 @@ async function connApply(){
   const d=await post('/api/conn/apply',connBody({save:byId('conn-save').checked,save_password:byId('conn-savepw').checked}));
   if(!d.ok){ byId('conn-result').innerHTML=`<div class="error-box">${escH(d.error)}</div>`; return; }
   connDirty=false; byId('conn-result').innerHTML=connReport(d)+(d.saved?'<div class="mini-note">Saved as the default.</div>':'');
-  showToast('Connection applied'); await connLoad(true);
+  showToast('Connected'); await connLoad(true); connPing();
   loadStatus(); loadEnv();
   if(byId('panel-vc').classList.contains('active')){vcStatus();vcIndexes();}
   if(byId('panel-pgv').classList.contains('active')){pgvStatus();pgvIndexes();}
@@ -2916,17 +3508,38 @@ async function connForget(){
   const d=await post('/api/conn/forget'); if(d.ok){showToast('Saved connection removed'); connLoad();}
 }
 
+// A status call that can neither hang forever nor die silently: it times out, survives a non-JSON
+// reply (an HTML error page) and reports what went wrong, so the pipeline never just sits on dashes.
+async function statusGet(path,ms){
+  ms=ms||60000; const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),ms);
+  try{
+    const r=await fetch(path,{signal:ctl.signal}); const txt=await r.text();
+    try{ return JSON.parse(txt); }
+    catch(e){ return {ok:false,_error:`HTTP ${r.status}: ${(txt.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim()||'empty reply').slice(0,220)}`}; }
+  }catch(e){ return {ok:false,_error:e.name==='AbortError'?`no answer from the app within ${ms/1000}s`:String(e)}; }
+  finally{ clearTimeout(t); }
+}
+function statusFail(prefix,msg){
+  const w=byId(prefix+'-warn'); if(w) w.innerHTML=`<div class="error-box" style="white-space:pre-wrap">Status request failed — ${escH(msg)}</div>`;
+}
+const rowsTxt=(rows,exact)=>rows===null||rows===undefined?'counting…':((exact===false?'≈ ':'')+fmt(rows)+' rows');
+
 // ── VECTORCHORD TAB ───────────────────────────────────────────────────────────
 let VCS={}, vcBusy=false, vcClonePoll=null, vcBuildPoll=null, vcAdvice=null;
+let vcInflight=false;
 async function vcStatus(){
-  const d=await api('/api/vc/status'); VCS=d;
+  if(vcInflight) return; vcInflight=true;
+  try{ await vcStatusInner(); } finally { vcInflight=false; }
+}
+async function vcStatusInner(){
+  const d=await statusGet('/api/vc/status'); if(d._error){ statusFail('vc',d._error); return; } VCS=d;
   const set=(id,t,cls)=>{const e=byId(id); e.textContent=t; if(cls!==undefined) e.style.color=cls;};
   if(!d.db_ok){ set('vc-pp-ext','no DB','var(--red)'); return; }
   byId('vc-vp-name').textContent=d.vp_table;
   set('vc-pp-ext',d.extension||'not installed',d.extension?'var(--green)':'var(--amber)');
-  set('vc-pp-vp',d.vp_exists?fmt(d.vp_rows)+' rows':'missing',d.vp_exists?'':'var(--amber)');
-  set('vc-pp-vc',d.vc_exists?fmt(d.vc_rows)+' rows':'not cloned',d.vc_exists?'':'var(--amber)');
-  set('vc-pp-sync',d.in_sync===undefined?'—':(d.in_sync?'yes':'no — re-clone'),d.in_sync?'var(--green)':(d.in_sync===false?'var(--red)':''));
+  set('vc-pp-vp',d.vp_exists?rowsTxt(d.vp_rows,d.vp_rows_exact):'missing',d.vp_exists?'':'var(--amber)');
+  set('vc-pp-vc',d.vc_exists?rowsTxt(d.vc_rows,d.vc_rows_exact):'not cloned',d.vc_exists?'':'var(--amber)');
+  set('vc-pp-sync',d.in_sync===undefined?'—':(d.in_sync===null?'checking…':(d.in_sync?'yes':'no — re-clone')),d.in_sync?'var(--green)':(d.in_sync===false?'var(--red)':''));
   set('vc-pp-idx',(d.indexes&&d.indexes.length)?d.indexes.length+' · '+d.indexes.map(i=>i.size).join(', '):'none',(d.indexes&&d.indexes.length)?'var(--green)':'var(--amber)');
   let w='';
   if(d.extension&&!d.preloaded) w+=`<div class="warn-box">⚠ vchord is installed but not in <code>shared_preload_libraries</code>. Add it and restart the server — index builds and the <code>vchordrq.*</code> settings depend on it.</div>`;
@@ -3050,15 +3663,20 @@ function pgvAmChanged(){
   document.querySelectorAll('.pgb-h').forEach(e=>e.style.display=h?'':'none');
   document.querySelectorAll('.pgb-i').forEach(e=>e.style.display=h?'none':'');
 }
+let pgvInflight=false;
 async function pgvStatus(){
-  const d=await api('/api/pgv/status'); PGS=d;
+  if(pgvInflight) return; pgvInflight=true;
+  try{ await pgvStatusInner(); } finally { pgvInflight=false; }
+}
+async function pgvStatusInner(){
+  const d=await statusGet('/api/pgv/status'); if(d._error){ statusFail('pgv',d._error); return; } PGS=d;
   const set=(id,t,col)=>{const e=byId(id); e.textContent=t; e.style.color=col||'';};
   if(!d.db_ok){ set('pgv-pp-ext','no DB','var(--red)'); return; }
   byId('pgv-vp-name').textContent=d.vp_table;
   set('pgv-pp-ext',d.pgvector||'missing',d.pgvector?'var(--green)':'var(--red)');
-  set('pgv-pp-vp',d.vp_exists?fmt(d.vp_rows)+' rows':'missing',d.vp_exists?'':'var(--amber)');
+  set('pgv-pp-vp',d.vp_exists?rowsTxt(d.vp_rows,d.vp_rows_exact):'missing',d.vp_exists?'':'var(--amber)');
   const T=d.tables||{}, st=t=>!t||!t.exists?['not cloned','var(--amber)']
-    :[fmt(t.rows)+' rows'+(t.in_sync===false?' ⚠':''), t.in_sync===false?'var(--red)':''];
+    :[rowsTxt(t.rows,t.rows_exact)+(t.in_sync===false?' ⚠':''), t.in_sync===false?'var(--red)':''];
   set('pgv-pp-h',...st(T.hnsw)); set('pgv-pp-i',...st(T.ivfflat));
   const n=['hnsw','ivfflat'].reduce((a,k)=>a+((T[k]&&T[k].indexes)?T[k].indexes.length:0),0);
   set('pgv-pp-idx',n+' of 2',n===2?'var(--green)':'var(--amber)');
@@ -3166,6 +3784,907 @@ async function pgvDrop(name){
   const d=await post('/api/pgv/index/drop',{name}); if(!d.ok) showOutput('pgv-out',false,d.error); pgvIndexes(); pgvStatus();
 }
 
+// ── RECOMMENDED PROTOCOL AND THE QUIET-HOST OPTION ────────────────────────────
+function crPreset(){
+  byId('cr-k').value=10; byId('cr-q').value=50; byId('cr-cache').value='warm'; byId('cr-passes').value=3; byId('cr-repeats').value=3;
+  byId('cr-probes').value='1,2,4,8,16,32,64,128,256'; byId('cr-force').checked=true; byId('cr-iter').value='off';
+  const q=byId('cr-quiet'); if(q&&!q.disabled) q.checked=true;
+  showToast('Recommended protocol: k 10, 50 queries, warm, 3 passes, 3 repeats, probes up to 256');
+  crQuietHint();
+}
+function crQuietHint(){
+  const q=byId('cr-quiet'), h=byId('cr-quiet-hint'), w=byId('cr-quiet-wrap'); if(!q||!h) return;
+  const ch=(connLast&&connLast.ch)||{}, picked=(typeof selEngines==='function')?selEngines():[];
+  const running=ch.service==='active', control=!!(chInfo&&chInfo.service_control), isEngine=picked.includes('clickhouse');
+  let msg='', ok=false;
+  if(isEngine){ msg='ClickHouse is one of the engines in this sweep, so it stays running. For a quiet comparison of the other engines, run them in a separate sweep with ClickHouse unticked.'; }
+  else if(running&&control){ ok=true; msg='ClickHouse is running on this host and shares memory and page cache with Postgres, which can add latency spikes. Tick the box and it is stopped before the first repeat and started again afterwards.'; }
+  else if(running){ msg='ClickHouse is running on this host and may disturb the measurement. Stop it on the Setup page, or start the app with VP_ALLOW_SERVICE_CONTROL=1 to let a sweep do it for you.'; }
+  q.disabled=!ok; if(!ok) q.checked=false;
+  w.style.opacity=ok?'1':'0.55'; h.textContent=msg; h.style.display=msg?'':'none';
+}
+
+// ── CLICKHOUSE: connection, validation, service control ───────────────────────
+let chDirty=false, chInfo={}, chSvcPoll=null;
+async function chLoad(force){
+  let d; try{ d=await api('/api/ch'); }catch(e){ return; } if(!d.ok) return; chInfo=d;
+  if(!chDirty||force){
+    byId('ch-host').value=d.host||''; byId('ch-port').value=d.port||8123; byId('ch-user').value=d.user||''; byId('ch-db').value=d.dbname||'default';
+    byId('ch-service').value=d.service||'clickhouse-server'; byId('ch-pass').value=''; byId('ch-pass').placeholder=d.has_password?'(unchanged)':'(none — the default user has no password)'; chDirty=false;
+  }
+  const note=byId('ch-svc-note');
+  note.innerHTML=!d.local?'Remote host: its service cannot be started or stopped from here — Connect and Validate still work.'
+    :(d.service_control?`Service control is on: Start / Stop run <code>sudo -n ${escH(d.systemctl)} start|stop ${escH(d.service)}</code> as <b>${escH(d.app_user)}</b> — nothing else. It needs a sudoers rule: <code style="user-select:all">${escH(d.sudoers)}</code>`
+    :'Service control is <b>off</b>. To allow Start / Stop, start the app with <code>VP_ALLOW_SERVICE_CONTROL=1</code> (it is off by default because this app has no login) and add the sudoers rule shown after you press Start.');
+}
+function chBody(extra){
+  return Object.assign({host:byId('ch-host').value.trim(),port:+byId('ch-port').value,user:byId('ch-user').value.trim(),password:byId('ch-pass').value,
+    dbname:byId('ch-db').value.trim(),service:byId('ch-service').value.trim()},extra||{});
+}
+function chStepsHtml(steps){
+  return `<div class="vbox">`+steps.map(s=>`<div class="vstep"><span class="ic ${s.ok===true?'ok':s.ok===false?'bad':'na'}">${s.ok===true?'✓':s.ok===false?'✗':'–'}</span><div><b>${escH(s.name)}</b> — ${escH(s.detail)}${s.hint&&s.ok===false?`<div class="vhint">${escH(s.hint)}</div>`:''}</div></div>`).join('')+`</div>`;
+}
+async function chValidate(){
+  byId('ch-conn-result').innerHTML='<div class="loading"><div class="spinner"></div>Checking service, port, login and database…</div>';
+  const d=await post('/api/ch/test',chBody());
+  if(!d.steps){ byId('ch-conn-result').innerHTML=`<div class="error-box">${escH(d.error||'failed')}</div>`; return; }
+  byId('ch-conn-result').innerHTML=`<div class="${d.ok?'output-msg ok':'warn-box'}" style="margin-top:8px">${d.ok?'✓ ClickHouse '+escH((d.info&&d.info.version)||'')+' is reachable and usable — press Connect to use it.':'Not usable yet — see the first ✗ below.'}</div>`+chStepsHtml(d.steps);
+}
+async function chConnect(){
+  byId('ch-conn-result').innerHTML='<div class="loading"><div class="spinner"></div>Validating, then connecting…</div>';
+  const d=await post('/api/ch/apply',chBody({save:byId('conn-save').checked,save_password:byId('conn-savepw').checked}));
+  const steps=d.steps?chStepsHtml(d.steps):'';
+  if(!d.ok){ byId('ch-conn-result').innerHTML=`<div class="error-box" style="white-space:pre-wrap">Not connected — ${escH(d.error)}</div>${steps}`; return; }
+  chDirty=false; showToast('ClickHouse connected');
+  byId('ch-conn-result').innerHTML=`<div class="output-msg ok" style="margin-top:8px">✓ Connected — ClickHouse ${escH((d.info&&d.info.version)||'')}</div>${steps}`+(d.saved?'<div class="mini-note">Saved as the default.</div>':'');
+  await chLoad(true); connPing();
+}
+async function chDisconnect(){
+  if(!confirm('Disconnect from ClickHouse? The settings stay filled in, and the service keeps running.')) return;
+  const d=await post('/api/ch/disconnect'); if(!d.ok){ showToast(d.error||'failed'); return; }
+  byId('ch-conn-result').innerHTML=''; showToast('ClickHouse disconnected'); await chLoad(true); connPing();
+}
+async function chService(action){
+  if(action==='stop'&&!confirm('Stop the ClickHouse service on this machine?')) return;
+  byId('ch-conn-result').innerHTML=`<div class="loading"><div class="spinner"></div>${action==='start'?'Starting':'Stopping'} ${escH(byId('ch-service').value)}…</div>`;
+  const d=await post('/api/ch/service',chBody({action}));
+  if(!d.ok){ byId('ch-conn-result').innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(d.error)}${d.hint?'\n\n'+escH(d.hint):''}</div>`; return; }
+  ['ch-start','ch-stop'].forEach(i=>byId(i).disabled=true);
+  if(chSvcPoll) clearInterval(chSvcPoll);
+  const tick=async()=>{
+    let s; try{ s=await api('/api/ch/service/status'); }catch(e){ return; }
+    const steps=(s.steps&&s.steps.length)?chStepsHtml(s.steps):'';
+    if(s.running){ byId('ch-conn-result').innerHTML=`<div class="loading"><div class="spinner"></div>${action==='start'?'Starting':'Stopping'}… ${s.elapsed}s</div>${steps}`; return; }
+    clearInterval(chSvcPoll); chSvcPoll=null; ['ch-start','ch-stop'].forEach(i=>byId(i).disabled=false);
+    if(s.error) byId('ch-conn-result').innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(s.error)}${s.hint?'\n\n'+escH(s.hint):''}</div>${steps}`;
+    else byId('ch-conn-result').innerHTML=`<div class="output-msg ok" style="margin-top:8px">✓ Service ${action==='start'?'started':'stopped'} in ${s.elapsed}s</div>${steps}`+(action==='start'&&s.result&&s.result.steps?`<div class="mini-note" style="margin-top:8px">Validation after start:</div>`+chStepsHtml(s.result.steps):'');
+    connPing();
+  };
+  chSvcPoll=setInterval(tick,700); tick();
+}
+
+// ── LIVE CONNECTION STATUS ────────────────────────────────────────────────────
+// The badges, the active-connection lines, the header chips and the warning bar all come from
+// /api/conn/ping, which really opens each connection — never from what was merely saved.
+function connPill(id,state,text,title){ const el=byId(id); if(!el) return; el.className='conn-pill '+state; el.textContent=text; el.title=title||''; }
+let connPinging=false, connLast=null;
+async function connPing(){
+  if(connPinging) return; connPinging=true;
+  try{
+    let d; try{ d=await statusGet('/api/conn/ping',20000); }catch(e){ d={_error:String(e)}; }
+    if(d._error||!d.pg){ connPill('pill-pg','err','○ App not answering',d._error||''); connBanner('The dashboard cannot reach its own server: '+(d._error||'no answer')); return; }
+    connLast=d; const pg=d.pg, w=d.whpg||{};
+    if(pg.ok){
+      connPill('pill-pg','on','● Connected','verified '+d.ts);
+      byId('conn-state').innerHTML=`<b>Active:</b> ${escH(pg.target)}${pg.schema&&pg.schema!=='public'?' · schema '+escH(pg.schema):''} · ${escH(pg.product||'')} · ${pg.ms} ms <span style="color:var(--faint)">· verified ${escH(d.ts)}${CONN_SOURCE?' · '+escH(CONN_SOURCE):''}</span>`;
+    } else {
+      connPill('pill-pg','err','○ Not connected',pg.error||'');
+      byId('conn-state').innerHTML=`<b style="color:var(--red)">Not connected</b> to ${escH(pg.target||'')} — ${escH(pg.error||'unknown error')}. Check the details and press <b>Connect</b>.`;
+    }
+    const dis=byId('wh-disconnect'); if(dis) dis.style.display=w.enabled?'':'none';
+    if(!w.enabled){
+      connPill('pill-wh','off','○ Not connected');
+      byId('wh-state').innerHTML='Not in use. Fill in the details and press <b>Connect</b> to add it to the comparison.';
+    } else if(w.ok){
+      connPill('pill-wh','on','● Connected','verified '+d.ts);
+      byId('wh-state').innerHTML=`<b>Active:</b> ${escH(w.target)} · ${escH(w.product||'')}${w.segments?' · '+w.segments+' segments':''} · ${w.ms} ms · session: ${escH((w.session||[]).join('; ')||'none')} <span style="color:var(--faint)">· verified ${escH(d.ts)}</span>`;
+    } else {
+      connPill('pill-wh','err','○ Not connected',w.error||'');
+      byId('wh-state').innerHTML=`<b style="color:var(--red)">Not connected</b> to ${escH(w.target||'')} — ${escH(w.error||'unknown error')}. If the password was not saved, re-enter it and press <b>Connect</b>.`;
+    }
+    const ch=d.ch||{};
+    const svc=ch.service;
+    connPill('pill-chsvc',svc==='active'?'on':(svc===null||svc===undefined?'off':'err'),svc==='active'?'● service running':(svc===null||svc===undefined?'○ service unmanaged':'○ service '+svc),ch.service_note||'');
+    const sb=byId('ch-stop'), sa=byId('ch-start'); if(sa&&!chSvcPoll){ sa.disabled=(svc==='active'); sb.disabled=(svc!=='active'&&svc!==undefined&&svc!==null); }
+    const cdis=byId('ch-disconnect'); if(cdis) cdis.style.display=ch.enabled?'':'none';
+    if(ch.enabled&&ch.paused){
+      connPill('pill-ch','busy','◌ Paused for a sweep');
+      byId('ch-state').innerHTML='The service is stopped while a quiet sweep runs, and starts again when it finishes.';
+    } else if(!ch.enabled){
+      connPill('pill-ch','off','○ Not connected');
+      byId('ch-state').innerHTML=svc==='active'?'The service is running. Press <b>Connect</b> to use it (it is checked first).':'The service is not running. Press <b>▶ Start service</b>, then <b>Connect</b>.';
+    } else if(ch.ok){
+      connPill('pill-ch','on','● Connected','verified '+d.ts);
+      byId('ch-state').innerHTML=`<b>Active:</b> ${escH(ch.target)} · ClickHouse ${escH(ch.version||'')} · ${ch.ms} ms <span style="color:var(--faint)">· verified ${escH(d.ts)}</span>`;
+    } else {
+      connPill('pill-ch','err','○ Not connected',ch.error||'');
+      byId('ch-state').innerHTML=`<b style="color:var(--red)">Not connected</b> to ${escH(ch.target||'')} — ${escH(ch.error||'unknown error')}. ${svc&&svc!=='active'?'The service is '+escH(svc)+' — press <b>▶ Start service</b>.':'Press <b>Connect</b> to re-check.'}`;
+    }
+    let cchip=byId('conn-chip-ch');
+    if(ch.enabled){ if(!cchip){ (byId('conn-chip-wh')||byId('conn-chip')).insertAdjacentHTML('afterend','<span class="conn-chip" id="conn-chip-ch" onclick="switchTab(\'setup\')" title="ClickHouse"></span>'); cchip=byId('conn-chip-ch'); }
+      cchip.textContent='CH '+(ch.target||''); cchip.className='conn-chip '+(ch.ok?'on':(ch.paused?'':'err')); } else if(cchip){ cchip.remove(); }
+    const c1=byId('conn-chip'); if(c1) c1.className='conn-chip '+(pg.ok?'on':'err');
+    const c2=byId('conn-chip-wh'); if(c2) c2.className='conn-chip '+(w.ok?'on':'err');
+    const bad=[]; if(!pg.ok) bad.push('PostgreSQL: '+(pg.error||'not connected')); if(w.enabled&&!w.ok) bad.push('WarehousePG: '+(w.error||'not connected')); if(ch.enabled&&!ch.ok&&!ch.paused) bad.push('ClickHouse: '+(ch.error||'not connected'));
+    crQuietHint();
+    connBanner(bad.length?'Connection lost — '+bad.join(' · ')+'. Open Setup and press Connect.':'');
+  } finally { connPinging=false; }
+}
+function connBanner(msg){
+  let b=byId('conn-banner');
+  if(!b){ const first=byId('panel-setup'); if(!first) return; b=document.createElement('div'); b.id='conn-banner'; b.onclick=()=>switchTab('setup'); first.parentNode.insertBefore(b,first); }
+  b.style.display=msg?'block':'none'; b.textContent=msg||'';
+}
+
+// ── WAREHOUSEPG: connection (second profile) ──────────────────────────────────
+let whDirty=false;
+async function whConnLoad(force){
+  let d; try{ d=await api('/api/conn/whpg'); }catch(e){ return; }
+  if(!d.ok) return;
+  if(!whDirty||force){
+    byId('wh-host').value=d.host||''; byId('wh-port').value=d.port||5432;
+    byId('wh-user').value=d.user||''; byId('wh-db').value=d.dbname||''; byId('wh-schema').value=d.schema||'public';
+    byId('wh-dist').value=d.distribution||''; byId('wh-session').value=(d.session||[]).join('\n');
+    byId('wh-pass').value=''; byId('wh-pass').placeholder=d.has_password?'(unchanged)':'(none set)'; whDirty=false;
+  }
+  let chip=byId('conn-chip-wh');
+  if(d.enabled){
+    if(!chip){ byId('conn-chip').insertAdjacentHTML('afterend','<span class="conn-chip" id="conn-chip-wh" onclick="switchTab(\'setup\')" title="WarehousePG connection"></span>'); chip=byId('conn-chip-wh'); }
+    chip.textContent='WHPG '+d.user+'@'+d.host+':'+d.port+'/'+d.dbname+(d.segments?' · '+d.segments+' seg':'');
+  } else if(chip){ chip.remove(); }
+}
+function whConnBody(extra){
+  return Object.assign({enabled:true,host:byId('wh-host').value.trim(),port:+byId('wh-port').value,
+    user:byId('wh-user').value.trim(),password:byId('wh-pass').value,dbname:byId('wh-db').value.trim(),
+    schema:byId('wh-schema').value.trim(),distribution:byId('wh-dist').value.trim(),
+    session:byId('wh-session').value.split('\n').map(x=>x.trim()).filter(Boolean)},extra||{});
+}
+function whConnReport(d){
+  const ex=d.extensions||{}, badge=(n)=>ex[n]?`<span class="badge bg">${n} ${escH(ex[n])}</span>`:`<span class="badge ba">${n} missing</span>`;
+  const ap=Object.entries(d.applied||{}).map(([k,v])=>`<span class="badge ${v===null?'br':'bb'}">${escH(k)} = ${escH(v===null?'unknown':v)}</span>`).join(' ');
+  return `<div class="output-msg ok" style="margin-top:10px">✓ ${escH((d.version||'').split(' on ')[0])} · ${d.connect_ms} ms${d.segments?` · ${d.segments} segments`:' · segment count not available (not a Greenplum-family server)'}</div>
+    <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">${badge('edb_vectorplus')} ${badge('vector')} ${ap}</div>`+
+    (d.schema_exists===false?'<div class="warn-box">Schema does not exist on this database.</div>':'')+
+    (d.save_error?`<div class="error-box">Could not write the saved file: ${escH(d.save_error)}</div>`:'');
+}
+async function whConnTest(){
+  byId('wh-conn-result').innerHTML='<div class="loading"><div class="spinner"></div>Connecting…</div>';
+  const d=await post('/api/conn/whpg/test',whConnBody());
+  byId('wh-conn-result').innerHTML=d.ok?whConnReport(d):`<div class="error-box" style="white-space:pre-wrap">${escH(d.error)}</div>`;
+}
+async function whDisconnect(){
+  if(!confirm('Disconnect from WarehousePG? Its settings stay filled in, and Connect brings it straight back.')) return;
+  const d=await post('/api/conn/whpg/disconnect');
+  if(!d.ok){ showToast(d.error||'could not disconnect'); return; }
+  byId('wh-conn-result').innerHTML=''; showToast('WarehousePG disconnected'); await whConnLoad(true); connPing();
+  if(byId('panel-wh').classList.contains('active')) whStatus();
+}
+async function whConnApply(){
+  byId('wh-conn-result').innerHTML='<div class="loading"><div class="spinner"></div>Connecting…</div>';
+  const d=await post('/api/conn/whpg/apply',whConnBody({save:byId('conn-save').checked,save_password:byId('conn-savepw').checked}));
+  if(!d.ok){ byId('wh-conn-result').innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(d.error)}</div>`; return; }
+  whDirty=false; byId('wh-conn-result').innerHTML=(d.enabled?whConnReport(d):'<div class="output-msg ok" style="margin-top:10px">WarehousePG disabled.</div>')+(d.saved?'<div class="mini-note">Saved as the default.</div>':'');
+  showToast('WarehousePG connected'); await whConnLoad(true); connPing();
+  if(byId('panel-wh').classList.contains('active')){whStatus();whIndexes();}
+}
+
+// ── WAREHOUSEPG TAB ───────────────────────────────────────────────────────────
+let WHS={}, whBusy=false, whSyncPoll=null, whBuildPoll=null;
+function whAmChanged(){
+  const am=byId('whb-am').value;
+  document.querySelectorAll('.whb-l').forEach(e=>e.style.display=am==='hnsw'?'none':'');
+  document.querySelectorAll('.whb-h').forEach(e=>e.style.display=am==='hnsw'?'':'none');
+  document.querySelectorAll('.whb-r').forEach(e=>e.style.display=am==='ivfplus'?'':'none');
+}
+let whInflight=false;
+async function whStatus(){
+  if(whInflight) return; whInflight=true;
+  try{ await whStatusInner(); } finally { whInflight=false; }
+}
+async function whStatusInner(){
+  const d=await statusGet('/api/wh/status'); if(d._error){ statusFail('wh',d._error); return; } WHS=d;
+  const set=(id,t,col)=>{const e=byId(id); e.textContent=t; e.style.color=col||'';};
+  if(!d.enabled){ set('wh-pp-conn','disabled','var(--amber)'); byId('wh-warn').innerHTML='<div class="warn-box">WarehousePG is not enabled. Set it up in <b>Setup → Connection → WarehousePG</b>.</div>'; return; }
+  const c=d.config||{}; byId('wh-src-name').textContent=(d.source&&d.source.table)||'vp_docs';
+  if(!d.connected){ set('wh-pp-conn','unreachable','var(--red)'); byId('wh-warn').innerHTML=`<div class="error-box">${escH(d.error||'cannot connect')}</div>`; return; }
+  set('wh-pp-conn',`${c.host}:${c.port}`,'var(--green)');
+  set('wh-pp-seg',d.segments?String(d.segments):'n/a',d.segments?'':'var(--amber)');
+  const T=d.tables||{}, st=t=>!t||!t.exists?['not synced','var(--amber)']:[rowsTxt(t.rows,t.rows_exact)+(t.in_sync===false?' ⚠':''),t.in_sync===false?'var(--red)':''];
+  set('wh-pp-vp',...st(T.ivfplus)); set('wh-pp-h',...st(T.hnsw)); set('wh-pp-i',...st(T.ivfflat));
+  const n=['ivfplus','hnsw','ivfflat'].reduce((a,k)=>a+((T[k]&&T[k].indexes)?T[k].indexes.length:0),0);
+  set('wh-pp-idx',n+' of 3',n===3?'var(--green)':'var(--amber)');
+  let w=''; const ex=d.extensions||{};
+  if(!ex.vector) w+='<div class="warn-box">⚠ The <code>vector</code> extension is not installed on WarehousePG.</div>';
+  if(!ex.edb_vectorplus) w+='<div class="warn-box">⚠ <code>edb_vectorplus</code> is not installed on WarehousePG, so the ivfplus index there cannot be built.</div>';
+  ['ivfplus','hnsw','ivfflat'].forEach(k=>{ if(T[k]&&T[k].exists&&T[k].in_sync===false) w+=`<div class="warn-box">⚠ ${escH(T[k].table)} holds different rows from ${escH(d.source.table)} (${fmt(T[k].rows)} vs ${fmt(d.source.rows)}). Re-sync before comparing.</div>`; });
+  byId('wh-warn').innerHTML=w;
+  byId('wh-applied').innerHTML='<span class="mini-note" style="margin:0">session settings in force:</span> '+
+    (Object.keys(d.applied||{}).length?Object.entries(d.applied).map(([k,v])=>`<span class="badge ${v===null?'br':'bb'}">${escH(k)} = ${escH(v===null?'unknown':v)}</span>`).join(' '):'<span class="badge ba">none</span>');
+  if(d.sync&&d.sync.running&&!whSyncPoll) whSyncPollStart();
+  if(d.build&&d.build.running&&!whBuildPoll) whBuildPollStart();
+}
+function whSync(which){
+  if(!confirm(`Drop and recreate ${which==='all'?'all three WarehousePG tables':'the '+which+' table'} from Postgres? Their indexes go with them.`)) return;
+  post('/api/wh/sync',{which}).then(d=>{
+    if(!d.ok){ byId('wh-out').innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(d.error)}</div>`; return; }
+    byId('wh-out').innerHTML=''; whSyncPollStart();
+  });
+}
+function whSyncPollStart(){
+  byId('wh-sync-box').style.display='block'; whBusy=true;
+  const tick=async()=>{
+    const s=await api('/api/wh/sync/status');
+    byId('wh-sync-bar').style.width=(s.pct||0)+'%';
+    byId('wh-sync-txt').textContent=`${s.phase}${s.current?' · '+s.current:''} — ${fmt(s.done)} / ${fmt(s.total)} rows · ${s.elapsed}s`;
+    if(!s.running){
+      clearInterval(whSyncPoll); whSyncPoll=null; whBusy=false;
+      if(s.error) byId('wh-out').innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(s.error)}</div>`;
+      else if(s.result) showOutput('wh-out',true,`synced ${fmt(s.result.tables.length)} table(s), ${fmt(s.result.rows)} rows${s.result.binary_copy?' (binary COPY)':' (text COPY — binary was refused)'}`);
+      whStatus();
+    }
+  };
+  if(whSyncPoll) clearInterval(whSyncPoll);
+  whSyncPoll=setInterval(tick,700); tick();
+}
+async function whBuild(){
+  byId('whb-result').innerHTML=''; byId('whb-warn').innerHTML='';
+  const am=byId('whb-am').value;
+  const d=await post('/api/wh/index/build/start',{am,opclass:byId('whb-opclass').value,lists:byId('whb-lists').value,
+    m:byId('whb-m').value,ef_construction:byId('whb-efc').value,rotation:byId('whb-rot').checked,
+    maintenance_work_mem:byId('whb-mwm').value.trim(),name:byId('whb-name').value.trim(),replace:byId('whb-replace').checked});
+  if(!d.ok){ byId('whb-result').innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(d.error)}</div>`; return; }
+  warnList('whb-warn',d.warnings);
+  byId('whb-sql').innerHTML=sqlPanel(d.sql,'CREATE INDEX — '+d.name,true);
+  whBuildPollStart();
+}
+function whBuildPollStart(){
+  byId('whb-live').style.display='block'; byId('whb-btn').disabled=true; whBusy=true;
+  const tick=async()=>{
+    const s=await api('/api/wh/index/build/status');
+    byId('whb-timer').innerHTML=`${Number(s.elapsed||0).toFixed(1)}<span class="timer-unit">s</span>`;
+    if(!s.running){
+      clearInterval(whBuildPoll); whBuildPoll=null; whBusy=false;
+      byId('whb-btn').disabled=false; byId('whb-live').style.display='none';
+      if(s.error) byId('whb-result').innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(s.error)}</div>${noticeList(s.notices)}`;
+      else if(s.result){ const r=s.result, o=r.opts||{};
+        byId('whb-result').innerHTML=`<div class="kpi-row">
+          <div class="kpi"><div class="kpi-label">Build time</div><div class="kpi-val teal">${r.seconds}s</div><div class="kpi-sub">${fmt(r.rows_per_sec)} rows/s</div></div>
+          <div class="kpi"><div class="kpi-label">Index size</div><div class="kpi-val">${escH(r.size)}</div><div class="kpi-sub">${r.bytes_per_row} B/row · all segments</div></div>
+          <div class="kpi"><div class="kpi-label">${r.am==='hnsw'?'m / ef_construction':'lists'}</div><div class="kpi-val">${r.am==='hnsw'?o.m+' / '+o.ef_construction:o.lists}</div></div></div>`+
+          (r.notices&&r.notices.length?`<details><summary class="mini-note" style="cursor:pointer">server notices (${r.notices.length})</summary>${noticeList(r.notices)}</details>`:'');
+      }
+      whIndexes(); whStatus();
+    }
+  };
+  if(whBuildPoll) clearInterval(whBuildPoll);
+  whBuildPoll=setInterval(tick,600); tick();
+}
+async function whIndexes(){
+  const d=await api('/api/wh/index/list'); if(!d.ok) return;
+  byId('wh-indexes').innerHTML=d.rows.length
+    ? tableHtml(['Index','Method','Table','Built with','Opclass','Size','Valid',''],
+        d.rows.map(r=>[`<code>${escH(r.name)}</code>`,`<span class="badge bb">${r.am}</span>`,escH(r.table),
+          r.am==='hnsw'?`m=${r.m??'—'}, ef_construction=${r.ef_construction??'—'}`:`lists=${r.lists?r.lists[0]:'—'}`,
+          escH(r.opclass||'—'),escH(r.size),r.valid?'<span class="badge bg">valid</span>':'<span class="badge br">invalid</span>',
+          `<button class="run-btn danger" onclick="whDrop('${escH(r.name)}')">drop</button>`]),['','','','','','num','',''])
+    : '<div class="loading">No index on WarehousePG yet.</div>';
+  byId('wh-history').innerHTML=d.history.length
+    ? `<div class="col-head"><span>Builds recorded for WarehousePG</span><span></span></div>`+
+      tableHtml(['When','Method','Index','Params','Rows','Seconds','rows/s','Size','B/row'],
+        d.history.map(b=>[escH(b.at),`<code>${escH(b.engine)}</code>`,`<code>${escH(b.index_name||'')}</code>`,
+          b.engine==='hnsw'?`m=${b.m}, efc=${b.ef_construction}`:`lists=${b.lists}`,fmt(b.rows),
+          b.build_seconds!==null?Number(b.build_seconds).toFixed(2):'—',fmt(Math.round(b.rows_per_sec||0)),
+          escH(b.size),b.bytes_per_row!==null?Math.round(b.bytes_per_row):'—']),['','','','','num','num','num','num','num']) : '';
+}
+async function whDrop(name){
+  if(!confirm('Drop index '+name+' on WarehousePG?')) return;
+  const d=await post('/api/wh/index/drop',{name}); if(!d.ok) showOutput('wh-out',false,d.error); whIndexes(); whStatus();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  BENCHMARK PAGE — ranks saved runs, charts them, tracks scaling, exports a report
+// ══════════════════════════════════════════════════════════════════════════════
+const BM={runs:[],payload:{},pick:{},bucket:null,last:null};
+const BM_METRICS=[
+  {id:'lat',  label:'Latency at bar',   low:true,  color:'#0F6E5A', gated:true},
+  {id:'p95',  label:'p95 at bar',       low:true,  color:'#4FA58F', gated:true},
+  {id:'rec',  label:'Best recall',      low:false, color:'#1A5A9A'},
+  {id:'build',label:'Build time',       low:true,  color:'#9A6A00'},
+  {id:'size', label:'Index size',       low:true,  color:'#5A3A9A'},
+  {id:'maint',label:'Maintenance',      low:true,  color:'#9A2A1A'}];
+const bmBucketKey=r=>Number((+r||0).toPrecision(2));
+function bmScaleLabel(rows){
+  if(rows>=1e6){ const m=rows/1e6; return (m<10?m.toFixed(1).replace(/\.0$/,''):Math.round(m))+'M'; }
+  if(rows>=1e3){ const k=rows/1e3; return (k<10?k.toFixed(1).replace(/\.0$/,''):Math.round(k))+'K'; }
+  return String(rows);
+}
+const bmMs=v=>v===null||v===undefined?'—':(v>=100?v.toFixed(0):v>=10?v.toFixed(1):v.toFixed(2))+' ms';
+const bmSecs=v=>v===null||v===undefined?'—':(v>=100?v.toFixed(0):v>=10?v.toFixed(1):v.toFixed(2))+' s';
+const bmMib=v=>v===null||v===undefined?'—':(v/1048576>=100?(v/1048576).toFixed(0):(v/1048576).toFixed(1))+' MiB';
+
+async function benchLoad(keepPick){
+  const d=await api('/api/bench/runs'); if(!d.ok) return;
+  BM.runs=d.runs; byId('bm-store').textContent=d.results_db?'stored in '+d.results_db:'';
+  const sweeps=BM.runs.filter(r=>r.kind==='sweep'&&!r.hidden);
+  const buckets={}; sweeps.forEach(r=>{ (buckets[bmBucketKey(r.rows)]=buckets[bmBucketKey(r.rows)]||[]).push(r); });
+  BM.buckets=buckets;
+  Object.keys(buckets).forEach(b=>{ const list=buckets[b];
+    if(!keepPick||!BM.pick[b]||!list.some(r=>r.id===BM.pick[b])) BM.pick[b]=(list.find(r=>r.starred)||list[0]).id; });
+  Object.keys(BM.pick).forEach(b=>{ if(!buckets[b]) delete BM.pick[b]; });
+  const keys=Object.keys(buckets).map(Number).sort((a,b)=>b-a);
+  const sel=byId('bm-scale'); const cur=BM.bucket&&buckets[BM.bucket]?String(BM.bucket):(keys.length?String(keys[0]):'');
+  sel.innerHTML=keys.map(k=>`<option value="${k}">${bmScaleLabel(k)} rows (${buckets[k].length} run${buckets[k].length>1?'s':''})</option>`).join('');
+  sel.value=cur; BM.bucket=cur?+cur:null;
+  byId('bm-empty').innerHTML=keys.length?'':`<div class="info-box">No saved runs yet. Run <b>Engine Compare → Recall vs latency sweep</b> on two or more engines — every sweep is saved here automatically, and so is every churn run. Runs can also be imported from another machine below.</div>`;
+  byId('bm-controls').style.display=keys.length?'':'none';
+  benchFillRuns(); benchRenderRuns(); await benchRender();
+}
+function benchFillRuns(){
+  const list=BM.buckets[BM.bucket]||[]; const sel=byId('bm-run');
+  sel.innerHTML=list.map(r=>`<option value="${r.id}">${r.starred?'★ ':''}#${r.id} · ${escH(r.label||'')} · ${escH((r.ts||'').slice(5,16))} · ${r.cache_mode||''}, ${r.queries||'?'} queries, k=${r.k||'?'} · ${(r.engines||[]).map(k=>engMeta(k).short).join(', ')}</option>`).join('');
+  if(BM.pick[BM.bucket]) sel.value=BM.pick[BM.bucket];
+}
+function benchScaleChanged(){ BM.bucket=+byId('bm-scale').value; benchFillRuns(); benchRender(); }
+function benchRunChanged(){ BM.pick[BM.bucket]=+byId('bm-run').value; benchRender(); }
+async function benchGet(ids){
+  const need=ids.filter(i=>i&&!BM.payload[i]);
+  if(need.length){ const d=await api('/api/bench/runs/payloads?ids='+need.join(',')); (d.runs||[]).forEach(r=>BM.payload[r.id]=r); }
+  return ids.map(i=>BM.payload[i]).filter(Boolean);
+}
+// A ranking is only as complete as the sweep behind it, and sweeps are run for different engines at different
+// times. Combining keeps the selected run authoritative for its own engines and fills the gaps from the newest
+// run measured the same way (same k, operator class, cache mode).
+async function benchResolve(id){
+  const [base]=await benchGet([id]); if(!base) return null;
+  const el=byId('bn-merge');
+  if(!el||!el.checked) return Object.assign({},base,{merged:null});
+  const bk=bmBucketKey(base.rows);
+  const sib=BM.runs.filter(r=>r.kind==='sweep'&&!r.hidden&&r.id!==base.id&&bmBucketKey(r.rows)===bk&&r.k===base.k&&r.opclass===base.opclass&&r.cache_mode===base.cache_mode)
+                   .sort((a,b)=>b.id-a.id).slice(0,12);
+  const others=await benchGet(sib.map(r=>r.id));
+  const P=JSON.parse(JSON.stringify(base.payload)), from={}, added=[];
+  (P.order||[]).forEach(k=>{ from[k]=base.id; });
+  others.forEach(o=>{ (o.payload.order||[]).forEach(k=>{ if(from[k]===undefined){ P.order.push(k); P.engines[k]=JSON.parse(JSON.stringify(o.payload.engines[k])); from[k]=o.id; added.push(k); } }); });
+  const reg=ENG.map(e=>e.key); P.order.sort((a,b)=>reg.indexOf(a)-reg.indexOf(b));
+  Object.keys(P.engines).forEach(k=>{ P.engines[k].src=from[k]; });
+  // Repeats of the same index: take the lowest (or median) latency per setting. Interference only ever adds
+  // time, and recall is identical between repeats, so only the latency columns move.
+  const mode=(byId('bn-agg')||{}).value||'best', aggs=[];
+  if(mode!=='selected'){
+    const allRuns=[base].concat(others);
+    Object.keys(P.engines).forEach(k=>{
+      const srcRun=allRuns.find(r=>r.id===from[k]); if(!srcRun) return;
+      const ref=srcRun.payload.engines[k];
+      const cands=allRuns.map(r=>({id:r.id,e:r.payload.engines[k]})).filter(c=>c.e&&c.e.index_bytes===ref.index_bytes);
+      if(cands.length<2) return;
+      let used=0;
+      const res=ref.results.map(x=>{
+        const recs=cands.map(c=>(c.e.results||[]).find(y=>String(y.param)===String(x.param)&&Math.abs(y.recall-x.recall)<1e-9)).filter(Boolean);
+        if(recs.length<2) return x;
+        used=Math.max(used,recs.length);
+        recs.sort((a,b)=>a.ms-b.ms);
+        return JSON.parse(JSON.stringify(mode==='best'?recs[0]:recs[Math.floor((recs.length-1)/2)]));
+      });
+      if(used>1){ P.engines[k].results=res; P.engines[k].agg={n:used,mode}; aggs.push(k); }
+    });
+  }
+  const srcs=[...new Set(Object.values(from))];
+  return Object.assign({},base,{payload:P,aggs,merged:srcs.length>1?{from,srcs,added}:null});
+}
+function bmChurnFor(bucket){
+  const c=BM.runs.filter(r=>r.kind==='churn'&&!r.hidden&&bmBucketKey(r.rows)===bucket);
+  return c.length?c[0]:null;
+}
+const bmW=()=>({lat:+byId('bm-w-lat').value||0,p95:+byId('bm-w-p95').value||0,rec:+byId('bm-w-rec').value||0,
+                build:+byId('bm-w-build').value||0,size:+byId('bm-w-size').value||0,maint:+byId('bm-w-maint').value||0});
+
+// ── the ranking itself ────────────────────────────────────────────────────────
+function benchEval(run, churn, o){
+  const P=run.payload, rows=[];
+  (P.order||[]).filter(k=>o.include[k]!==false).forEach(k=>{
+    const e=P.engines[k], res=e.results||[];
+    const ok=res.filter(r=>r.recall>=o.floor-1e-9), best=ok.length?ok.reduce((a,b)=>a.ms<=b.ms?a:b):null;
+    const t=churn&&churn.payload&&churn.payload.timings&&churn.payload.timings[k];
+    rows.push({key:k,label:e.label,e,best,qualified:!!best,
+      m:{lat:best?best.ms:null,p95:best?best.p95_ms:null,rec:res.length?Math.max(...res.map(r=>r.recall)):null,
+         build:(e.build&&e.build.build_seconds!=null)?e.build.build_seconds:null,
+         size:e.index_bytes||(e.build&&e.build.index_bytes)||null,
+         maint:t?t.insert+t.update+t.delete+t.vacuum:null}});
+  });
+  const warnings=[], used=[];
+  BM_METRICS.forEach(M=>{
+    const w=o.w[M.id]; if(!(w>0)) return;
+    const have=rows.filter(r=>r.m[M.id]!==null&&r.m[M.id]!==undefined);
+    if(M.gated){ if(!have.length){ warnings.push(`${M.label}: no engine reaches the recall bar, so it cannot be scored.`); return; } }
+    else if(have.length!==rows.length){
+      const miss=rows.filter(r=>r.m[M.id]===null||r.m[M.id]===undefined).map(r=>r.label);
+      warnings.push(`${M.label} is left out of the score: no data for ${miss.join(', ')}.`); return; }
+    used.push(M);
+  });
+  const totalW=used.reduce((a,M)=>a+o.w[M.id],0)||1;
+  used.forEach(M=>{
+    const vals=rows.filter(r=>r.m[M.id]!==null&&r.m[M.id]!==undefined).map(r=>r.m[M.id]);
+    const best=M.low?Math.min(...vals):Math.max(...vals);
+    rows.forEach(r=>{ const v=r.m[M.id]; let s=0;
+      if(v!==null&&v!==undefined) s=M.low?(v>0?best/v:1):(best>0?v/best:0);
+      r.norm=r.norm||{}; r.norm[M.id]=s; r.parts=r.parts||{}; r.parts[M.id]=100*o.w[M.id]/totalW*s; });
+    // rank within the metric
+    const sorted=rows.filter(r=>r.m[M.id]!==null&&r.m[M.id]!==undefined).sort((a,b)=>M.low?a.m[M.id]-b.m[M.id]:b.m[M.id]-a.m[M.id]);
+    sorted.forEach((r,i)=>{ r.mrank=r.mrank||{}; r.mrank[M.id]=i+1; });
+  });
+  rows.forEach(r=>{ r.score=used.reduce((a,M)=>a+((r.parts&&r.parts[M.id])||0),0); });
+  rows.sort((a,b)=>{
+    if(o.gate&&a.qualified!==b.qualified) return a.qualified?-1:1;
+    if(o.gate&&!a.qualified&&!b.qualified) return b.m.rec-a.m.rec;
+    return b.score-a.score || ((a.m.lat??1e9)-(b.m.lat??1e9));
+  });
+  let rk=0; rows.forEach(r=>{ r.rank=(o.gate&&!r.qualified)?null:++rk; });
+  return {rows,used,warnings,totalW};
+}
+function bmOpts(){
+  const include={}; document.querySelectorAll('#bm-include input').forEach(i=>include[i.dataset.k]=i.checked);
+  return {floor:+byId('bm-floor').value,gate:byId('bm-gate').checked,w:bmW(),include};
+}
+function bmMedal(n){ return n===1?'🥇':n===2?'🥈':n===3?'🥉':'#'+n; }
+
+async function benchRender(){
+  const id=BM.pick[BM.bucket]; if(!id){ benchScaling(); benchChurn(); benchMethod(null); return; }
+  const run=await benchResolve(id); if(!run) return;
+  // engine include chips follow the chosen run
+  const inc=byId('bm-include'); const have=(run.payload.order||[]);
+  const incKey=id+'|'+(run.payload.order||[]).join(',');
+  if(inc.dataset.run!==incKey){
+    inc.dataset.run=incKey;
+    inc.innerHTML='<span class="mini-note" style="margin:0">rank:</span>'+have.map(k=>{const m=engMeta(k);
+      return `<label class="chk"><input type="checkbox" data-k="${k}" checked onchange="benchRender()"><span class="eng-dot" style="background:${m.color}"></span>${escH(run.payload.engines[k].label)}</label>`;}).join('');
+  }
+  const churn=bmChurnFor(BM.bucket), o=bmOpts();
+  const churnFull=churn?(await benchGet([churn.id]))[0]:null;
+  const ev=benchEval(run,churnFull,o); BM.last={run,ev,o,churn:churnFull};
+  const q=ev.rows.filter(r=>r.qualified);
+
+  // winner
+  let win='';
+  if(ev.rows.length&&(q.length||!o.gate)){
+    const w=ev.rows[0], second=ev.rows[1];
+    const strong=ev.used.filter(M=>w.mrank&&w.mrank[M.id]===1).map(M=>M.label.toLowerCase());
+    const weakM=ev.used.filter(M=>w.m[M.id]!==null&&w.m[M.id]!==undefined).map(M=>({M,n:w.norm[M.id]})).sort((a,b)=>a.n-b.n)[0];
+    const meta=engMeta(w.key);
+    win=`<div class="info-box" style="border-left:4px solid ${meta.color}"><b>🏆 ${escH(w.label)}</b> leads at ${bmScaleLabel(run.rows)} rows with <b>${w.score.toFixed(1)}</b> points`+
+      (second?` (${(w.score-second.score).toFixed(1)} ahead of ${escH(second.label)})`:'')+`. `+
+      (strong.length?`Best on ${strong.join(', ')}. `:'')+
+      (weakM&&weakM.n<0.9?`Weakest on ${weakM.M.label.toLowerCase()} — ${weakM.M.low?'it is':'it reaches only'} ${weakM.M.low?(1/weakM.n).toFixed(1)+'× the best':(weakM.n*100).toFixed(0)+'% of the best'}. `:'')+
+      `<span style="color:var(--muted)">${ev.rows.length-q.length?`${ev.rows.length-q.length} engine(s) never reached ${(o.floor*100)|0}% recall.`:''}</span></div>`;
+  } else if(ev.rows.length){
+    win=`<div class="warn-box">No engine reached ${(o.floor*100)|0}% recall in this run — nothing to rank. Try a lower bar, or sweep higher probes / ef_search.</div>`;
+  }
+  byId('bm-winner').innerHTML=win;
+  let notice='';
+  if(run.merged){
+    const lab=k=>engMeta(k).label, bySrc={}; run.merged.added.forEach(k=>{ (bySrc[run.merged.from[k]]=bySrc[run.merged.from[k]]||[]).push(lab(k)); });
+    notice+=`<div class="info-box"><b>Combined view.</b> The selected run #${run.id} is the base. `+Object.entries(bySrc).map(([rid,l])=>`${l.map(escH).join(', ')} come${l.length>1?'':'s'} from run #${rid}`).join('; ')+
+      `. Same <code>k</code>, operator class and cache mode, but measured at different times and cache states. Untick “combine runs” for a strict single-run ranking.</div>`;
+  }
+  if((run.aggs||[]).length){
+    const mode=(byId('bn-agg')||{}).value;
+    notice+=`<div class="info-box"><b>${mode==='median'?'Median':'Lowest'} of repeated runs.</b> For ${run.aggs.map(k=>`${escH(engMeta(k).label)} (×${run.payload.engines[k].agg.n})`).join(', ')} each setting uses the ${mode==='median'?'median':'lowest'} latency across runs of the same index. Interference only adds time, so the lowest is the least disturbed; recall does not vary between repeats. Choose “selected run only” for a strict single run.</div>`;
+  }
+  // an engine the app is connected to but that no saved sweep at this scale contains
+  const inRun=new Set(run.payload.order||[]), cl=(connLast&&connLast.ch)||{}, wl=(connLast&&connLast.whpg)||{};
+  const lacking=[]; if(cl.enabled&&!inRun.has('clickhouse')) lacking.push('ClickHouse'); if(wl.enabled&&![...inRun].some(k=>k.startsWith('w_'))) lacking.push('WarehousePG engines');
+  if(lacking.length) notice+=`<div class="warn-box">⚠ ${lacking.join(' and ')} ${lacking.length>1?'are':'is'} connected, but no saved sweep at ${bmScaleLabel(run.rows)} rows includes ${lacking.length>1?'them':'it'}. In <b>Engine Compare</b> tick ${lacking.length>1?'them':'it'} and run a sweep with the same <code>k</code>, operator class and cache mode (its table must be synced and its index built first).</div>`;
+  byId('bm-warn').innerHTML=notice+ev.warnings.map(w=>`<div class="warn-box">⚠ ${escH(w)}</div>`).join('');
+
+  // table
+  const cellOf=(r,M,txt)=>{ const rk=r.mrank&&r.mrank[M.id]; const best=rk===1;
+    return `<span style="${best?'background:var(--green-bg);padding:1px 5px;border-radius:3px':''}">${txt}</span>${rk?` <sub style="color:var(--faint)">${rk===1?'🥇':'#'+rk}</sub>`:''}`; };
+  const head=['#','Engine','Score','Latency @ bar','p95 @ bar','Best recall','Build','Index size','Maintenance'];
+  const body=ev.rows.map(r=>{ const meta=engMeta(r.key);
+    return [r.rank?`<b>${bmMedal(r.rank)}</b>`:'<span class="badge br">DNQ</span>',
+      `<span class="eng-dot" style="background:${meta.color}"></span>${escH(r.label)}${r.e.src&&r.e.src!==run.id?` <sup style="color:var(--faint)" title="measured in run #${r.e.src}, not in the selected run">#${r.e.src}</sup>`:''}${r.e.agg&&r.e.agg.n>1?` <sup style="color:var(--faint)" title="${r.e.agg.mode==='median'?'median':'lowest'} of ${r.e.agg.n} runs of the same index">×${r.e.agg.n}</sup>`:''}`,
+      r.rank?`<b>${r.score.toFixed(1)}</b>`:`<span style="color:var(--faint)" title="DNQ: ranked below every engine that reached the recall bar, so this score does not decide its place">(${r.score.toFixed(1)})</span>`,
+      r.qualified?cellOf(r,BM_METRICS[0],bmMs(r.m.lat))+` <span style="color:var(--faint);font-size:11px">at ${escH(String(r.best.param===''?"''":r.best.param))}</span>`:`<span class="badge br">misses ${(o.floor*100)|0}%</span>`,
+      r.qualified?cellOf(r,BM_METRICS[1],bmMs(r.m.p95)):'—',
+      cellOf(r,BM_METRICS[2],(r.m.rec*100).toFixed(1)+'%'),
+      cellOf(r,BM_METRICS[3],bmSecs(r.m.build)),
+      cellOf(r,BM_METRICS[4],bmMib(r.m.size)),
+      cellOf(r,BM_METRICS[5],bmSecs(r.m.maint))];});
+  byId('bm-rank').innerHTML=`<div id="bm-rank-table-main">${tableHtml(head,body,['','','num','num','num','num','num','num','num'])}</div>`;
+  byId('bm-rank-note').innerHTML=`Run #${run.id} “${escH(run.label||'')}” · ${fmt(run.rows)} rows · ${run.dim} dims · k=${run.k} · ${run.queries} query vectors · ${escH(run.payload.protocol&&run.payload.protocol.text||'')}. `+
+    `Score = Σ weight × (best ÷ value) over ${ev.used.map(M=>M.label.toLowerCase()).join(', ')||'no metric'}; `+(o.gate?'engines under the recall bar are ranked below all that reach it (DNQ).':'no recall gate.');
+  byId('bm-charts-desc').textContent=`${bmScaleLabel(run.rows)} rows · run #${run.id}`;
+  benchCharts(run,ev,o); benchScaling(); benchChurn(); benchMethod(run);
+}
+
+// ── charts for the selected run ───────────────────────────────────────────────
+function benchCharts(run,ev,o){
+  const rows=ev.rows, P=run.payload;
+  const dash={ivfplus:[],vchordrq:[5,4],hnsw:[2,3],ivfflat:[8,3],clickhouse:[10,3],clickhouse_qbit:[4,3],w_ivfplus:[1,3],w_hnsw:[1,3],w_ivfflat:[1,3]};
+  const allMs=rows.flatMap(r=>r.e.results.map(x=>x.ms)), xmin=Math.min(...allMs), xmax=Math.max(...allMs);
+  const ds=rows.map(r=>{const m=engMeta(r.key);
+    return {label:r.label,data:r.e.results.map(x=>({x:x.ms,y:+(x.recall*100).toFixed(2),p:x.param})),borderColor:m.color,backgroundColor:m.color,
+            borderDash:dash[r.key]||[],showLine:true,tension:.15,pointRadius:3};});
+  ds.push({label:`recall bar ${(o.floor*100)|0}%`,data:[{x:xmin/1.3,y:o.floor*100},{x:xmax*1.3,y:o.floor*100}],borderColor:'#9a9a9a',borderDash:[6,4],showLine:true,pointRadius:0,borderWidth:1});
+  mkChart('bm-ch-curves',{type:'scatter',data:{datasets:ds},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{boxWidth:10}},tooltip:{callbacks:{label:c=>`${c.dataset.label} ${c.raw.p===undefined?'':(c.raw.p===''?"''":c.raw.p)}: ${c.parsed.y}% @ ${c.parsed.x.toFixed(3)} ms`}}},
+    scales:{x:{type:'logarithmic',title:{display:true,text:'mean latency ms (log)'}},y:{min:Math.max(0,Math.floor(Math.min(...rows.flatMap(r=>r.e.results.map(x=>x.recall)))*100/5)*5-5),max:100,title:{display:true,text:'recall %'}}}}});
+  const bar=(id,vals,fmtv,unit)=>{ const list=rows.filter(r=>vals(r)!==null&&vals(r)!==undefined);
+    mkChart(id,{type:'bar',data:{labels:list.map(r=>r.label),datasets:[{data:list.map(r=>+vals(r).toFixed(3)),backgroundColor:list.map(r=>engMeta(r.key).color)}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtv(c.parsed.x)}}},
+               scales:{x:{title:{display:true,text:unit},beginAtZero:true}}}}); };
+  bar('bm-ch-lat',r=>r.qualified?r.m.lat:null,v=>bmMs(v),'ms');
+  bar('bm-ch-build',r=>r.m.build,v=>bmSecs(v),'seconds');
+  bar('bm-ch-size',r=>r.m.size===null?null:r.m.size/1048576,v=>v.toFixed(1)+' MiB','MiB');
+  const sc=rows.filter(r=>r.rank||!o.gate);
+  mkChart('bm-ch-score',{type:'bar',data:{labels:rows.map(r=>(r.rank?bmMedal(r.rank)+' ':'DNQ ')+r.label),
+      datasets:ev.used.map(M=>({label:M.label,data:rows.map(r=>+(((r.parts||{})[M.id])||0).toFixed(2)),backgroundColor:M.color}))},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10}}},
+             scales:{x:{stacked:true,max:100,title:{display:true,text:'points (100 = best on every metric)'}},y:{stacked:true}}}});
+  mkChart('bm-ch-radar',{type:'radar',data:{labels:ev.used.map(M=>M.label),
+      datasets:rows.map(r=>{const c=engMeta(r.key).color; return {label:r.label,data:ev.used.map(M=>+(100*((r.norm||{})[M.id]||0)).toFixed(1)),borderColor:c,backgroundColor:c+'22',pointRadius:2,borderWidth:2};})},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10}}},scales:{r:{min:0,max:100,ticks:{stepSize:25}}}}});
+}
+
+// ── scaling across data sizes ─────────────────────────────────────────────────
+async function benchScaling(){
+  const buckets=Object.keys(BM.pick).map(Number).sort((a,b)=>a-b);
+  const info=byId('bm-scale-info'), tab=byId('bm-scale-table'), rt=byId('bm-rank-table');
+  if(buckets.length<2){
+    info.innerHTML=`<div class="info-box">Only ${buckets.length} data size saved so far. Run the same sweep at another size (e.g. 2M, then 10M) with the same <code>k</code>, operator class and cache mode, and the scaling charts appear here.</div>`;
+    tab.innerHTML=''; rt.innerHTML=''; ['bm-ch-sc-lat','bm-ch-sc-build','bm-ch-sc-size'].forEach(id=>{ const ex=Chart.getChart(id); if(ex) ex.destroy(); });
+    return; }
+  const runs=(await Promise.all(buckets.map(b=>benchResolve(BM.pick[b])))).filter(Boolean); const o=bmOpts();
+  const per=runs.map(run=>({run,ev:benchEval(run,null,Object.assign({},o,{include:{}}))}));
+  const diffs=[]; const f=per[0].run;
+  per.forEach(p=>{ if(p.run.k!==f.k) diffs.push('k'); if(p.run.opclass!==f.opclass) diffs.push('operator class'); if(p.run.cache_mode!==f.cache_mode) diffs.push('cache mode'); });
+  info.innerHTML=`<div class="info-box">Comparing ${per.map(p=>`<b>${bmScaleLabel(p.run.rows)}</b> (run #${p.run.id})`).join(' → ')} at a recall bar of ${(o.floor*100)|0}%.</div>`+
+    (diffs.length?`<div class="warn-box">⚠ These runs differ in ${[...new Set(diffs)].join(', ')}, so the comparison is not strictly like for like.</div>`:'');
+  const keys=[...new Set(per.flatMap(p=>p.ev.rows.map(r=>r.key)))];
+  const series=(fn)=>keys.map(k=>({key:k,pts:per.map(p=>{const r=p.ev.rows.find(x=>x.key===k); const v=r?fn(r):null; return v===null||v===undefined?null:{x:p.run.rows,y:v};}).filter(Boolean)})).filter(s=>s.pts.length);
+  const xs=per.map(p=>p.run.rows);
+  const line=(id,fn,unit)=>mkChart(id,{type:'scatter',data:{datasets:series(fn).map(s=>{const m=engMeta(s.key); return {label:m.label,data:s.pts,borderColor:m.color,backgroundColor:m.color,showLine:true,pointRadius:4,tension:.1};})},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10}}},
+      scales:{x:{type:'logarithmic',title:{display:true,text:'rows (log)'},ticks:{callback:v=>bmScaleLabel(v),autoSkip:false,maxRotation:0},
+                 afterBuildTicks:ax=>{ ax.ticks=xs.map(v=>({value:v})); }},
+              y:{type:'logarithmic',title:{display:true,text:unit+' (log)'}}}}});
+  line('bm-ch-sc-lat',r=>r.qualified?r.m.lat:null,'ms at bar');
+  line('bm-ch-sc-build',r=>r.m.build,'seconds');
+  line('bm-ch-sc-size',r=>r.m.size===null?null:r.m.size/1048576,'MiB');
+  // growth table
+  const lo=per[0], hi=per[per.length-1], grow=hi.run.rows/lo.run.rows;
+  const g=(a,b)=>(a&&b)?b/a:null;
+  const verdict=(x)=>x===null?'—':x<grow*0.7?'<span class="badge bg">sub-linear</span>':x<=grow*1.3?'<span class="badge ba">≈ linear</span>':'<span class="badge br">worse than linear</span>';
+  const rowsT=keys.map(k=>{ const a=lo.ev.rows.find(x=>x.key===k), b=hi.ev.rows.find(x=>x.key===k);
+    const gl=a&&b&&a.qualified&&b.qualified?g(a.m.lat,b.m.lat):null, gb=a&&b?g(a.m.build,b.m.build):null, gs=a&&b?g(a.m.size,b.m.size):null;
+    const cell=(r)=>r?(r.qualified?bmMs(r.m.lat):'<span class="badge br">misses bar</span>'):'—';
+    return [`<span class="eng-dot" style="background:${engMeta(k).color}"></span>${escH(engMeta(k).label)}`,cell(a),cell(b),
+      gl===null?'—':gl.toFixed(1)+'× '+verdict(gl),gb===null?'—':gb.toFixed(1)+'× '+verdict(gb),gs===null?'—':gs.toFixed(1)+'× '+verdict(gs)];});
+  tab.innerHTML=`<div class="col-head"><span>Growth from ${bmScaleLabel(lo.run.rows)} to ${bmScaleLabel(hi.run.rows)} (data grew ${grow.toFixed(1)}×)</span><span></span></div>`+
+    tableHtml(['Engine','Latency @ bar '+bmScaleLabel(lo.run.rows),'Latency @ bar '+bmScaleLabel(hi.run.rows),'Latency grew','Build grew','Index grew'],rowsT,['','num','num','','','']);
+  // ranking by scale
+  const rk=keys.map(k=>[`<span class="eng-dot" style="background:${engMeta(k).color}"></span>${escH(engMeta(k).label)}`].concat(per.map(p=>{
+    const r=p.ev.rows.find(x=>x.key===k); if(!r) return '—'; return r.rank?`<b>${bmMedal(r.rank)}</b> <span style="color:var(--faint)">${r.score.toFixed(1)}</span>`:'<span class="badge br">DNQ</span>'; })));
+  rt.innerHTML=`<div class="col-head"><span>Rank by data size (same weights and recall bar; maintenance excluded because it is measured per size)</span><span></span></div>`+
+    tableHtml(['Engine'].concat(per.map(p=>bmScaleLabel(p.run.rows)+' rows')),rk,[''].concat(per.map(()=>'num')));
+}
+
+// ── churn ─────────────────────────────────────────────────────────────────────
+async function benchChurn(){
+  const box=byId('bm-churn'), wrap=byId('bm-churn-wrap');
+  const list=BM.runs.filter(r=>r.kind==='churn'&&!r.hidden);
+  if(!list.length){ box.innerHTML='<div class="info-box">No churn run saved yet. Use <b>Engine Compare → Identical churn</b>; each run is kept here and, once present for a data size, counts toward that size\'s ranking.</div>'; wrap.hidden=true; return; }
+  const c=BM.last&&BM.last.churn?BM.last.churn:(await benchGet([list[0].id]))[0]; if(!c){ return; }
+  const R=c.payload, ord=R.order, t=R.timings;
+  const tot=k=>t[k].insert+t[k].update+t[k].delete+t[k].vacuum, best=Math.min(...ord.map(tot));
+  box.innerHTML=`<div class="mini-note">Churn run #${c.id} (${fmt(R.inserts)} inserts, ${fmt(R.updates)} updates, ${fmt(R.deletes)} deletes on ${fmt(c.rows)} rows) — the one used for the ${bmScaleLabel(c.rows)} ranking.</div>`+
+    tableHtml(['Engine','Insert s','Update s','Delete s','Vacuum s','Total s','vs best'],ord.slice().sort((a,b)=>tot(a)-tot(b)).map(k=>[
+      `<span class="eng-dot" style="background:${engMeta(k).color}"></span>${escH((R.labels||{})[k]||engMeta(k).label)}`,t[k].insert,t[k].update,t[k].delete,t[k].vacuum,`<b>${tot(k).toFixed(2)}</b>`,(tot(k)/best).toFixed(1)+'×']),['','num','num','num','num','num','num']);
+  wrap.hidden=false;
+  const ph=[['insert','#0F6E5A'],['update','#9A6A00'],['delete','#9A2A1A'],['vacuum','#5A3A9A']];
+  mkChart('bm-ch-churn',{type:'bar',data:{labels:ord.map(k=>(R.labels||{})[k]||k),datasets:ph.map(([p,col])=>({label:p,data:ord.map(k=>t[k][p]),backgroundColor:col}))},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10}}},scales:{x:{stacked:true,title:{display:true,text:'seconds'}},y:{stacked:true}}}});
+}
+
+// ── saved runs ────────────────────────────────────────────────────────────────
+function benchRenderRuns(){
+  const showHidden=byId('bm-showhidden').checked;
+  const list=BM.runs.filter(r=>showHidden||!r.hidden);
+  byId('bm-runs').innerHTML=list.length?tableHtml(['','#','When','Kind','Scale','Label','Setup','Notes',''],list.map(r=>[
+      `<span style="cursor:pointer;font-size:15px" title="star: preferred run for its scale" onclick="benchUpdate(${r.id},{starred:${r.starred?'false':'true'}})">${r.starred?'★':'☆'}</span>`,
+      r.id,escH((r.ts||'').slice(0,16)),`<span class="badge ${r.kind==='sweep'?'bb':'ba'}">${r.kind}</span>`,
+      `${bmScaleLabel(r.rows||0)}<span style="color:var(--faint);font-size:11px"> ${fmt(r.rows)}</span>`,
+      `<input type="text" value="${escH(r.label||'')}" style="width:100%;min-width:180px" onchange="benchUpdate(${r.id},{label:this.value},true)">`,
+      r.kind==='sweep'?`k=${r.k} · ${r.queries} q · ${escH(r.cache_mode||'')} · ${r.passes}p · ${(r.engines||[]).length} engines`:`${(r.engines||[]).length} engines`,
+      `<input type="text" value="${escH(r.notes||'')}" placeholder="notes…" style="width:100%;min-width:140px" onchange="benchUpdate(${r.id},{notes:this.value},true)">`,
+      `${r.kind==='sweep'?`<button class="run-btn secondary" onclick="benchUse(${r.id})">use</button> `:''}<button class="run-btn secondary" onclick="benchUpdate(${r.id},{hidden:${r.hidden?'false':'true'}})">${r.hidden?'unhide':'hide'}</button> <button class="run-btn secondary" onclick="benchExport(${r.id})" title="export this run">⬇</button> <button class="run-btn danger" onclick="benchDelete(${r.id})">delete</button>`]),
+      ['','num','','','','','','','']):'<div class="loading">No runs.</div>';
+}
+async function benchUpdate(id,body,quiet){
+  const d=await post(`/api/bench/run/${id}/update`,body); if(!d.ok){ showToast(d.error||'failed'); return; }
+  const r=BM.runs.find(x=>x.id===id); if(r) Object.assign(r,body);
+  if(BM.payload[id]) Object.assign(BM.payload[id],body);
+  if(!quiet) await benchLoad(true); else { benchFillRuns(); if(BM.last) benchRender(); }
+}
+async function benchDelete(id){
+  if(!confirm('Delete run #'+id+'? This cannot be undone — export it first if you may want it back.')) return;
+  await post(`/api/bench/run/${id}/delete`); delete BM.payload[id]; await benchLoad(true);
+}
+function benchUse(id){ const r=BM.runs.find(x=>x.id===id); if(!r) return; BM.bucket=bmBucketKey(r.rows); BM.pick[BM.bucket]=id;
+  byId('bm-scale').value=String(BM.bucket); benchFillRuns(); byId('bm-run').value=id; benchRender(); window.scrollTo({top:0,behavior:'smooth'}); }
+function benchExport(id){ window.location='/api/bench/export'+(id&&id!==false?'?ids='+id:''); }
+async function benchImport(inp){
+  const f=inp.files&&inp.files[0]; if(!f) return;
+  try{ const data=JSON.parse(await f.text()); const d=await post('/api/bench/import',data);
+    byId('bm-import-out').innerHTML=d.ok?`<div class="output-msg ok">Imported ${d.added} run(s), skipped ${d.skipped} already present.</div>`:`<div class="error-box">${escH(d.error)}</div>`;
+    await benchLoad(true);
+  }catch(e){ byId('bm-import-out').innerHTML=`<div class="error-box">Not a valid export file: ${escH(String(e))}</div>`; }
+  inp.value='';
+}
+
+// ── method & environment ──────────────────────────────────────────────────────
+function benchMethod(run){
+  const el=byId('bm-method'); if(!run){ el.innerHTML=''; return; }
+  const E=run.env||{}, pg=E.postgres||{}, wh=E.whpg, P=run.payload.protocol||{};
+  const ext=Object.entries(pg.extensions||{}).map(([k,v])=>`${k} ${v}`).join(', '), chE=E.clickhouse;
+  el.innerHTML=`<div class="info-box"><b>Environment of run #${run.id}</b> (${escH(E.saved_at||run.ts||'')}): PostgreSQL ${escH(pg.version||'?')} · shared_buffers ${escH(pg.shared_buffers||'?')} · block size ${escH(pg.block_size||'?')} · extensions: ${escH(ext)}.`+
+    (chE?` ClickHouse ${escH(chE.version||'')}${chE.index?` (HNSW: quantization ${escH(chE.index.quantization||'?')}, M ${chE.index.m??'?'}, ef_construction ${chE.index.ef_construction??'?'})`:''}.`:'')+
+    (wh?` WarehousePG: ${escH(wh.version||'')}${wh.segments?` · ${wh.segments} segments`:''} · session settings: ${escH((wh.session||[]).join('; ')||'none')}.`:'')+
+    ` Protocol: ${escH(P.text||'')}; ${run.queries} query vectors; k=${run.k}; operator class ${escH(run.opclass||'?')}; exact scan ${run.payload.exact_ms} ms (median).</div>
+    <ul class="mini-note" style="line-height:1.6;margin:8px 0 0 18px">
+      <li>Recall is measured against an exact scan of the same rows; latency is the mean of per-query medians over repeated passes with engines interleaved.</li>
+      <li>The score is a weighted comparison of ratios, not a measurement: change the weights and the order can change. The per-metric columns and charts are the evidence; the score is a summary.</li>
+      <li>Engines on WarehousePG run each query on every segment, so settings are per segment and latency includes coordinator overhead. Their index parameters are copied unchanged from Postgres.</li>
+      <li>The corpus is synthetic, with clustered vectors and uniform text. Real embeddings have different cluster structure and can move both recall and latency — confirm on your own data before deciding.</li>
+      <li>Maintenance numbers come from one churn run per data size, applied identically to every table.</li></ul>`;
+}
+
+// ── standalone report ─────────────────────────────────────────────────────────
+function benchReport(){
+  if(!BM.last){ showToast('Nothing to report yet'); return; }
+  const {run,ev,o}=BM.last, title=`Vector search benchmark — ${bmScaleLabel(run.rows)} rows`;
+  const img=(id,cap)=>{ const c=byId(id); try{ return c&&c.width?`<figure><img src="${c.toDataURL('image/png')}" style="max-width:100%"><figcaption>${cap}</figcaption></figure>`:''; }catch(e){ return ''; } };
+  const sect=(id)=>{ const e=byId(id); return e?e.innerHTML:''; };
+  const html=`<!doctype html><html><head><meta charset="utf-8"><title>${escH(title)}</title><style>
+    body{font:14px/1.5 -apple-system,Segoe UI,Helvetica,Arial,sans-serif;max-width:1100px;margin:30px auto;padding:0 18px;color:#1c1b19}
+    h1{font-size:22px}h2{font-size:16px;margin-top:28px;border-bottom:1px solid #ddd;padding-bottom:4px}
+    table{border-collapse:collapse;width:100%;font-size:12.5px;margin:8px 0}th,td{border-bottom:1px solid #e3e1db;padding:5px 8px;text-align:left}th{background:#f4f2ec}td.num,th.num{text-align:right}
+    .badge{padding:1px 6px;border-radius:3px;background:#eee;font-size:11px}.info-box,.warn-box{border:1px solid #ddd;background:#f7f6f2;padding:8px 12px;border-radius:5px;margin:8px 0}
+    .eng-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}figure{margin:10px 0}figcaption{font-size:12px;color:#666}code{background:#eee;padding:0 3px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}</style></head><body>
+    <h1>${escH(title)}</h1><div style="color:#666">Generated ${new Date().toLocaleString()} · run #${run.id} “${escH(run.label||'')}” · recall bar ${(o.floor*100)|0}%</div>
+    ${sect('bm-winner')}${sect('bm-warn')}<h2>Ranking</h2>${sect('bm-rank')}<div style="font-size:12px;color:#666">${sect('bm-rank-note')}</div>
+    <h2>How points are counted</h2>${scoreFormulaHtml()}${scoreMatrixHtml(BM.last)}
+    <h2>Charts</h2>${img('bm-ch-curves','Recall against mean latency')}<div class="grid">${img('bm-ch-lat','Latency at the recall bar')}${img('bm-ch-build','Index build time')}${img('bm-ch-size','Index size')}${img('bm-ch-score','Score breakdown')}${img('bm-ch-radar','Profile per engine')}</div>
+    <h2>Scaling</h2>${sect('bm-scale-info')}${sect('bm-scale-table')}${sect('bm-rank-table')}<div class="grid">${img('bm-ch-sc-lat','Latency vs rows')}${img('bm-ch-sc-build','Build time vs rows')}${img('bm-ch-sc-size','Index size vs rows')}</div>
+    <h2>Maintenance</h2>${sect('bm-churn')}${img('bm-ch-churn','Churn timings')}
+    <h2>Method &amp; caveats</h2>${sect('bm-method')}</body></html>`;
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
+  a.download=`benchmark-${bmScaleLabel(run.rows)}-${new Date().toISOString().slice(0,10)}.html`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  SCORING EXPLAINED — reads the Benchmark's live ranking, so it can never disagree with it
+// ══════════════════════════════════════════════════════════════════════════════
+const scFmt={
+  lat:v=>bmMs(v), p95:v=>bmMs(v), rec:v=>v===null||v===undefined?'—':(v*100).toFixed(1)+'%',
+  build:v=>bmSecs(v), size:v=>bmMib(v), maint:v=>bmSecs(v)};
+const scWhat={
+  lat:'lowest mean latency among settings that reached the bar', p95:'p95 of that same setting', rec:'highest recall anywhere in the sweep',
+  build:'seconds of the CREATE INDEX', size:'index size', maint:'insert + update + delete + vacuum seconds'};
+async function scoreOpen(){
+  if(!BM.last){ try{ await benchLoad(true); }catch(e){} }
+  scoreRender();
+}
+function scoreBest(ev,M){
+  const have=ev.rows.filter(r=>r.m[M.id]!==null&&r.m[M.id]!==undefined);
+  if(!have.length) return null;
+  const best=have.reduce((a,b)=>(M.low?b.m[M.id]<a.m[M.id]:b.m[M.id]>a.m[M.id])?b:a);
+  return {value:best.m[M.id],row:best};
+}
+function scoreMatrixHtml(L){
+  const {ev,o}=L, used=ev.used;
+  const heat=(pts,max)=>`background:rgba(15,110,90,${(0.07+0.55*Math.min(1,max>0?pts/max:0)).toFixed(2)})`;
+  const head=['#','Engine'].concat(used.map(M=>`${M.label} (max ${(100*o.w[M.id]/ev.totalW).toFixed(1)})`)).concat(['Score']);
+  const body=ev.rows.map(r=>{
+    const meta=engMeta(r.key);
+    return [r.rank?`<b>${bmMedal(r.rank)}</b>`:'<span class="badge br">DNQ</span>',`<span class="eng-dot" style="background:${meta.color}"></span>${escH(r.label)}`]
+      .concat(used.map(M=>{ const pts=(r.parts&&r.parts[M.id])||0, max=100*o.w[M.id]/ev.totalW;
+        return `<span style="display:block;padding:2px 6px;border-radius:3px;text-align:right;${heat(pts,max)}">${pts.toFixed(1)}</span>`; }))
+      .concat([`<b>${r.rank?r.score.toFixed(1):'('+r.score.toFixed(1)+')'}</b>`]);});
+  return tableHtml(head,body,['',''].concat(used.map(()=>'num')).concat(['num']));
+}
+function scoreFormulaHtml(){
+  return `<p style="font-size:12.5px;line-height:1.7"><b>How points are counted.</b> Each measurement is worth a share of 100 points in proportion to its weight (measurements that are off or missing for any engine are dropped and the rest rescaled). An engine earns that share multiplied by its ratio to the best engine: best ÷ value where lower is better (latency, p95, build time, index size, maintenance), value ÷ best for recall. The score is the sum. Engines that never reach the recall bar score 0 on latency and p95 and are ranked below every engine that does (DNQ).</p>`;
+}
+function scoreRender(){
+  const L=BM.last, W=byId('sc-weights'), X=byId('sc-example'), Mx=byId('sc-matrix'), sel=byId('sc-engine');
+  if(!L){
+    const msg='<div class="info-box">No saved benchmark run yet, so there is nothing to work through. Run <b>Engine Compare → sweep</b> on two or more engines; the live example then appears here, using the run selected on the Benchmark tab. The rules above and below apply to every run.</div>';
+    W.innerHTML=msg; X.innerHTML=''; Mx.innerHTML=''; sel.innerHTML=''; return;
+  }
+  const {run,ev,o}=L;
+  byId('sc-run-desc').textContent=`run #${run.id}${run.merged?' + '+run.merged.srcs.filter(x=>x!==run.id).map(x=>'#'+x).join(', ')+' (combined)':''}${(run.aggs||[]).length?' · '+((byId('bn-agg')||{}).value==='median'?'median':'lowest')+' of repeats':''} · ${bmScaleLabel(run.rows)} rows · recall bar ${(o.floor*100)|0}%`;
+  // weights
+  const rows=BM_METRICS.map(M=>{
+    const w=o.w[M.id], inUse=ev.used.includes(M);
+    const why=w>0?(inUse?'in use':(ev.warnings.find(x=>x.startsWith(M.label))||'dropped')):'weight is 0';
+    return [`<span class="eng-dot" style="background:${M.color}"></span>${escH(M.label)}`,w,inUse?`<b>${(100*w/ev.totalW).toFixed(1)}</b>`:'—',inUse?'<span class="badge bg">in use</span>':`<span class="badge ba">not counted</span> <span style="color:var(--faint);font-size:11px">${escH(why)}</span>`];
+  });
+  W.innerHTML=tableHtml(['Measurement','Weight you set','Share of 100 points','Status'],rows,['','num','num',''])+
+    `<div class="mini-note">Weights in use add up to ${ev.totalW}, so each is rescaled to a share of 100 points. Recall bar: an engine must reach ${(o.floor*100)|0}% recall to avoid DNQ. Gate: ${o.gate?'on':'off'}. Engines ranked: ${ev.rows.length}.</div>`;
+  // example selector
+  const cur=sel.value;
+  sel.innerHTML=ev.rows.map(r=>`<option value="${r.key}">${r.rank?bmMedal(r.rank)+' ':'DNQ · '}${escH(r.label)} — ${r.score.toFixed(1)}</option>`).join('');
+  sel.value=ev.rows.some(r=>r.key===cur)?cur:ev.rows[0].key;
+  scoreExample();
+  Mx.innerHTML=scoreMatrixHtml(L)+`<div class="mini-note">Each cell is the points that engine earned on that measurement; the column header shows the most any engine could earn there. The score is the row total${o.gate?'; DNQ scores are in brackets because those engines are ranked below every engine that reached the bar':''}.</div>`;
+}
+function scoreExample(){
+  const L=BM.last; if(!L) return; const {ev,o}=L, X=byId('sc-example');
+  const r=ev.rows.find(x=>x.key===byId('sc-engine').value)||ev.rows[0];
+  let total=0;
+  const rows=ev.used.map(M=>{
+    const share=100*o.w[M.id]/ev.totalW, v=r.m[M.id], b=scoreBest(ev,M), pts=(r.parts&&r.parts[M.id])||0; total+=pts;
+    if(v===null||v===undefined) return [`<b>${M.label}</b><div style="color:var(--faint);font-size:11px">${scWhat[M.id]}</div>`,'<span class="badge br">none — never reached the bar</span>',b?`${scFmt[M.id](b.value)} <span style="color:var(--faint)">(${escH(b.row.label)})</span>`:'—','0',share.toFixed(1),'<b>0.0</b>'];
+    const ratio=r.norm[M.id], calc=M.low?`${scFmt[M.id](b.value)} ÷ ${scFmt[M.id](v)}`:`${scFmt[M.id](v)} ÷ ${scFmt[M.id](b.value)}`;
+    return [`<b>${M.label}</b><div style="color:var(--faint);font-size:11px">${scWhat[M.id]}</div>`,scFmt[M.id](v),
+            `${scFmt[M.id](b.value)} <span style="color:var(--faint)">(${b.row.key===r.key?'this engine':escH(b.row.label)})</span>`,
+            `${calc} = <b>${ratio.toFixed(3)}</b>`,share.toFixed(1),`<b>${pts.toFixed(1)}</b> <span style="color:var(--faint);font-size:11px">= ${share.toFixed(1)} × ${ratio.toFixed(3)}</span>`];
+  });
+  X.innerHTML=tableHtml(['Measurement','This engine','The best engine','Ratio','Max points','Points earned'],rows,['','num','num','num','num','num'])+
+    `<div class="info-box" style="margin-top:10px"><b>${escH(r.label)}</b>: ${rows.length?ev.used.map(M=>((r.parts&&r.parts[M.id])||0).toFixed(1)).join(' + '):''} = <b>${total.toFixed(1)}</b> points`+
+    (r.rank?` — rank <b>${r.rank}</b>.`:` — but <b>DNQ</b>: it never reached ${(o.floor*100)|0}% recall (best ${(r.m.rec*100).toFixed(1)}%), so latency and p95 earn nothing, and it is ranked below every engine that did, even where its score is higher.`)+
+    ` <span style="color:var(--muted)">The Benchmark shows ${r.score.toFixed(1)}; any tenth of a difference is rounding.</span></div>`;
+}
+
+// ── CLICKHOUSE TAB ────────────────────────────────────────────────────────────
+let chdInflight=false, chdSyncPoll=null, chdBuildPoll=null, chdBusy=false, chqPoll=null;
+async function chdStatus(){
+  if(chdInflight) return; chdInflight=true;
+  try{ await chdStatusInner(); } finally { chdInflight=false; }
+}
+async function chdStatusInner(){
+  const d=await statusGet('/api/chd/status'); if(d._error){ statusFail('chd',d._error); return; }
+  const set=(id,t,col)=>{const e=byId(id); e.textContent=t; e.style.color=col||'';};
+  byId('chd-src-name').textContent=d.vp_table||'vp_docs';
+  if(!d.enabled){ set('chd-pp-conn','not connected','var(--amber)'); byId('chd-warn').innerHTML='<div class="warn-box">ClickHouse is not connected. Open <b>Setup</b>, start the service if needed, and press <b>Connect</b>.</div>'; return; }
+  if(d.error){ set('chd-pp-conn','unreachable','var(--red)'); byId('chd-warn').innerHTML=`<div class="error-box">ClickHouse is enabled but cannot be reached: ${escH(d.error)}. Start the service on the Setup page.</div>`; return; }
+  set('chd-pp-conn','connected','var(--green)'); set('chd-pp-ver',d.version||'?');
+  set('chd-pp-src',d.vp_exists?rowsTxt(d.source_rows,true):'missing',d.vp_exists?'':'var(--amber)');
+  set('chd-pp-tbl',d.exists?rowsTxt(d.rows,d.rows_exact):'not synced',d.exists?'':'var(--amber)');
+  set('chd-pp-sync',!d.exists?'—':(d.in_sync===null||d.in_sync===undefined?'checking…':(d.in_sync?'yes':'no — re-sync')),d.in_sync?'var(--green)':(d.in_sync===false?'var(--red)':''));
+  const n=(d.indexes||[]).length; set('chd-pp-idx',n?d.indexes[0].size:'none',n?'var(--green)':'var(--amber)');
+  const qb=d.qbit||{};
+  set('chq-pp-src',d.exists?rowsTxt(d.rows,d.rows_exact):'not synced',d.exists?'':'var(--amber)');
+  set('chq-pp-tbl',qb.exists?rowsTxt(qb.rows,qb.rows_exact):'not created',qb.exists?'':'var(--amber)');
+  set('chq-pp-size',qb.exists?(qb.size||'—'):'—');
+  set('chq-pp-sync',!qb.exists?'—':(qb.in_sync===null||qb.in_sync===undefined?'checking…':(qb.in_sync?'yes':'no — rebuild')),qb.in_sync?'var(--green)':(qb.in_sync===false?'var(--red)':''));
+  byId('chq-warn').innerHTML=(qb.exists&&qb.in_sync===false)?'<div class="warn-box">⚠ The QBit table does not hold the same rows as the Array table. Rebuild it.</div>':'';
+  if(qb.build&&qb.build.running&&!chqPoll) chqPollStart();
+  let w='';
+  if(d.exists&&d.in_sync===false) w+='<div class="warn-box">⚠ The ClickHouse table does not hold the same rows as Postgres. Re-sync before comparing.</div>';
+  if(d.exists&&d.parts>1) w+=`<div class="warn-box">⚠ The table has ${d.parts} data parts; ClickHouse builds one HNSW graph per part, so queries get slower with more parts. Re-sync, or run <code>OPTIMIZE TABLE … FINAL</code>.</div>`;
+  if(d.cache&&d.cache.warning) w+=`<div class="warn-box">⚠ ${escH(d.cache.warning)}</div>`;
+  byId('chd-warn').innerHTML=w;
+  if(d.sync&&d.sync.running&&!chdSyncPoll) chdSyncPollStart();
+  if(d.build&&d.build.running&&!chdBuildPoll) chdBuildPollStart();
+}
+function chdSync(){
+  if(!confirm('Drop and recreate the ClickHouse table from Postgres? Its index goes with it.')) return;
+  post('/api/chd/sync').then(d=>{
+    if(!d.ok){ byId('chd-out').innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(d.error)}</div>`; return; }
+    byId('chd-out').innerHTML=''; chdSyncPollStart();
+  });
+}
+function chdSyncPollStart(){
+  byId('chd-sync-box').style.display='block'; chdBusy=true;
+  const tick=async()=>{
+    let s; try{ s=await api('/api/chd/sync/status'); }catch(e){ return; }
+    byId('chd-sync-bar').style.width=(s.pct||0)+'%';
+    byId('chd-sync-txt').textContent=`${s.phase} — ${fmt(s.done)} / ${fmt(s.total)} rows · ${s.elapsed}s`;
+    if(!s.running){
+      clearInterval(chdSyncPoll); chdSyncPoll=null; chdBusy=false;
+      if(s.error) byId('chd-out').innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(s.error)}</div>`;
+      else if(s.result) showOutput('chd-out',true,`synced ${fmt(s.result.rows)} rows in ${s.result.copy_seconds}s (${fmt(s.result.rows_per_sec)} rows/s), merged to one part in ${s.result.merge_seconds}s — identical to Postgres`);
+      chdStatus();
+    }
+  };
+  if(chdSyncPoll) clearInterval(chdSyncPoll);
+  chdSyncPoll=setInterval(tick,700); tick();
+}
+async function chdBuild(){
+  byId('chdb-result').innerHTML=''; byId('chdb-warn').innerHTML='';
+  const d=await post('/api/chd/index/build/start',{opclass:byId('chdb-opclass').value,quantization:byId('chdb-quant').value,
+    m:byId('chdb-m').value,ef_construction:byId('chdb-efc').value,replace:byId('chdb-replace').checked});
+  if(!d.ok){ byId('chdb-result').innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(d.error)}</div>`; return; }
+  warnList('chdb-warn',d.warnings);
+  byId('chdb-sql').innerHTML=sqlPanel(d.sql,'index DDL',true);
+  chdBuildPollStart();
+}
+function chdBuildPollStart(){
+  byId('chdb-live').style.display='block'; byId('chdb-btn').disabled=true; chdBusy=true;
+  const tick=async()=>{
+    let s; try{ s=await api('/api/chd/index/build/status'); }catch(e){ return; }
+    byId('chdb-timer').innerHTML=`${Number(s.elapsed||0).toFixed(1)}<span class="timer-unit">s</span>`;
+    byId('chdb-phase').textContent=s.phase==='building'?`materializing the index${s.parts_to_do!==null&&s.parts_to_do!==undefined?` — ${s.parts_to_do} part(s) left`:''}`:s.phase;
+    if(!s.running){
+      clearInterval(chdBuildPoll); chdBuildPoll=null; chdBusy=false;
+      byId('chdb-btn').disabled=false; byId('chdb-live').style.display='none';
+      if(s.error) byId('chdb-result').innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(s.error)}</div>`;
+      else if(s.result){ const r=s.result, o=r.opts||{};
+        byId('chdb-result').innerHTML=`<div class="kpi-row">
+          <div class="kpi"><div class="kpi-label">Build time</div><div class="kpi-val red">${r.seconds}s</div><div class="kpi-sub">${fmt(r.rows_per_sec)} rows/s</div></div>
+          <div class="kpi"><div class="kpi-label">Index size</div><div class="kpi-val">${escH(r.size)}</div><div class="kpi-sub">${r.bytes_per_row} B/row</div></div>
+          <div class="kpi"><div class="kpi-label">M / ef_construction</div><div class="kpi-val">${o.m} / ${o.ef_construction}</div><div class="kpi-sub">quantization ${escH(o.quantization||'')}</div></div></div>`;
+      }
+      chdIndexes(); chdStatus();
+    }
+  };
+  if(chdBuildPoll) clearInterval(chdBuildPoll);
+  chdBuildPoll=setInterval(tick,700); tick();
+}
+async function chdIndexes(){
+  const d=await api('/api/chd/index/list'); if(!d.ok) return;
+  byId('chd-indexes').innerHTML=d.rows.length
+    ? tableHtml(['Index','Distance','Quantization','M','ef_construction','On disk','In memory when queried',''],
+        d.rows.map(r=>[`<code>${escH(r.name)}</code>`,escH(r.opclass||'—'),escH(r.quantization||'—'),r.m??'—',r.ef_construction??'—',escH(r.size),escH(r.memory||'—'),
+          `<button class="run-btn danger" onclick="chdDrop()">drop</button>`]),['','','','num','num','num','num',''])
+    : '<div class="loading">No vector index yet.</div>';
+  byId('chd-history').innerHTML=d.history.length
+    ? `<div class="col-head"><span>Builds recorded for ClickHouse</span><span></span></div>`+
+      tableHtml(['When','Rows','M','ef_construction','Seconds','rows/s','Size','B/row','note'],
+        d.history.map(b=>[escH(b.at),fmt(b.rows),b.m??'—',b.ef_construction??'—',b.build_seconds!==null?Number(b.build_seconds).toFixed(2):'—',
+          fmt(Math.round(b.rows_per_sec||0)),escH(b.size),b.bytes_per_row!==null?Math.round(b.bytes_per_row):'—',escH(b.note||'')]),
+        ['num','num','num','num','num','num','num','num','']) : '';
+}
+async function chqBuild(){
+  byId('chq-result').innerHTML='';
+  if(!confirm('Create the QBit table from ch_docs? An existing QBit table is dropped first.')) return;
+  const d=await post('/api/chd/qbit/build/start',{});
+  if(!d.ok){ byId('chq-result').innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(d.error)}</div>`; return; }
+  chqPollStart();
+}
+function chqPollStart(){
+  byId('chq-live').style.display='block'; byId('chq-btn').disabled=true; chdBusy=true;
+  const tick=async()=>{
+    let s; try{ s=await api('/api/chd/qbit/build/status'); }catch(e){ return; }
+    byId('chq-timer').innerHTML=`${Number(s.elapsed||0).toFixed(1)}<span class="timer-unit">s</span>`;
+    byId('chq-phase').textContent=s.phase||'';
+    if(s.sql) byId('chq-sql').innerHTML=sqlPanel(s.sql,'QBit table',true);
+    if(!s.running){
+      clearInterval(chqPoll); chqPoll=null; chdBusy=false; byId('chq-btn').disabled=false; byId('chq-live').style.display='none';
+      if(s.error) byId('chq-result').innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(s.error)}</div>`;
+      else if(s.result){ const r=s.result;
+        byId('chq-result').innerHTML=`<div class="kpi-row">
+          <div class="kpi"><div class="kpi-label">Conversion</div><div class="kpi-val red">${r.seconds}s</div><div class="kpi-sub">${fmt(r.rows_per_sec)} rows/s; merge ${r.merge_seconds}s not counted</div></div>
+          <div class="kpi"><div class="kpi-label">Vector column</div><div class="kpi-val">${escH(r.size)}</div><div class="kpi-sub">${r.bytes_per_row} B/row</div></div>
+          <div class="kpi"><div class="kpi-label">Identical to Array table</div><div class="kpi-val">${r.identical?'yes':'NO'}</div><div class="kpi-sub">count, id range, id checksum</div></div></div>`;
+      }
+      chdStatus();
+    }
+  };
+  if(chqPoll) clearInterval(chqPoll);
+  chqPoll=setInterval(tick,700); tick();
+}
+async function chqDrop(){
+  if(!confirm('Drop the QBit table?')) return;
+  const d=await post('/api/chd/qbit/drop'); if(!d.ok) showOutput('chd-out',false,d.error); byId('chq-result').innerHTML=''; chdStatus();
+}
+async function chdDrop(){
+  if(!confirm('Drop the ClickHouse vector index?')) return;
+  const d=await post('/api/chd/index/drop'); if(!d.ok) showOutput('chd-out',false,d.error); chdIndexes(); chdStatus();
+}
+
 // ── CACHE TOOLS ───────────────────────────────────────────────────────────────
 async function cacheLoad(){
   const d=await api('/api/cache/status'); const el=byId('cache-caps'); if(!el) return;
@@ -3202,9 +4721,14 @@ const ENG=[
   {key:'ivfplus', label:'EDB ivfplus',      short:'ivfplus',  color:'#0F6E5A', kpi:'teal',   cls:'vp'},
   {key:'vchordrq',label:'VectorChord',      short:'vchordrq', color:'#5A3A9A', kpi:'purple', cls:'vc'},
   {key:'hnsw',    label:'pgvector HNSW',    short:'hnsw',     color:'#1A5A9A', kpi:'blue',   cls:'hn'},
-  {key:'ivfflat', label:'pgvector IVFFlat', short:'ivfflat',  color:'#9A6A00', kpi:'amber',  cls:'if'}];
+  {key:'ivfflat', label:'pgvector IVFFlat', short:'ivfflat',  color:'#9A6A00', kpi:'amber',  cls:'if'},
+  {key:'clickhouse',label:'ClickHouse',            short:'clickhouse',    color:'#C2410C', kpi:'red',    cls:'ch'},
+  {key:'clickhouse_qbit',label:'ClickHouse QBit',  short:'qbit',          color:'#8E2C48', kpi:'red',    cls:'ch'},
+  {key:'w_ivfplus',label:'EDB ivfplus @ WHPG',      short:'ivfplus@whpg',  color:'#4FA58F', kpi:'teal',   cls:'vp'},
+  {key:'w_hnsw',   label:'pgvector HNSW @ WHPG',    short:'hnsw@whpg',     color:'#6FA0D6', kpi:'blue',   cls:'hn'},
+  {key:'w_ivfflat',label:'pgvector IVFFlat @ WHPG', short:'ivfflat@whpg',  color:'#D6A84F', kpi:'amber',  cls:'if'}];
 const engMeta=k=>ENG.find(e=>e.key===k)||{label:k,short:k,color:'#6B6860',kpi:'',cls:''};
-const selEngines=()=>ENG.filter(e=>byId('ce-'+e.key).checked).map(e=>e.key);
+const selEngines=()=>ENG.filter(e=>{const b=byId('ce-'+e.key); return b&&b.checked&&!b.disabled;}).map(e=>e.key);
 function buildParams(b){
   if(!b) return '—';
   if(b.m!==null&&b.m!==undefined) return `m=${b.m}, efc=${b.ef_construction}`;
@@ -3215,7 +4739,7 @@ function engCard(e){
   const meta=engMeta(e.key);
   if(!e.exists) return `<div class="eng-card ${meta.cls}"><h4><span>${escH(e.label)}</span><span class="badge ba">no table</span></h4><div class="mini-note"><code>${escH(e.table)}</code> does not exist yet.</div></div>`;
   const b=e.last_build;
-  return `<div class="eng-card ${meta.cls}"><h4><span>${escH(e.label)} · <code>${escH(e.engine)}</code></span><span class="badge bb">${fmt(e.rows)} rows</span></h4><dl>
+  return `<div class="eng-card ${meta.cls}"><h4><span>${escH(e.label)} · <code>${escH(e.engine)}</code></span><span class="badge bb">${e.rows_exact===false?'≈ ':''}${fmt(e.rows)} rows</span></h4><dl>
     <dt>table</dt><dd>${escH(e.table)}</dd>
     <dt>heap + toast</dt><dd>${bytes(e.heap_bytes)}</dd>
     <dt>vector indexes</dt><dd>${e.indexes.length?e.indexes.map(i=>escH(i.name)+' · '+escH(i.size)).join('<br>'):'none'}</dd>
@@ -3226,14 +4750,21 @@ function engCard(e){
 }
 async function cmpSummary(){
   const d=await api('/api/cmp/summary'); if(!d.ok) return;
-  byId('cmp-cards').innerHTML=d.order.map(k=>engCard(d.engines[k])).join('');
+  byId('cmp-cards').innerHTML=d.order.filter(k=>!k.startsWith('w_')||d.whpg_enabled).map(k=>engCard(d.engines[k])).join('');
+  ['w_ivfplus','w_hnsw','w_ivfflat'].forEach(k=>{ const b=byId('ce-'+k); if(!b) return; const ok=d.whpg_enabled&&!d.whpg_error&&d.engines[k]&&d.engines[k].exists;
+    b.disabled=!ok; if(!ok) b.checked=false; else if(!window._whAuto) b.checked=true; });
+  if(d.whpg_enabled&&!d.whpg_error) window._whAuto=true;
+  { const cq=byId('ce-clickhouse_qbit'); if(cq){ const q=d.engines.clickhouse_qbit; const ok=d.ch_enabled&&!d.ch_error&&q&&q.exists; cq.disabled=!ok; if(!ok) cq.checked=false; } }
+  { const cb=byId('ce-clickhouse'); if(cb){ const ce=d.engines.clickhouse; const ok=d.ch_enabled&&!d.ch_error&&ce&&ce.exists&&(ce.indexes||[]).length>0; cb.disabled=!ok; if(!ok) cb.checked=false; else if(!window._chAuto) cb.checked=true; if(ok) window._chAuto=true; } }
+  byId('ce-wh-hint').textContent=!d.whpg_enabled?'WarehousePG engines appear here once the second connection is enabled and its tables are synced.'
+     :(d.whpg_error?'':'WarehousePG: '+(d.segments?d.segments+' segments · ':'')+'probes / ef_search apply per segment; cold mode is warm-only for these.');
   const base=d.baseline?engMeta(d.baseline).short:null; let k='';
   Object.entries(d.ratios||{}).forEach(([key,r])=>{
     const m=engMeta(key);
     if(r.build!==undefined) k+=`<div class="kpi"><div class="kpi-label">${escH(m.short)} build time</div><div class="kpi-val ${m.kpi}">${r.build}×</div><div class="kpi-sub">vs ${escH(base)}</div></div>`;
     if(r.size!==undefined) k+=`<div class="kpi"><div class="kpi-label">${escH(m.short)} index size</div><div class="kpi-val ${m.kpi}">${r.size}×</div><div class="kpi-sub">vs ${escH(base)}</div></div>`;
   });
-  byId('cmp-kpis').innerHTML=k?`<div class="kpi-row">${k}</div>`:'';
+  byId('cmp-kpis').innerHTML=(d.whpg_error?`<div class="error-box">WarehousePG is enabled but cannot be reached: ${escH(d.whpg_error)}</div>`:'')+(k?`<div class="kpi-row">${k}</div>`:'');
 }
 async function cmpCategories(){
   const d=await api('/api/cmp/categories'); const el=byId('cs-cat'); if(!d.ok||!el) return;
@@ -3251,7 +4782,15 @@ async function cmpBuildBoth(){
     ivfplus:{start:()=>post('/api/index/build/start',{lists:+byId('cb-vp-lists').value,opclass,maintenance_work_mem:mwm}),status:'/api/index/build/status'},
     vchordrq:{start:()=>post('/api/vc/index/build/start',{lists:byId('cb-vc-lists').value.trim(),opclass,maintenance_work_mem:mwm,replace:true}),status:'/api/vc/index/build/status'},
     hnsw:{start:()=>post('/api/pgv/index/build/start',{am:'hnsw',m:byId('cb-h-m').value,ef_construction:byId('cb-h-efc').value,opclass,maintenance_work_mem:mwm,replace:true}),status:'/api/pgv/index/build/status'},
-    ivfflat:{start:()=>post('/api/pgv/index/build/start',{am:'ivfflat',lists:byId('cb-i-lists').value,opclass,maintenance_work_mem:mwm,replace:true}),status:'/api/pgv/index/build/status'}};
+    ivfflat:{start:()=>post('/api/pgv/index/build/start',{am:'ivfflat',lists:byId('cb-i-lists').value,opclass,maintenance_work_mem:mwm,replace:true}),status:'/api/pgv/index/build/status'},
+    // ClickHouse: the same M / ef_construction as HNSW, bf16 quantization (its default)
+    clickhouse:{start:()=>post('/api/chd/index/build/start',{opclass,m:byId('cb-h-m').value,ef_construction:byId('cb-h-efc').value,replace:true}),status:'/api/chd/index/build/status'},
+    // ClickHouse QBit: converts the Array table to bit planes; there is no index to tune
+    clickhouse_qbit:{start:()=>post('/api/chd/qbit/build/start',{}),status:'/api/chd/qbit/build/status'},
+    // WarehousePG: the very same lists / m / ef_construction, nothing scaled for the segment count
+    w_ivfplus:{start:()=>post('/api/wh/index/build/start',{am:'ivfplus',lists:+byId('cb-vp-lists').value,opclass,maintenance_work_mem:mwm,replace:true}),status:'/api/wh/index/build/status'},
+    w_hnsw:{start:()=>post('/api/wh/index/build/start',{am:'hnsw',m:byId('cb-h-m').value,ef_construction:byId('cb-h-efc').value,opclass,maintenance_work_mem:mwm,replace:true}),status:'/api/wh/index/build/status'},
+    w_ivfflat:{start:()=>post('/api/wh/index/build/start',{am:'ivfflat',lists:byId('cb-i-lists').value,opclass,maintenance_work_mem:mwm,replace:true}),status:'/api/wh/index/build/status'}};
   const waitFor=async(url)=>{ for(;;){ const s=await api(url); if(!s.running) return s; await new Promise(r=>setTimeout(r,700)); } };
   const done=[];
   try{
@@ -3275,22 +4814,57 @@ function hitCol(title,res,truth,color){
       <span class="hit-score">${r.distance}</span></div>`).join(''):'<div class="hit"><span class="hit-title" style="color:var(--red)">no rows returned</span></div>'}</div>
     <div class="mini-note">index used: <code>${escH(res.plan.index||'none — '+res.plan.nodes.join(' › '))}</code></div></div>`;
 }
+let csPoll=null, csLost=0;
+function csSetBusy(on){ const b=byId('cs-btn'); if(b) b.disabled=on; }
+function csShowProgress(s){
+  const pct=s.pct||0;
+  byId('cs-out').innerHTML=`<div class="ctrl-card" style="margin:0"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div class="spinner"></div><b>${fmt(s.done)} of ${s.total?fmt(s.total):'…'} queries executed</b>
+      <span class="mini-note" style="margin:0">${s.elapsed||0}s elapsed</span>
+      <button class="run-btn danger" style="margin-left:auto" onclick="cmpSearchCancel()">Cancel</button></div>
+      <div class="pbar" style="margin-top:8px"><div class="pbar-fill ${s.total?'':'indeterminate'}" style="width:${s.total?pct:100}%"></div></div>
+      <div class="mini-note">${s.done?'last finished: ':''}${escH(s.current||'starting…')}${csLost?` <span style="color:var(--amber)">· lost contact with the app ${csLost}×, retrying — the run continues on the server</span>`:''}</div></div>`;
+}
+async function cmpSearchPoll(){
+  if(csPoll) clearInterval(csPoll);
+  csSetBusy(true);
+  const tick=async()=>{
+    let s; try{ s=await statusGet('/api/cmp/search/status',20000); if(s._error) throw new Error(s._error); csLost=0; }catch(e){ csLost++; return; }
+    if(s.running){ csShowProgress(s); return; }
+    clearInterval(csPoll); csPoll=null; csSetBusy(false);
+    if(s.result&&s.result.ok) cmpSearchRender(s.result);
+    else if(s.phase==='cancelled') byId('cs-out').innerHTML='<div class="warn-box">Search cancelled.</div>';
+    else if(s.error) byId('cs-out').innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(s.error)}</div>`;
+  };
+  csPoll=setInterval(tick,400); tick();
+}
+async function cmpSearchCancel(){ await post('/api/cmp/search/cancel'); }
+async function cmpSearchResume(){
+  let s; try{ s=await api('/api/cmp/search/status'); }catch(e){ return; }
+  if(s.running){ csShowProgress(s); cmpSearchPoll(); }
+}
 async function cmpSearch(){
   const out=byId('cs-out'); const picked=selEngines();
   if(picked.length<2){ out.innerHTML='<div class="warn-box">Tick at least two engines above to compare.</div>'; return; }
-  out.innerHTML='<div class="loading"><div class="spinner"></div>Running the exact scan, then each index…</div>';
+  csSetBusy(true);
+  out.innerHTML='<div class="loading"><div class="spinner"></div>Starting…</div>';
   const tri=id=>{const v=byId(id).value; return v===''?null:v==='true';};
   const body={engines:picked,opclass:byId('cs-opclass').value,limit:+byId('cs-k').value,
-    vp_probes:+byId('cs-vp-probes').value,vc_probes:byId('cs-vc-probes').value.trim(),
-    hnsw_ef:+byId('cs-h-ef').value,ivf_probes:+byId('cs-i-probes').value,iterative:byId('cs-iter').value,
+    probes:+byId('cs-probes').value,iterative:byId('cs-iter').value,
     epsilon:byId('cs-eps').value.trim()||null,category_id:byId('cs-cat').value||null,prefilter:tri('cs-pre'),
     reps:+byId('cs-reps').value,force_index:byId('cs-force').checked,cache_mode:byId('cs-cache').value};
   const id=byId('cs-id').value; if(id) body.id=+id; else body.text=byId('cs-text').value;
-  const d=await post('/api/cmp/search',body);
-  if(!d.ok){ out.innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(d.error)}</div>`; return; }
+  let d;
+  try{ d=await post('/api/cmp/search/start',body); }
+  catch(e){ csSetBusy(false); out.innerHTML=`<div class="error-box">Could not reach the app: ${escH(String(e))}</div>`; return; }
+  if(!d.ok){ csSetBusy(false); out.innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(d.error)}</div>`; return; }
+  cmpSearchPoll();
+}
+function cmpSearchRender(d){
+  const out=byId('cs-out');
   const rc=v=>v===null||v===undefined?'':(v>=.95?'var(--green)':(v>=.8?'var(--amber)':'var(--red)'));
   const kpis=`<div class="kpi"><div class="kpi-label">Exact scan</div><div class="kpi-val">${d.exact.ms} ms</div><div class="kpi-sub">ground truth</div></div>`+
-    d.engines.map(o=>{const m=engMeta(o.key); return `<div class="kpi"><div class="kpi-label">${escH(m.short)}</div>
+    d.engines.map(o=>{const m=engMeta(o.key); return `<div class="kpi"><div class="kpi-label">${escH(m.short)}</div><div class="kpi-sub" style="margin:0 0 2px">${escH((o.settings[0]||'').replace('SET ',''))}</div>
       <div class="kpi-val ${m.kpi}">${o.result.ms} ms${o.result.cold?' <span style="font-size:11px;color:var(--faint)">cold</span>':''}</div>
       <div class="kpi-sub">${o.result.cold&&o.result.ms_warm!==null?`warm ${o.result.ms_warm} ms · `:''}recall <b style="color:${rc(o.recall)}">${o.recall===null?'—':(o.recall*100).toFixed(0)+'%'}</b> · ${o.returned} of ${d.k} rows · ${o.speedup??'—'}× vs exact</div></div>`;}).join('')+
     `<div class="kpi"><div class="kpi-label">Found by all</div><div class="kpi-val">${d.common_to_all.length}</div><div class="kpi-sub">of ${d.k} requested</div></div>`;
@@ -3306,25 +4880,64 @@ function parseList(s,vc){
   if(vc) return (s.includes(';')?s.split(';'):s.split(',')).map(x=>x.trim());
   return s.split(',').map(x=>+x.trim()).filter(x=>x>0);
 }
+let crPoll=null, crLost=0;
+function crSetBusy(on){ const b=byId('cr-btn'); if(b) b.disabled=on; }
+function crShowProgress(s){
+  const pct=s.pct||0, eta=s.eta!=null?` · about ${s.eta>=90?Math.round(s.eta/60)+' min':s.eta+' s'} left`:'';
+  const phase={preparing:'preparing',quiet:'keeping ClickHouse out of the way',verifying:'verifying the tables are identical',"ground truth":'measuring the exact baseline',prewarming:'warming the indexes',sweeping:'sweeping',saving:'saving the run'}[s.phase]||s.phase;
+  byId('cr-out').innerHTML=`<div class="ctrl-card" style="margin:0"><div style="display:flex;align-items:center;gap:12px">
+      <div class="spinner"></div><b>${escH(phase)}</b><span class="mini-note" style="margin:0">${s.repeats>1?'repeat '+s.repeat+' of '+s.repeats+' · ':''}${s.total?fmt(s.done)+' of '+fmt(s.total)+' passes · ':''}${s.elapsed||0}s elapsed${eta}</span>
+      <button class="run-btn danger" style="margin-left:auto" onclick="cmpSweepCancel()">Cancel</button></div>
+      <div class="pbar" style="margin-top:8px"><div class="pbar-fill ${s.total?'':'indeterminate'}" style="width:${s.total?pct:100}%"></div></div>
+      <div class="mini-note">${escH(s.current||'')}${crLost?` <span style="color:var(--amber)">· lost contact with the app ${crLost}×, retrying — the sweep keeps running on the server</span>`:''}</div></div>`;
+}
+async function cmpSweepPoll(){
+  if(crPoll) clearInterval(crPoll);
+  crSetBusy(true);
+  const tick=async()=>{
+    let s;
+    try{ s=await api('/api/cmp/recall/status'); crLost=0; }catch(e){ crLost++; return; }
+    if(s.running){ crShowProgress(s); return; }
+    clearInterval(crPoll); crPoll=null; crSetBusy(false);
+    if(s.result&&s.result.ok) cmpSweepRender(s.result);
+    else if(s.phase==='cancelled') byId('cr-out').innerHTML='<div class="warn-box">Sweep cancelled — nothing was saved.</div>';
+    else if(s.error) byId('cr-out').innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(s.error)}</div>`;
+  };
+  crPoll=setInterval(tick,1000); tick();
+}
+async function cmpSweepCancel(){ await post('/api/cmp/recall/cancel'); }
+async function cmpSweepResume(){
+  // after a reload, or after the connection dropped: pick the job up where it is
+  let s; try{ s=await api('/api/cmp/recall/status'); }catch(e){ return; }
+  if(s.running){ crShowProgress(s); cmpSweepPoll(); }
+  else if(s.result&&s.result.ok&&!byId('cr-out').innerHTML.trim()){ cmpSweepRender(s.result); }
+}
 async function cmpSweep(){
-  const out=byId('cr-out'), btn=byId('cr-btn'); const picked=selEngines();
+  const out=byId('cr-out'); const picked=selEngines();
   if(picked.length<2){ out.innerHTML='<div class="warn-box">Tick at least two engines above to compare.</div>'; return; }
-  btn.disabled=true;
-  out.innerHTML='<div class="loading"><div class="spinner"></div>Exact ground truth, then every sweep… this runs every query at every setting.</div>';
-  const d=await post('/api/cmp/recall',{engines:picked,k:+byId('cr-k').value,queries:+byId('cr-q').value,opclass:byId('cr-opclass').value,
-    vp_probes_list:parseList(byId('cr-vp').value,false),vc_probes_list:parseList(byId('cr-vc').value,true),
-    hnsw_ef_list:parseList(byId('cr-h').value,false),ivf_probes_list:parseList(byId('cr-i').value,false),
-    epsilon:byId('cr-eps').value.trim()||null,iterative:byId('cr-iter').value,force_index:byId('cr-force').checked,
-    cache_mode:byId('cr-cache').value,passes:+byId('cr-passes').value||null});
-  btn.disabled=false;
-  if(!d.ok){ out.innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(d.error)}</div>`; return; }
+  crSetBusy(true);
+  out.innerHTML='<div class="loading"><div class="spinner"></div>Starting…</div>';
+  let d;
+  try{
+    d=await post('/api/cmp/recall/start',{engines:picked,k:+byId('cr-k').value,queries:+byId('cr-q').value,opclass:byId('cr-opclass').value,
+      probes_list:parseList(byId('cr-probes').value,false),
+      epsilon:byId('cr-eps').value.trim()||null,iterative:byId('cr-iter').value,force_index:byId('cr-force').checked,
+      cache_mode:byId('cr-cache').value,passes:+byId('cr-passes').value||null,label:byId('cr-label').value.trim(),
+      repeats:+byId('cr-repeats').value||1,quiet_host:byId('cr-quiet').checked&&!byId('cr-quiet').disabled});
+  }catch(e){ crSetBusy(false); out.innerHTML=`<div class="error-box">Could not reach the app: ${escH(String(e))}</div>`; return; }
+  if(!d.ok){ crSetBusy(false); out.innerHTML=`<div class="error-box" style="white-space:pre-wrap">${escH(d.error)}</div>`; return; }
+  cmpSweepPoll();
+}
+function cmpSweepRender(d){
+  const out=byId('cr-out');
   const P=d.protocol||{}; let cleanTxt='';
   if(P.cache_mode==='cold'){ cleanTxt=' Cleaned before every pass: '+d.order.map(k=>{const c=(P.clean||{})[k]; if(!c) return ''; return `${escH(engMeta(k).short)} (${[c.shared?fmt(c.shared.evicted)+' shared blocks':null,c.os?bytes(c.os.bytes)+' OS cache':null].filter(Boolean).join(' + ')||'nothing'})`;}).join(', ')+'.'; }
   else if(P.prewarm){ cleanTxt=' Prewarmed: '+d.order.map(k=>`${escH(engMeta(k).short)} (${escH((P.prewarm[k]||[]).join(', '))})`).join(', ')+'.'; }
-  out.innerHTML=`<div class="info-box" style="margin:0">${escH(d.note)} Exact scan: ${d.exact_ms} ms (median).${cleanTxt} Indexes used: ${d.order.map(k=>`${escH(engMeta(k).short)} → <code>${escH(d.engines[k].index||'none')}</code>`).join(' · ')}.</div><div id="cr-notes"></div>`;
+  out.innerHTML=`<div class="info-box" style="margin:0">${escH(d.note)} Exact scan: ${d.exact_ms} ms (median)${d.truth_source?' — '+escH(d.truth_source):''}.${cleanTxt} Indexes used: ${d.order.map(k=>`${escH(engMeta(k).short)} → <code>${escH(d.engines[k].index||'none')}</code>`).join(' · ')}.</div>`+
+    ((d.run_ids&&d.run_ids.length>1)?`<div class="output-msg ok" style="margin-top:8px">Saved as ${d.run_ids.length} benchmark runs (#${d.run_ids.join(', #')}), one per repeat — <a href="#" onclick="switchTab('bench');return false" style="color:inherit;text-decoration:underline">rank them in 🏆 Benchmark</a></div>`:d.run_id?`<div class="output-msg ok" style="margin-top:8px">Saved as benchmark run #${d.run_id} — <a href="#" onclick="switchTab('bench');return false" style="color:inherit;text-decoration:underline">rank it in 🏆 Benchmark</a></div>`:'')+`<div id="cr-notes"></div>`;
   warnList('cr-notes',d.notes);
   byId('cr-chart-label').hidden=false; byId('cr-chart-wrap').hidden=false;
-  const dash={ivfplus:[],vchordrq:[5,4],hnsw:[2,3],ivfflat:[8,3]};
+  const dash={ivfplus:[],vchordrq:[5,4],hnsw:[2,3],ivfflat:[8,3],clickhouse:[10,3],clickhouse_qbit:[4,3],w_ivfplus:[1,3],w_hnsw:[1,3],w_ivfflat:[1,3]};
   mkChart('chart-cmp-recall',{type:'scatter',data:{datasets:d.order.map(k=>{const m=engMeta(k),e=d.engines[k];
       return {label:m.short,data:e.results.map(r=>({x:r.ms,y:+(r.recall*100).toFixed(2),p:r.param})),
         borderColor:m.color,backgroundColor:m.color,borderDash:dash[k]||[],showLine:true,tension:.15,pointRadius:4};})},
@@ -3369,13 +4982,16 @@ async function cmpChurn(){
         ph.filter(p=>n[p]!==0).map(p=>[p,n[p]===null?'—':fmt(n[p])].concat(ord.map(k=>{
           const v=t[k][p]; const r=(k!==base&&t[base][p]>0)?` <span style="color:var(--faint);font-size:11px">${(v/t[base][p]).toFixed(1)}×</span>`:'';
           return v+r;}))),['','num'].concat(ord.map(()=>'num')))+
-        `<div class="mini-note">× is relative to ${escH(engMeta(base).short)}. Index size after: ${ord.map(k=>`${escH(engMeta(k).short)} ${bytes(R.index_bytes[k])}`).join(' · ')}. Rows: ${ord.map(k=>fmt(R.rows[k])).join(' / ')}. Re-run the sweep to see recall after drift.</div>`;
+        `<div class="mini-note">Saved to the benchmark page. × is relative to ${escH(engMeta(base).short)}. Index size after: ${ord.map(k=>`${escH(engMeta(k).short)} ${bytes(R.index_bytes[k])}`).join(' · ')}. Rows: ${ord.map(k=>fmt(R.rows[k])).join(' / ')}. Re-run the sweep to see recall after drift.</div>`;
       cmpSummary();
     }
   },700);
 }
-connLoad(true);
-setInterval(()=>{ if(!connDirty) connLoad(false); },15000);
+connLoad(true); whConnLoad(true); chLoad(true); connPing();
+setInterval(()=>{ if(!connDirty) connLoad(false); if(!whDirty) whConnLoad(false); if(!chDirty) chLoad(false); },15000);
+setInterval(connPing,10000);
+
+document.addEventListener('change',e=>{ if(e.target&&e.target.id&&e.target.id.startsWith('ce-')) crQuietHint(); });
 
 
 // ══════════════════════════════════════════════════════════════════════════════

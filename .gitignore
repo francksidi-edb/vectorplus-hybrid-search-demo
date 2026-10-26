@@ -3,3 +3,6 @@ __pycache__/
 *.bak-*
 .env
 configs/*.properties
+vpbench.db
+vpbench.db-journal
+.vectorplus_demo_connection.json
